@@ -1,24 +1,31 @@
 import PageHeader from '../components/ui/PageHeader'
-import { MOCK_GAMES } from '../lib/mockData'
+import { useGames } from '../lib/hooks'
 
 export default function Setup() {
-  const mapCounts = MOCK_GAMES.reduce<Record<string, number>>((acc, g) => {
-    acc[g.map_name] = (acc[g.map_name] ?? 0) + 1
-    return acc
-  }, {})
+  const { data, isLoading, error } = useGames()
 
-  const expansionCounts = MOCK_GAMES.flatMap(g => g.expansions).reduce<Record<string, number>>((acc, e) => {
-    acc[e] = (acc[e] ?? 0) + 1
-    return acc
-  }, {})
+  if (isLoading) return <div style={loadingStyle}>Loading…</div>
+  if (error) return <div style={loadingStyle}>Failed to load data.</div>
 
-  const colonyCounts = MOCK_GAMES.flatMap(g => g.colonies).reduce<Record<string, number>>((acc, c) => {
-    acc[c] = (acc[c] ?? 0) + 1
-    return acc
-  }, {})
+  const games = data ?? []
+
+  const mapCounts: Record<string, number> = {}
+  for (const g of games) {
+    if (g.map_name) mapCounts[g.map_name] = (mapCounts[g.map_name] ?? 0) + 1
+  }
+
+  const expansionCounts: Record<string, number> = {}
+  for (const exp of games.flatMap(g => g.expansions)) {
+    expansionCounts[exp] = (expansionCounts[exp] ?? 0) + 1
+  }
+
+  const colonyCounts: Record<string, number> = {}
+  for (const col of games.flatMap(g => g.colonies)) {
+    colonyCounts[col] = (colonyCounts[col] ?? 0) + 1
+  }
 
   const mapScores = Object.keys(mapCounts).map(map => {
-    const results = MOCK_GAMES.filter(g => g.map_name === map).flatMap(g => g.player_results)
+    const results = games.filter(g => g.map_name === map).flatMap(g => g.player_results)
     const avg = results.reduce((s, r) => s + r.total_vp, 0) / results.length
     return { map, count: mapCounts[map], avgScore: avg }
   })
@@ -32,74 +39,80 @@ export default function Setup() {
         {/* Maps */}
         <div>
           <h2 style={sectionTitle}>Maps</h2>
-          <div style={{ background: '#141820', border: '1px solid #1a1f2a', borderRadius: '6px', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #1a1f2a' }}>
-                  <th style={th}>Map</th>
-                  <th style={{ ...th, textAlign: 'right' }}>Games</th>
-                  <th style={{ ...th, textAlign: 'right' }}>Avg score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mapScores.sort((a, b) => b.count - a.count).map((m, i) => (
-                  <tr key={m.map} style={{ borderBottom: i < mapScores.length - 1 ? '1px solid #1a1f2a' : 'none' }}>
-                    <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ddd9d0' }}>{m.map}</td>
-                    <td style={numTd}>{m.count}</td>
-                    <td style={{ ...numTd, color: '#c9a030' }}>{m.avgScore.toFixed(1)}</td>
+          {mapScores.length === 0 ? (
+            <div style={emptyCard}>No map data logged yet</div>
+          ) : (
+            <div style={tableWrap}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #282042' }}>
+                    <th style={th}>Map</th>
+                    <th style={{ ...th, textAlign: 'right' }}>Games</th>
+                    <th style={{ ...th, textAlign: 'right' }}>Avg score</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {mapScores.sort((a, b) => b.count - a.count).map((m, i) => (
+                    <tr key={m.map} style={{ borderBottom: i < mapScores.length - 1 ? '1px solid #282042' : 'none' }}>
+                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>{m.map}</td>
+                      <td style={numTd}>{m.count}</td>
+                      <td style={{ ...numTd, color: '#c9a030' }}>{m.avgScore.toFixed(1)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Expansions */}
         <div>
           <h2 style={sectionTitle}>Expansions</h2>
-          <div style={{ background: '#141820', border: '1px solid #1a1f2a', borderRadius: '6px', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #1a1f2a' }}>
-                  <th style={th}>Expansion</th>
-                  <th style={{ ...th, textAlign: 'right' }}>Games used</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(expansionCounts).sort((a, b) => b[1] - a[1]).map(([exp, count], i, arr) => (
-                  <tr key={exp} style={{ borderBottom: i < arr.length - 1 ? '1px solid #1a1f2a' : 'none' }}>
-                    <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ddd9d0' }}>
-                      <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#2e8b8b', marginRight: '8px' }} />
-                      {exp}
-                    </td>
-                    <td style={numTd}>{count}</td>
+          {Object.keys(expansionCounts).length === 0 ? (
+            <div style={emptyCard}>No expansion data logged yet</div>
+          ) : (
+            <div style={tableWrap}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #282042' }}>
+                    <th style={th}>Expansion</th>
+                    <th style={{ ...th, textAlign: 'right' }}>Games used</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {Object.entries(expansionCounts).sort((a, b) => b[1] - a[1]).map(([exp, count], i, arr) => (
+                    <tr key={exp} style={{ borderBottom: i < arr.length - 1 ? '1px solid #282042' : 'none' }}>
+                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>
+                        <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#2e8b8b', marginRight: '8px' }} />
+                        {exp}
+                      </td>
+                      <td style={numTd}>{count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Colonies */}
         <div>
           <h2 style={sectionTitle}>Colonies</h2>
           {Object.keys(colonyCounts).length === 0 ? (
-            <div style={{ background: '#141820', border: '1px solid #1a1f2a', borderRadius: '6px', padding: '20px 14px', fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#3d4352', textAlign: 'center' }}>
-              No colony data logged yet
-            </div>
+            <div style={emptyCard}>No colony data logged yet</div>
           ) : (
-            <div style={{ background: '#141820', border: '1px solid #1a1f2a', borderRadius: '6px', overflow: 'hidden' }}>
+            <div style={tableWrap}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #1a1f2a' }}>
+                  <tr style={{ borderBottom: '1px solid #282042' }}>
                     <th style={th}>Colony</th>
                     <th style={{ ...th, textAlign: 'right' }}>Appearances</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Object.entries(colonyCounts).sort((a, b) => b[1] - a[1]).map(([col, count], i, arr) => (
-                    <tr key={col} style={{ borderBottom: i < arr.length - 1 ? '1px solid #1a1f2a' : 'none' }}>
-                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ddd9d0' }}>{col}</td>
+                    <tr key={col} style={{ borderBottom: i < arr.length - 1 ? '1px solid #282042' : 'none' }}>
+                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>{col}</td>
                       <td style={numTd}>{count}</td>
                     </tr>
                   ))}
@@ -113,15 +126,56 @@ export default function Setup() {
   )
 }
 
+const loadingStyle: React.CSSProperties = {
+  padding: '32px 36px',
+  color: '#625c7c',
+  fontFamily: 'var(--font-body)',
+}
+
+const emptyCard: React.CSSProperties = {
+  background: '#1e1835',
+  border: '1px solid #282042',
+  borderRadius: '6px',
+  padding: '20px 14px',
+  fontFamily: 'var(--font-body)',
+  fontSize: '0.8rem',
+  color: '#504270',
+  textAlign: 'center',
+}
+
+const tableWrap: React.CSSProperties = {
+  background: '#1e1835',
+  border: '1px solid #282042',
+  borderRadius: '6px',
+  overflow: 'hidden',
+}
+
 const sectionTitle: React.CSSProperties = {
   fontFamily: 'var(--font-display)',
   fontWeight: 600,
   fontSize: '0.82rem',
   letterSpacing: '0.1em',
   textTransform: 'uppercase',
-  color: '#5e5b57',
+  color: '#625c7c',
   marginBottom: '12px',
   marginTop: 0,
 }
-const th: React.CSSProperties = { padding: '9px 14px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: '0.66rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3d4352' }
-const numTd: React.CSSProperties = { padding: '10px 14px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: '#b5b0a8' }
+
+const th: React.CSSProperties = {
+  padding: '9px 14px',
+  textAlign: 'left',
+  fontFamily: 'var(--font-body)',
+  fontSize: '0.66rem',
+  fontWeight: 600,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: '#504270',
+}
+
+const numTd: React.CSSProperties = {
+  padding: '10px 14px',
+  textAlign: 'right',
+  fontFamily: 'var(--font-mono)',
+  fontSize: '0.82rem',
+  color: '#bbb4d0',
+}

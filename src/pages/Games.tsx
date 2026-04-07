@@ -1,9 +1,14 @@
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
-import { MOCK_GAMES } from '../lib/mockData'
+import { useGames } from '../lib/hooks'
 
 export default function Games() {
-  const games = [...MOCK_GAMES].sort((a, b) => b.date.localeCompare(a.date))
+  const { data, isLoading, error } = useGames()
+
+  if (isLoading) return <div style={loadingStyle}>Loading…</div>
+  if (error) return <div style={loadingStyle}>Failed to load data.</div>
+
+  const games = data ?? []
 
   return (
     <div className="page-enter" style={{ padding: '32px 36px' }}>
@@ -23,8 +28,8 @@ export default function Games() {
               className="panel-hover"
               style={{
                 display: 'block',
-                background: '#141820',
-                border: '1px solid #1a1f2a',
+                background: '#1e1835',
+                border: '1px solid #282042',
                 borderRadius: '6px',
                 padding: '20px 24px',
                 textDecoration: 'none',
@@ -34,14 +39,14 @@ export default function Games() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-                    <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', color: '#ddd9d0' }}>
-                      {game.map_name}
+                    <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', color: '#ece6ff' }}>
+                      {game.map_name ?? 'Digital'}
                     </span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#3d4352', letterSpacing: '0.05em' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#504270', letterSpacing: '0.05em' }}>
                       {game.id}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: '16px', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#5e5b57' }}>
+                  <div style={{ display: 'flex', gap: '16px', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c' }}>
                     <span>{new Date(game.date).toLocaleDateString('sv-SE')}</span>
                     <span>{game.player_count} players</span>
                     {game.generations && <span>{game.generations} generations</span>}
@@ -81,30 +86,30 @@ export default function Games() {
                       background: result.position === 1 ? 'rgba(224, 85, 53, 0.04)' : 'transparent',
                     }}
                   >
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: result.position === 1 ? '#e05535' : '#3d4352', width: '16px' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: result.position === 1 ? '#e05535' : '#504270', width: '16px' }}>
                       #{result.position}
                     </span>
-                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: result.position === 1 ? 600 : 400, fontSize: '0.85rem', color: result.position === 1 ? '#ddd9d0' : '#b5b0a8', width: '80px' }}>
+                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: result.position === 1 ? 600 : 400, fontSize: '0.85rem', color: result.position === 1 ? '#ece6ff' : '#bbb4d0', minWidth: '130px' }}>
                       {result.player_name}
                     </span>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#5e5b57', flex: 1 }}>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', flex: 1 }}>
                       {result.corporation}
                     </span>
                     {result.key_notes && (
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#3d4352', fontStyle: 'italic', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', fontStyle: 'italic', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {result.key_notes}
                       </span>
                     )}
-                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: result.position === 1 ? '#c9a030' : '#8a8680', marginLeft: 'auto' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: result.position === 1 ? '#c9a030' : '#8e87a8', marginLeft: 'auto' }}>
                       {result.total_vp}
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: '#3d4352', marginLeft: '3px', fontWeight: 400 }}>VP</span>
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: '#504270', marginLeft: '3px', fontWeight: 400 }}>VP</span>
                     </span>
                   </div>
                 ))}
               </div>
 
               {game.notes && (
-                <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #1a1f2a', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#3d4352', fontStyle: 'italic' }}>
+                <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #282042', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#504270', fontStyle: 'italic' }}>
                   {game.notes}
                 </div>
               )}
@@ -114,4 +119,10 @@ export default function Games() {
       </div>
     </div>
   )
+}
+
+const loadingStyle: React.CSSProperties = {
+  padding: '32px 36px',
+  color: '#625c7c',
+  fontFamily: 'var(--font-body)',
 }

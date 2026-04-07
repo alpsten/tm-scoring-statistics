@@ -1,15 +1,16 @@
 import { useParams, Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
-import { MOCK_GAMES } from '../lib/mockData'
+import { useGame } from '../lib/hooks'
 
 export default function GameDetail() {
   const { id } = useParams<{ id: string }>()
-  const game = MOCK_GAMES.find(g => g.id === id)
+  const { data: game, isLoading, error } = useGame(id!)
 
-  if (!game) {
+  if (isLoading) return <div style={loadingStyle}>Loading…</div>
+  if (error || !game) {
     return (
-      <div style={{ padding: '32px 36px', color: '#5e5b57' }}>
+      <div style={loadingStyle}>
         Game not found. <Link to="/games" style={{ color: '#e05535' }}>Back to games</Link>
       </div>
     )
@@ -19,44 +20,44 @@ export default function GameDetail() {
   const winner = sorted[0]
 
   const scoreFields: { key: keyof typeof winner; label: string }[] = [
-    { key: 'tr',          label: 'TR'         },
+    { key: 'tr',           label: 'TR'         },
     { key: 'milestone_vp', label: 'Milestones' },
-    { key: 'award_vp',    label: 'Awards'     },
-    { key: 'greenery_vp', label: 'Greeneries' },
-    { key: 'city_vp',     label: 'Cities'     },
-    { key: 'card_vp',     label: 'Cards'      },
+    { key: 'award_vp',     label: 'Awards'     },
+    { key: 'greenery_vp',  label: 'Greeneries' },
+    { key: 'city_vp',      label: 'Cities'     },
+    { key: 'card_vp',      label: 'Cards'      },
   ]
 
   return (
     <div className="page-enter" style={{ padding: '32px 36px' }}>
       <div style={{ marginBottom: '24px' }}>
-        <Link to="/games" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#5e5b57', textDecoration: 'none' }}>
+        <Link to="/games" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', textDecoration: 'none' }}>
           ← Games
         </Link>
       </div>
 
       <PageHeader
-        title={`${game.map_name} — ${new Date(game.date).toLocaleDateString('sv-SE')}`}
+        title={`${game.map_name ?? 'Digital'} — ${new Date(game.date).toLocaleDateString('sv-SE')}`}
         subtitle={`${game.player_count} players · ${game.generations ?? '?'} generations · ${game.id}`}
       />
 
       {/* Game meta */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
-        <StatCard label="Winner"      value={winner.player_name} sub={winner.corporation} accent="mars"  />
-        <StatCard label="Winning score" value={winner.total_vp}  sub="VP"                accent="score" />
-        <StatCard label="Expansions"  value={game.expansions.length || '—'} sub={game.expansions.join(', ') || 'Base only'} accent="atmo" />
-        <StatCard label="Colonies"    value={game.colonies.length || '—'}   sub={game.colonies.join(', ') || 'None'} accent="neutral" />
+        <StatCard label="Winner"        value={winner.player_name} sub={winner.corporation}                   accent="mars"    />
+        <StatCard label="Winning score" value={winner.total_vp}    sub="VP"                                   accent="score"   />
+        <StatCard label="Expansions"    value={game.expansions.length || '—'} sub={game.expansions.join(', ') || 'Base only'} accent="atmo" />
+        <StatCard label="Colonies"      value={game.colonies.length || '—'}   sub={game.colonies.join(', ') || 'None'}        accent="neutral" />
       </div>
 
       {/* Score breakdown table */}
       <div style={{ marginBottom: '32px' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#5e5b57', marginBottom: '14px' }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }}>
           Score breakdown
         </h2>
-        <div style={{ background: '#141820', border: '1px solid #1a1f2a', borderRadius: '6px', overflow: 'auto' }}>
+        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #1a1f2a' }}>
+              <tr style={{ borderBottom: '1px solid #282042' }}>
                 <th style={thStyle}>Player</th>
                 <th style={thStyle}>Corporation</th>
                 {scoreFields.map(f => (
@@ -67,28 +68,28 @@ export default function GameDetail() {
             </thead>
             <tbody>
               {sorted.map((r, i) => (
-                <tr key={r.id} style={{ borderBottom: i < sorted.length - 1 ? '1px solid #1a1f2a' : 'none' }}>
+                <tr key={r.id} style={{ borderBottom: i < sorted.length - 1 ? '1px solid #282042' : 'none' }}>
                   <td style={tdStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: r.position === 1 ? '#e05535' : '#3d4352' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: r.position === 1 ? '#e05535' : '#504270' }}>
                         #{r.position}
                       </span>
-                      <Link to={`/players/${r.player_name}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: '#ddd9d0', textDecoration: 'none', fontWeight: r.position === 1 ? 600 : 400 }}>
+                      <Link to={`/players/${r.player_name}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: '#ece6ff', textDecoration: 'none', fontWeight: r.position === 1 ? 600 : 400 }}>
                         {r.player_name}
                       </Link>
                     </div>
                   </td>
                   <td style={tdStyle}>
-                    <Link to={`/corporations/${r.corporation}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#8a8680', textDecoration: 'none' }}>
+                    <Link to={`/corporations/${encodeURIComponent(r.corporation)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#8e87a8', textDecoration: 'none' }}>
                       {r.corporation}
                     </Link>
                   </td>
                   {scoreFields.map(f => (
-                    <td key={f.key} style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: '#b5b0a8' }}>
+                    <td key={f.key} style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: '#bbb4d0' }}>
                       {r[f.key] ?? '—'}
                     </td>
                   ))}
-                  <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1rem', color: r.position === 1 ? '#c9a030' : '#8a8680' }}>
+                  <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1rem', color: r.position === 1 ? '#c9a030' : '#8e87a8' }}>
                     {r.total_vp}
                   </td>
                 </tr>
@@ -98,19 +99,73 @@ export default function GameDetail() {
         </div>
       </div>
 
+      {/* Parameter contributions */}
+      {game.parameter_contributions.length > 0 && (() => {
+        const params = game.parameter_contributions
+        const hasVenus = params.some(p => p.venus_steps > 0)
+        const paramCols: { key: keyof typeof params[0]; label: string; color: string }[] = [
+          { key: 'oxygen_steps',      label: 'Oxygen',      color: '#4a9e6b' },
+          { key: 'temperature_steps', label: 'Temperature', color: '#e05535' },
+          { key: 'ocean_steps',       label: 'Oceans',      color: '#2e8b8b' },
+          ...(hasVenus ? [{ key: 'venus_steps' as const, label: 'Venus', color: '#b87aff' }] : []),
+        ]
+        return (
+          <div style={{ marginBottom: '32px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }}>
+              Parameter contributions
+            </h2>
+            <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #282042' }}>
+                    <th style={thStyle}>Player</th>
+                    {paramCols.map(col => (
+                      <th key={col.key} style={{ ...thStyle, textAlign: 'right', color: col.color }}>{col.label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {params.map((p, i) => (
+                    <tr key={p.player_name} style={{ borderBottom: i < params.length - 1 ? '1px solid #282042' : 'none' }}>
+                      <td style={{ ...tdStyle, fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: '#ece6ff' }}>{p.player_name}</td>
+                      {paramCols.map(col => (
+                        <td key={col.key} style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: (p[col.key] as number) > 0 ? col.color : '#504270' }}>
+                          {p[col.key] as number}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                  <tr style={{ borderTop: '1px solid #282042', background: 'rgba(155,80,240,0.04)' }}>
+                    <td style={{ ...tdStyle, fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', fontStyle: 'italic' }}>Total</td>
+                    {paramCols.map(col => {
+                      const total = params.reduce((s, p) => s + (p[col.key] as number), 0)
+                      return (
+                        <td key={col.key} style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: col.color }}>
+                          {total}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Notes */}
       {sorted.some(r => r.key_notes) && (
         <div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#5e5b57', marginBottom: '14px' }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }}>
             Strategy notes
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {sorted.filter(r => r.key_notes).map(r => (
-              <div key={r.id} style={{ background: '#141820', border: '1px solid #1a1f2a', borderRadius: '4px', padding: '12px 16px', display: 'flex', gap: '12px' }}>
-                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.83rem', color: '#ddd9d0', minWidth: '70px' }}>
+              <div key={r.id} style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '4px', padding: '12px 16px', display: 'flex', gap: '12px' }}>
+                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.83rem', color: '#ece6ff', minWidth: '70px' }}>
                   {r.player_name}
                 </span>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#8a8680', fontStyle: 'italic' }}>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#8e87a8', fontStyle: 'italic' }}>
                   {r.key_notes}
                 </span>
               </div>
@@ -122,6 +177,12 @@ export default function GameDetail() {
   )
 }
 
+const loadingStyle: React.CSSProperties = {
+  padding: '32px 36px',
+  color: '#625c7c',
+  fontFamily: 'var(--font-body)',
+}
+
 const thStyle: React.CSSProperties = {
   padding: '10px 16px',
   textAlign: 'left',
@@ -130,7 +191,7 @@ const thStyle: React.CSSProperties = {
   fontWeight: 600,
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
-  color: '#3d4352',
+  color: '#504270',
 }
 
 const tdStyle: React.CSSProperties = {
