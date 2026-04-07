@@ -15,7 +15,7 @@ const TAG_COLORS: Record<string, { bg: string; text: string; border: string }> =
   'Venus':    { bg: 'rgba(220, 160, 60, 0.1)',  text: '#d0a040', border: 'rgba(220, 160, 60, 0.25)' },
 }
 
-const DEFAULT_TAG_COLOR = { bg: 'rgba(100, 100, 100, 0.1)', text: '#8a8680', border: 'rgba(100, 100, 100, 0.2)' }
+const DEFAULT_TAG_COLOR = { bg: 'rgba(100, 100, 100, 0.1)', text: '#8e87a8', border: 'rgba(100, 100, 100, 0.2)' }
 
 interface TagProps {
   name: string
@@ -41,10 +41,4 @@ export default function Tag({ name }: TagProps) {
       {name}
     </span>
   )
-}
-
-// Helper to parse "Animal, Microbe, Plant" → ['Animal', 'Microbe', 'Plant']
-export function parseTags(tags: string | null): string[] {
-  if (!tags) return []
-  return tags.split(',').map(t => t.trim()).filter(Boolean)
 }

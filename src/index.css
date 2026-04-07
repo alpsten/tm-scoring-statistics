@@ -2,33 +2,44 @@
 @import "tailwindcss";
 
 @theme {
+  /* Mars: red-orange (wins, highlights) */
   --color-mars-300: #ff9e87;
   --color-mars-400: #ff6b4a;
   --color-mars-500: #e05535;
   --color-mars-600: #c43e21;
   --color-mars-700: #a43318;
 
+  /* Violet: purple (primary UI accent) */
+  --color-violet-300: #d0a8ff;
+  --color-violet-400: #b87aff;
+  --color-violet-500: #9b50f0;
+  --color-violet-600: #7c34d8;
+
+  /* Atmo: teal/cyan (expansions, secondary) */
   --color-atmo-300: #76dada;
   --color-atmo-400: #3bbfbf;
   --color-atmo-500: #2e8b8b;
   --color-atmo-600: #247070;
 
-  --color-score-300: #f0d070;
-  --color-score-400: #e0b84a;
-  --color-score-500: #c9a030;
+  /* Score: gold (VP, scores) */
+  --color-score-300: #f5d878;
+  --color-score-400: #e8c058;
+  --color-score-500: #d4a820;
 
-  --color-surface-900: #0a0b0d;
-  --color-surface-800: #0f1117;
-  --color-surface-700: #141820;
-  --color-surface-600: #1a1f2a;
-  --color-surface-500: #232834;
-  --color-surface-400: #2e3340;
-  --color-surface-300: #3d4352;
+  /* Surface: dark purple-tinted backgrounds */
+  --color-surface-900: #110d1e;
+  --color-surface-800: #171228;
+  --color-surface-700: #1e1835;
+  --color-surface-600: #282042;
+  --color-surface-500: #322850;
+  --color-surface-400: #3e325e;
+  --color-surface-300: #504270;
 
-  --color-ink-100: #ddd9d0;
-  --color-ink-200: #b5b0a8;
-  --color-ink-300: #8a8680;
-  --color-ink-400: #5e5b57;
+  /* Ink: lavender-tinted text */
+  --color-ink-100: #ece6ff;
+  --color-ink-200: #bbb4d0;
+  --color-ink-300: #8e87a8;
+  --color-ink-400: #625c7c;
 
   --font-display: 'Exo 2', sans-serif;
   --font-mono: 'Space Mono', monospace;
@@ -47,15 +58,15 @@ html, body, #root {
 
 body {
   font-family: var(--font-body);
-  background-color: #0a0b0d;
-  color: #ddd9d0;
+  background-color: #110d1e;
+  color: #ece6ff;
   -webkit-font-smoothing: antialiased;
 }
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: #0f1117; }
-::-webkit-scrollbar-thumb { background: #2e3340; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #3d4352; }
+::-webkit-scrollbar-track { background: #171228; }
+::-webkit-scrollbar-thumb { background: #3e325e; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #504270; }
 
 .font-display { font-family: var(--font-display); }
 .font-mono    { font-family: var(--font-mono); }
@@ -64,8 +75,8 @@ body {
 /* Subtle terraforming-grid background texture */
 .grid-bg {
   background-image:
-    linear-gradient(rgba(224, 85, 53, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(224, 85, 53, 0.025) 1px, transparent 1px);
+    linear-gradient(rgba(155, 80, 240, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(155, 80, 240, 0.03) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
@@ -74,8 +85,8 @@ body {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .panel-hover:hover {
-  border-color: rgba(224, 85, 53, 0.25) !important;
-  box-shadow: 0 0 0 1px rgba(224, 85, 53, 0.08), 0 8px 32px rgba(0, 0, 0, 0.5);
+  border-color: rgba(155, 80, 240, 0.35) !important;
+  box-shadow: 0 0 0 1px rgba(155, 80, 240, 0.12), 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 /* Page enter animation */
@@ -105,8 +116,8 @@ body {
   letter-spacing: 0.08em;
   padding: 2px 8px;
   border-radius: 3px;
-  background: rgba(224, 85, 53, 0.12);
+  background: rgba(224, 85, 53, 0.14);
   color: #e05535;
-  border: 1px solid rgba(224, 85, 53, 0.25);
+  border: 1px solid rgba(224, 85, 53, 0.3);
   text-transform: uppercase;
 }

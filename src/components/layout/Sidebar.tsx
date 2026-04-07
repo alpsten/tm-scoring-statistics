@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/useAuth'
 
 const NAV_ITEMS = [
   { to: '/',              label: 'Overview',     icon: '◈' },
@@ -30,8 +30,8 @@ export default function Sidebar() {
       style={{
         width: '220px',
         minWidth: '220px',
-        background: '#0f1117',
-        borderRight: '1px solid #1a1f2a',
+        background: '#171228',
+        borderRight: '1px solid #282042',
         display: 'flex',
         flexDirection: 'column',
         height: '100vh',
@@ -41,15 +41,15 @@ export default function Sidebar() {
       }}
     >
       {/* Logo / title */}
-      <div style={{ padding: '28px 20px 20px', borderBottom: '1px solid #1a1f2a' }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.65rem', letterSpacing: '0.2em', color: '#5e5b57', textTransform: 'uppercase', marginBottom: '6px' }}>
+      <div style={{ padding: '28px 20px 20px', borderBottom: '1px solid #282042' }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.65rem', letterSpacing: '0.2em', color: '#625c7c', textTransform: 'uppercase', marginBottom: '6px' }}>
           Mission log
         </div>
-        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', color: '#ddd9d0', lineHeight: 1.2 }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', color: '#ece6ff', lineHeight: 1.2 }}>
           Terraforming<br />
           <span style={{ color: '#e05535' }}>Mars</span>
         </div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#3d4352', marginTop: '8px', letterSpacing: '0.05em' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#504270', marginTop: '8px', letterSpacing: '0.05em' }}>
           STATISTICS v1.0
         </div>
       </div>
@@ -69,9 +69,9 @@ export default function Sidebar() {
               fontSize: '0.85rem',
               fontFamily: 'var(--font-body)',
               fontWeight: isActive ? 600 : 400,
-              color: isActive ? '#e05535' : '#8a8680',
-              background: isActive ? 'rgba(224, 85, 53, 0.06)' : 'transparent',
-              borderRight: isActive ? '2px solid #e05535' : '2px solid transparent',
+              color: isActive ? '#b87aff' : '#8e87a8',
+              background: isActive ? 'rgba(155, 80, 240, 0.1)' : 'transparent',
+              borderRight: isActive ? '2px solid #9b50f0' : '2px solid transparent',
               textDecoration: 'none',
               transition: 'color 0.15s, background 0.15s',
               letterSpacing: '0.01em',
@@ -84,11 +84,11 @@ export default function Sidebar() {
       </nav>
 
       {/* Terraforming parameter decoration */}
-      <div style={{ padding: '16px 20px', borderTop: '1px solid #1a1f2a', borderBottom: '1px solid #1a1f2a' }}>
+      <div style={{ padding: '16px 20px', borderTop: '1px solid #282042', borderBottom: '1px solid #282042' }}>
         {PARAM_LABELS.map(({ label, color }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
             <div className="pulse-mars" style={{ width: '5px', height: '5px', borderRadius: '50%', background: color, flexShrink: 0 }} />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.12em', color: '#3d4352', textTransform: 'uppercase' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.12em', color: '#504270', textTransform: 'uppercase' }}>
               {label}
             </span>
           </div>
@@ -105,10 +105,10 @@ export default function Sidebar() {
                 display: 'block',
                 padding: '8px 12px',
                 marginBottom: '8px',
-                background: isActive ? 'rgba(224, 85, 53, 0.1)' : 'rgba(224, 85, 53, 0.04)',
-                border: '1px solid rgba(224, 85, 53, 0.2)',
+                background: isActive ? 'rgba(155, 80, 240, 0.15)' : 'rgba(155, 80, 240, 0.06)',
+                border: '1px solid rgba(155, 80, 240, 0.25)',
                 borderRadius: '4px',
-                color: '#e05535',
+                color: '#b87aff',
                 fontSize: '0.78rem',
                 fontFamily: 'var(--font-body)',
                 fontWeight: 500,
@@ -125,9 +125,9 @@ export default function Sidebar() {
                 width: '100%',
                 padding: '6px',
                 background: 'transparent',
-                border: '1px solid #2e3340',
+                border: '1px solid #3e325e',
                 borderRadius: '4px',
-                color: '#5e5b57',
+                color: '#625c7c',
                 fontSize: '0.72rem',
                 fontFamily: 'var(--font-body)',
                 cursor: 'pointer',
@@ -144,9 +144,9 @@ export default function Sidebar() {
               display: 'block',
               padding: '7px 12px',
               background: 'transparent',
-              border: '1px solid #2e3340',
+              border: '1px solid #3e325e',
               borderRadius: '4px',
-              color: '#5e5b57',
+              color: '#625c7c',
               fontSize: '0.75rem',
               fontFamily: 'var(--font-body)',
               textDecoration: 'none',

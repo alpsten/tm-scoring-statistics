@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/useAuth'
 
 export default function AdminLogin() {
   const { signIn, user } = useAuth()
@@ -32,17 +32,17 @@ export default function AdminLogin() {
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '32px' }}>
       <div style={{ width: '100%', maxWidth: '360px' }}>
         <div style={{ textAlign: 'center', marginBottom: '36px' }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.2rem', color: '#ddd9d0', marginBottom: '6px' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.2rem', color: '#ece6ff', marginBottom: '6px' }}>
             Terraforming Mars
           </div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.15em', color: '#3d4352', textTransform: 'uppercase' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.15em', color: '#504270', textTransform: 'uppercase' }}>
             Admin access
           </div>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          style={{ background: '#141820', border: '1px solid #1a1f2a', borderRadius: '8px', padding: '28px 28px' }}
+          style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '8px', padding: '28px 28px' }}
         >
           <div style={{ marginBottom: '18px' }}>
             <label style={labelStyle}>Email</label>
@@ -79,10 +79,10 @@ export default function AdminLogin() {
             style={{
               width: '100%',
               padding: '10px',
-              background: loading ? '#1a1f2a' : '#e05535',
+              background: loading ? '#282042' : '#e05535',
               border: 'none',
               borderRadius: '4px',
-              color: loading ? '#5e5b57' : '#fff',
+              color: loading ? '#625c7c' : '#fff',
               fontFamily: 'var(--font-body)',
               fontWeight: 600,
               fontSize: '0.88rem',
@@ -106,17 +106,17 @@ const labelStyle: React.CSSProperties = {
   fontWeight: 500,
   letterSpacing: '0.06em',
   textTransform: 'uppercase',
-  color: '#5e5b57',
+  color: '#625c7c',
   marginBottom: '6px',
 }
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '9px 12px',
-  background: '#0f1117',
-  border: '1px solid #2e3340',
+  background: '#171228',
+  border: '1px solid #3e325e',
   borderRadius: '4px',
-  color: '#ddd9d0',
+  color: '#ece6ff',
   fontFamily: 'var(--font-body)',
   fontSize: '0.87rem',
   outline: 'none',
