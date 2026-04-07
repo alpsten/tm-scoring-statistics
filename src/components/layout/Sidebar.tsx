@@ -1,0 +1,163 @@
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+
+const NAV_ITEMS = [
+  { to: '/',              label: 'Overview',     icon: '◈' },
+  { to: '/games',         label: 'Games',        icon: '◉' },
+  { to: '/players',       label: 'Players',      icon: '◎' },
+  { to: '/corporations',  label: 'Corporations', icon: '⬡' },
+  { to: '/cards',         label: 'Cards',        icon: '▣' },
+  { to: '/setup',         label: 'Setup',        icon: '◫' },
+]
+
+const PARAM_LABELS = [
+  { label: 'OXYGEN',      color: '#4a9e6b' },
+  { label: 'TEMPERATURE', color: '#e05535' },
+  { label: 'OCEANS',      color: '#2e8b8b' },
+]
+
+export default function Sidebar() {
+  const { user, signOut } = useAuth()
+  const navigate = useNavigate()
+
+  async function handleSignOut() {
+    await signOut()
+    navigate('/')
+  }
+
+  return (
+    <aside
+      style={{
+        width: '220px',
+        minWidth: '220px',
+        background: '#0f1117',
+        borderRight: '1px solid #1a1f2a',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        position: 'sticky',
+        top: 0,
+        overflow: 'hidden',
+      }}
+    >
+      {/* Logo / title */}
+      <div style={{ padding: '28px 20px 20px', borderBottom: '1px solid #1a1f2a' }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.65rem', letterSpacing: '0.2em', color: '#5e5b57', textTransform: 'uppercase', marginBottom: '6px' }}>
+          Mission log
+        </div>
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', color: '#ddd9d0', lineHeight: 1.2 }}>
+          Terraforming<br />
+          <span style={{ color: '#e05535' }}>Mars</span>
+        </div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#3d4352', marginTop: '8px', letterSpacing: '0.05em' }}>
+          STATISTICS v1.0
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav style={{ padding: '12px 0', flex: 1, overflowY: 'auto' }}>
+        {NAV_ITEMS.map(({ to, label, icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/'}
+            style={({ isActive }) => ({
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '9px 20px',
+              fontSize: '0.85rem',
+              fontFamily: 'var(--font-body)',
+              fontWeight: isActive ? 600 : 400,
+              color: isActive ? '#e05535' : '#8a8680',
+              background: isActive ? 'rgba(224, 85, 53, 0.06)' : 'transparent',
+              borderRight: isActive ? '2px solid #e05535' : '2px solid transparent',
+              textDecoration: 'none',
+              transition: 'color 0.15s, background 0.15s',
+              letterSpacing: '0.01em',
+            })}
+          >
+            <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>{icon}</span>
+            {label}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Terraforming parameter decoration */}
+      <div style={{ padding: '16px 20px', borderTop: '1px solid #1a1f2a', borderBottom: '1px solid #1a1f2a' }}>
+        {PARAM_LABELS.map(({ label, color }) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+            <div className="pulse-mars" style={{ width: '5px', height: '5px', borderRadius: '50%', background: color, flexShrink: 0 }} />
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.12em', color: '#3d4352', textTransform: 'uppercase' }}>
+              {label}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Admin / auth section */}
+      <div style={{ padding: '14px 20px' }}>
+        {user ? (
+          <div>
+            <NavLink
+              to="/admin"
+              style={({ isActive }) => ({
+                display: 'block',
+                padding: '8px 12px',
+                marginBottom: '8px',
+                background: isActive ? 'rgba(224, 85, 53, 0.1)' : 'rgba(224, 85, 53, 0.04)',
+                border: '1px solid rgba(224, 85, 53, 0.2)',
+                borderRadius: '4px',
+                color: '#e05535',
+                fontSize: '0.78rem',
+                fontFamily: 'var(--font-body)',
+                fontWeight: 500,
+                textDecoration: 'none',
+                textAlign: 'center',
+                letterSpacing: '0.03em',
+              })}
+            >
+              ＋ Add game
+            </NavLink>
+            <button
+              onClick={handleSignOut}
+              style={{
+                width: '100%',
+                padding: '6px',
+                background: 'transparent',
+                border: '1px solid #2e3340',
+                borderRadius: '4px',
+                color: '#5e5b57',
+                fontSize: '0.72rem',
+                fontFamily: 'var(--font-body)',
+                cursor: 'pointer',
+                letterSpacing: '0.03em',
+              }}
+            >
+              Sign out
+            </button>
+          </div>
+        ) : (
+          <NavLink
+            to="/admin/login"
+            style={{
+              display: 'block',
+              padding: '7px 12px',
+              background: 'transparent',
+              border: '1px solid #2e3340',
+              borderRadius: '4px',
+              color: '#5e5b57',
+              fontSize: '0.75rem',
+              fontFamily: 'var(--font-body)',
+              textDecoration: 'none',
+              textAlign: 'center',
+              letterSpacing: '0.03em',
+            }}
+          >
+            Admin login
+          </NavLink>
+        )}
+      </div>
+    </aside>
+  )
+}
