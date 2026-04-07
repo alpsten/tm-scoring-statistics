@@ -5,7 +5,7 @@ export interface GameSession {
   date: string          // ISO date string
   player_count: number
   generations: number | null
-  map_name: string
+  map_name: string | null
   notes: string | null
   game_code: string | null
   created_at: string
@@ -25,6 +25,8 @@ export interface PlayerResult {
   habitat_vp: number | null   // Moon expansion
   logistics_vp: number | null // Moon expansion
   mining_vp: number | null    // Moon expansion
+  plantery_vp: number | null  // Moon expansion (planetary)
+  mc: number | null           // MegaCredits at game end
   total_vp: number
   position: number
   key_notes: string | null
@@ -42,13 +44,23 @@ export interface GameColony {
   colony_name: string
 }
 
+export interface ParameterContribution {
+  id: string
+  game_id: string
+  player_name: string
+  oxygen_steps: number
+  temperature_steps: number
+  ocean_steps: number
+  venus_steps: number
+}
+
 export interface CardPlayed {
   id: string
   game_id: string
   player_name: string
   card_order: number | null
   card_name: string
-  vp_from_card: number
+  vp_from_card: number | null
   notes: string | null
 }
 
@@ -56,7 +68,7 @@ export interface CardReference {
   id: string
   card_name: string
   tags: string | null         // Comma-separated, alphabetical: "Animal, Microbe"
-  card_type: 'Automated' | 'Active' | 'Event'
+  card_type: 'Automated' | 'Active' | 'Event' | 'Prelude' | 'Corporation'
   expansion: string | null
   base_vp: number | null
 }
@@ -82,6 +94,7 @@ export interface GameWithResults extends GameSession {
   player_results: PlayerResult[]
   expansions: string[]
   colonies: string[]
+  parameter_contributions: ParameterContribution[]
 }
 
 export interface PlayerStats {
@@ -119,7 +132,7 @@ export interface GameSessionInput {
   date: string
   player_count: number
   generations: number | null
-  map_name: string
+  map_name: string | null
   notes: string
   game_code: string
   expansions: string[]
@@ -138,6 +151,8 @@ export interface PlayerResultInput {
   habitat_vp: number | null
   logistics_vp: number | null
   mining_vp: number | null
+  plantery_vp: number | null
+  mc: number | null
   total_vp: number
   position: number
   key_notes: string
@@ -145,7 +160,7 @@ export interface PlayerResultInput {
 
 export interface CardPlayedInput {
   card_name: string
-  vp_from_card: number
+  vp_from_card: number | null
   card_order: number | null
   notes: string
 }

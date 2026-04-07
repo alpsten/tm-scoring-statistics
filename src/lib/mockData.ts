@@ -14,11 +14,11 @@ export const MOCK_GAMES: GameWithResults[] = [
     game_code: 'TM-2026-001',
     created_at: '2026-03-28T20:00:00Z',
     expansions: ['Prelude', 'Colonies'],
-    colonies: ['Ceres', 'Europa', 'Ganymede'],
+    colonies: ["Ceres", "Europa", "Ganymede"], parameter_contributions: [],
     player_results: [
-      { id: 'PR001', game_id: 'G001', player_name: 'Emil', corporation: 'Helion', tr: 32, milestone_vp: 5, award_vp: 5, greenery_vp: 8, city_vp: 6, card_vp: 14, habitat_vp: null, logistics_vp: null, mining_vp: null, total_vp: 70, position: 1, key_notes: 'Heat engine, space strategy' },
-      { id: 'PR002', game_id: 'G001', player_name: 'Alex', corporation: 'Ecoline', tr: 28, milestone_vp: 5, award_vp: 0, greenery_vp: 14, city_vp: 4, card_vp: 8, habitat_vp: null, logistics_vp: null, mining_vp: null, total_vp: 59, position: 2, key_notes: 'Plant engine' },
-      { id: 'PR003', game_id: 'G001', player_name: 'Sara', corporation: 'Interplanetary Cinematics', tr: 25, milestone_vp: 0, award_vp: 5, greenery_vp: 4, city_vp: 2, card_vp: 20, habitat_vp: null, logistics_vp: null, mining_vp: null, total_vp: 56, position: 3, key_notes: 'Steel/card engine' },
+      { id: 'PR001', game_id: 'G001', player_name: 'Emil', corporation: 'Helion', tr: 32, milestone_vp: 5, award_vp: 5, greenery_vp: 8, city_vp: 6, card_vp: 14, habitat_vp: null, logistics_vp: null, mining_vp: null, plantery_vp: null, mc: null, total_vp: 70, position: 1, key_notes: 'Heat engine, space strategy' },
+      { id: 'PR002', game_id: 'G001', player_name: 'Alex', corporation: 'Ecoline', tr: 28, milestone_vp: 5, award_vp: 0, greenery_vp: 14, city_vp: 4, card_vp: 8, habitat_vp: null, logistics_vp: null, mining_vp: null, plantery_vp: null, mc: null, total_vp: 59, position: 2, key_notes: 'Plant engine' },
+      { id: 'PR003', game_id: 'G001', player_name: 'Sara', corporation: 'Interplanetary Cinematics', tr: 25, milestone_vp: 0, award_vp: 5, greenery_vp: 4, city_vp: 2, card_vp: 20, habitat_vp: null, logistics_vp: null, mining_vp: null, plantery_vp: null, mc: null, total_vp: 56, position: 3, key_notes: 'Steel/card engine' },
     ],
   },
   {
@@ -31,12 +31,12 @@ export const MOCK_GAMES: GameWithResults[] = [
     game_code: 'TM-2026-002',
     created_at: '2026-03-14T19:30:00Z',
     expansions: ['Prelude', 'Turmoil', 'Venus Next'],
-    colonies: [],
+    colonies: [], parameter_contributions: [],
     player_results: [
-      { id: 'PR004', game_id: 'G002', player_name: 'Sara', corporation: 'Teractor', tr: 35, milestone_vp: 5, award_vp: 5, greenery_vp: 6, city_vp: 8, card_vp: 12, habitat_vp: null, logistics_vp: null, mining_vp: null, total_vp: 71, position: 1, key_notes: 'Earth discount engine' },
-      { id: 'PR005', game_id: 'G002', player_name: 'Emil', corporation: 'Point Luna', tr: 30, milestone_vp: 5, award_vp: 0, greenery_vp: 8, city_vp: 6, card_vp: 16, habitat_vp: null, logistics_vp: null, mining_vp: null, total_vp: 65, position: 2, key_notes: 'Earth/draw engine' },
-      { id: 'PR006', game_id: 'G002', player_name: 'Marcus', corporation: 'Mons Insurance', tr: 28, milestone_vp: 0, award_vp: 5, greenery_vp: 4, city_vp: 4, card_vp: 18, habitat_vp: null, logistics_vp: null, mining_vp: null, total_vp: 59, position: 3, key_notes: null },
-      { id: 'PR007', game_id: 'G002', player_name: 'Alex', corporation: 'Arklight', tr: 25, milestone_vp: 0, award_vp: 0, greenery_vp: 10, city_vp: 2, card_vp: 10, habitat_vp: null, logistics_vp: null, mining_vp: null, total_vp: 47, position: 4, key_notes: 'Animal engine, slow start' },
+      { id: 'PR004', game_id: 'G002', player_name: 'Sara', corporation: 'Teractor', tr: 35, milestone_vp: 5, award_vp: 5, greenery_vp: 6, city_vp: 8, card_vp: 12, habitat_vp: null, logistics_vp: null, mining_vp: null, plantery_vp: null, mc: null, total_vp: 71, position: 1, key_notes: 'Earth discount engine' },
+      { id: 'PR005', game_id: 'G002', player_name: 'Emil', corporation: 'Point Luna', tr: 30, milestone_vp: 5, award_vp: 0, greenery_vp: 8, city_vp: 6, card_vp: 16, habitat_vp: null, logistics_vp: null, mining_vp: null, plantery_vp: null, mc: null, total_vp: 65, position: 2, key_notes: 'Earth/draw engine' },
+      { id: 'PR006', game_id: 'G002', player_name: 'Marcus', corporation: 'Mons Insurance', tr: 28, milestone_vp: 0, award_vp: 5, greenery_vp: 4, city_vp: 4, card_vp: 18, habitat_vp: null, logistics_vp: null, mining_vp: null, plantery_vp: null, mc: null, total_vp: 59, position: 3, key_notes: null },
+      { id: 'PR007', game_id: 'G002', player_name: 'Alex', corporation: 'Arklight', tr: 25, milestone_vp: 0, award_vp: 0, greenery_vp: 10, city_vp: 2, card_vp: 10, habitat_vp: null, logistics_vp: null, mining_vp: null, plantery_vp: null, mc: null, total_vp: 47, position: 4, key_notes: 'Animal engine, slow start' },
     ],
   },
   {
@@ -49,10 +49,10 @@ export const MOCK_GAMES: GameWithResults[] = [
     game_code: 'TM-2026-003',
     created_at: '2026-02-22T18:00:00Z',
     expansions: ['Prelude', 'Prelude 2'],
-    colonies: [],
+    colonies: [], parameter_contributions: [],
     player_results: [
-      { id: 'PR008', game_id: 'G003', player_name: 'Emil', corporation: 'Credicor', tr: 38, milestone_vp: 5, award_vp: 5, greenery_vp: 10, city_vp: 8, card_vp: 10, habitat_vp: null, logistics_vp: null, mining_vp: null, total_vp: 76, position: 1, key_notes: 'Megacredit engine, fast terraforming' },
-      { id: 'PR009', game_id: 'G003', player_name: 'Alex', corporation: 'Mining Guild', tr: 33, milestone_vp: 5, award_vp: 0, greenery_vp: 8, city_vp: 4, card_vp: 14, habitat_vp: null, logistics_vp: null, mining_vp: null, total_vp: 64, position: 2, key_notes: 'Steel focus' },
+      { id: 'PR008', game_id: 'G003', player_name: 'Emil', corporation: 'Credicor', tr: 38, milestone_vp: 5, award_vp: 5, greenery_vp: 10, city_vp: 8, card_vp: 10, habitat_vp: null, logistics_vp: null, mining_vp: null, plantery_vp: null, mc: null, total_vp: 76, position: 1, key_notes: 'Megacredit engine, fast terraforming' },
+      { id: 'PR009', game_id: 'G003', player_name: 'Alex', corporation: 'Mining Guild', tr: 33, milestone_vp: 5, award_vp: 0, greenery_vp: 8, city_vp: 4, card_vp: 14, habitat_vp: null, logistics_vp: null, mining_vp: null, plantery_vp: null, mc: null, total_vp: 64, position: 2, key_notes: 'Steel focus' },
     ],
   },
 ]
