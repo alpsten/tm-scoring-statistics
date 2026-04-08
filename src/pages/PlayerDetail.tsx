@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, type DotProps } from 'recharts'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import { useGames, usePlayerStats } from '../lib/hooks'
@@ -40,29 +40,36 @@ export default function PlayerDetail() {
         <StatCard label="Best score"  value={stats.best_score}                sub="VP"                               accent="neutral" />
       </div>
 
-      {/* Score history chart */}
+      {/* Score trend chart */}
       <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '20px 24px', marginBottom: '28px' }}>
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '16px' }}>
-          Score history
+          Score trend
         </div>
         <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={chartData} barSize={28}>
+          <LineChart data={chartData}>
             <XAxis dataKey="date" tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#504270' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#504270' }} axisLine={false} tickLine={false} width={32} />
             <Tooltip
               contentStyle={{ background: '#282042', border: '1px solid #3e325e', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#ece6ff' }}
-              cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+              cursor={{ stroke: 'rgba(255,255,255,0.06)' }}
             />
-            <Bar dataKey="score" radius={[3, 3, 0, 0]}>
-              {chartData.map((entry, i) => (
-                <Cell key={i} fill={entry.win ? '#e05535' : '#3e325e'} />
-              ))}
-            </Bar>
-          </BarChart>
+            <ReferenceLine y={stats.avg_score} stroke="#3e325e" strokeDasharray="4 3" label={{ value: 'avg', position: 'insideTopRight', fontSize: 9, fill: '#504270', fontFamily: 'var(--font-mono)' }} />
+            <Line
+              type="monotone"
+              dataKey="score"
+              stroke="#504270"
+              strokeWidth={1.5}
+              dot={(props: DotProps & { payload?: { win: boolean } }) => {
+                const { cx, cy, payload } = props
+                return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={5} fill={payload?.win ? '#e05535' : '#3e325e'} stroke="#171228" strokeWidth={1.5} />
+              }}
+              activeDot={{ r: 6, fill: '#b87aff', stroke: '#171228', strokeWidth: 1.5 }}
+            />
+          </LineChart>
         </ResponsiveContainer>
         <div style={{ display: 'flex', gap: '16px', marginTop: '10px', fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: '#504270' }}>
-          <span><span style={{ color: '#e05535' }}>■</span> Win</span>
-          <span><span style={{ color: '#3e325e', border: '1px solid #504270', display: 'inline-block', width: '10px', height: '10px', verticalAlign: 'middle' }} /> Top finish</span>
+          <span><span style={{ color: '#e05535' }}>●</span> Win</span>
+          <span><span style={{ color: '#3e325e' }}>●</span> Other finish</span>
         </div>
       </div>
 

@@ -97,7 +97,7 @@ export default function GameDetail() {
 
       <PageHeader
         title={`${game.map_name ?? 'Digital'} — ${new Date(game.date).toLocaleDateString('sv-SE')}`}
-        subtitle={`${game.player_count} players · ${game.generations ?? '?'} generations · ${game.id}`}
+        subtitle={`${game.player_count} players · ${game.generations ?? '?'} generations · GameID ${game.id}`}
       />
 
       {/* Game meta */}

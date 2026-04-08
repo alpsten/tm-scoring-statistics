@@ -87,22 +87,23 @@ function Combobox({ value, onChange, options, placeholder }: {
 const playerSchema = z.object({
   player_name:       z.string().min(1, 'Required'),
   corporation:       z.string().min(1, 'Required'),
-  tr:                z.coerce.number().min(0).max(63),
-  milestone_vp:      z.coerce.number().min(0),
-  award_vp:          z.coerce.number().min(0),
-  greenery_vp:       z.coerce.number().min(0),
-  city_vp:           z.coerce.number().min(0),
-  card_vp:           z.coerce.number().min(0),
-  habitat_vp:        z.coerce.number().min(0).nullable(),
-  logistics_vp:      z.coerce.number().min(0).nullable(),
-  mining_vp:         z.coerce.number().min(0).nullable(),
-  total_vp:          z.coerce.number().min(0),
-  position:          z.coerce.number().min(1),
+  tr:                z.coerce.number().int().min(0).max(63),
+  milestone_vp:      z.coerce.number().int().min(0),
+  award_vp:          z.coerce.number().int().min(0),
+  greenery_vp:       z.coerce.number().int().min(0),
+  city_vp:           z.coerce.number().int().min(0),
+  card_vp:           z.coerce.number().int(),
+  habitat_vp:        z.coerce.number().int().min(0).nullable(),
+  logistics_vp:      z.coerce.number().int().min(0).nullable(),
+  mining_vp:         z.coerce.number().int().min(0).nullable(),
+  mc:                z.preprocess(v => (v === '' || v == null ? null : v), z.coerce.number().int().min(0).nullable()),
+  total_vp:          z.coerce.number().int().min(0),
+  position:          z.coerce.number().int().min(1).max(5),
   key_notes:         z.string(),
-  oxygen_steps:      z.coerce.number().min(0).default(0),
-  temperature_steps: z.coerce.number().min(0).default(0),
-  ocean_steps:       z.coerce.number().min(0).default(0),
-  venus_steps:       z.coerce.number().min(0).default(0),
+  oxygen_steps:      z.coerce.number().int().min(0).default(0),
+  temperature_steps: z.coerce.number().int().min(0).default(0),
+  ocean_steps:       z.coerce.number().int().min(0).default(0),
+  venus_steps:       z.coerce.number().int().min(0).default(0),
 })
 
 const gameSchema = z.object({
@@ -129,15 +130,15 @@ const COLONY_TILES = [
   'Io', 'Luna', 'Miranda', 'Pluto', 'Titan', 'Triton',
 ]
 
-const SCORE_FIELDS: { key: keyof GameFormValues['players'][0]; label: string }[] = [
-  { key: 'tr',           label: 'TR'     },
-  { key: 'milestone_vp', label: 'MS'     },
-  { key: 'award_vp',     label: 'Awards' },
-  { key: 'greenery_vp',  label: 'Greens' },
-  { key: 'city_vp',      label: 'Cities' },
-  { key: 'card_vp',      label: 'Cards'  },
-  { key: 'total_vp',     label: 'Total'  },
-  { key: 'position',     label: 'Pos'    },
+const SCORE_FIELDS: { key: keyof GameFormValues['players'][0]; label: string; min?: number }[] = [
+  { key: 'tr',           label: 'TR',          min: 0 },
+  { key: 'milestone_vp', label: 'Milestones',  min: 0 },
+  { key: 'award_vp',     label: 'Awards',      min: 0 },
+  { key: 'greenery_vp',  label: 'Greeneries',  min: 0 },
+  { key: 'city_vp',      label: 'Cities',      min: 0 },
+  { key: 'card_vp',      label: 'Card VP'             },
+  { key: 'total_vp',     label: 'Total VP',    min: 0 },
+  { key: 'mc',           label: 'MC'                  },
 ]
 
 const PARAM_FIELDS: { key: 'oxygen_steps' | 'temperature_steps' | 'ocean_steps' | 'venus_steps'; label: string; color: string }[] = [
@@ -150,7 +151,7 @@ const PARAM_FIELDS: { key: 'oxygen_steps' | 'temperature_steps' | 'ocean_steps' 
 const DEFAULT_PLAYER = {
   player_name: '', corporation: '',
   tr: 20, milestone_vp: 0, award_vp: 0, greenery_vp: 0, city_vp: 0, card_vp: 0,
-  habitat_vp: null, logistics_vp: null, mining_vp: null,
+  habitat_vp: null, logistics_vp: null, mining_vp: null, mc: null,
   total_vp: 0, position: 1, key_notes: '',
   oxygen_steps: 0, temperature_steps: 0, ocean_steps: 0, venus_steps: 0,
 }
@@ -166,10 +167,11 @@ export default function AddGame() {
   const [saving, setSaving]       = useState(false)
   const [saved, setSaved]         = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [hasMoon, setHasMoon]     = useState(false)
   const [hasParams, setHasParams] = useState(false)
   const [expansions, setExpansions] = useState<string[]>([])
   const [colonies, setColonies]     = useState<string[]>([])
+
+  const hasMoon = expansions.includes('Moon')
 
   // Per-player merger state: how many corps each player has (1, 2, or 3)
   const [mergerCounts, setMergerCounts] = useState<number[]>([1, 1])
@@ -228,6 +230,7 @@ export default function AddGame() {
           habitat_vp: r.habitat_vp,
           logistics_vp: r.logistics_vp,
           mining_vp: r.mining_vp,
+          mc: r.mc,
           total_vp: r.total_vp,
           position: r.position,
           key_notes: r.key_notes ?? '',
@@ -244,7 +247,6 @@ export default function AddGame() {
     setExtraCorp3(sorted.map(r => r.corporation.split(', ')[2] ?? ''))
     setExpansions(existingGame.expansions)
     setColonies(existingGame.colonies)
-    setHasMoon(sorted.some(r => r.habitat_vp != null))
     setHasParams(existingGame.parameter_contributions.length > 0)
   }, [existingGame, isEdit, reset])
 
@@ -379,6 +381,7 @@ export default function AddGame() {
           habitat_vp: hasMoon ? p.habitat_vp : null,
           logistics_vp: hasMoon ? p.logistics_vp : null,
           mining_vp: hasMoon ? p.mining_vp : null,
+          mc: p.mc ?? null,
           total_vp: p.total_vp,
           position: p.position,
           key_notes: p.key_notes || null,
@@ -568,10 +571,6 @@ export default function AddGame() {
           {/* Options */}
           <div style={{ display: 'flex', gap: '20px', marginBottom: '16px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#8e87a8' }}>
-              <input type="checkbox" checked={hasMoon} onChange={e => setHasMoon(e.target.checked)} style={{ accentColor: '#9b50f0' }} />
-              Moon expansion (shows Moon VP fields)
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#8e87a8' }}>
               <input type="checkbox" checked={hasParams} onChange={e => setHasParams(e.target.checked)} style={{ accentColor: '#9b50f0' }} />
               Track parameter contributions
             </label>
@@ -695,19 +694,28 @@ export default function AddGame() {
                   </div>
                 </div>
 
-                {/* Row 2: Score fields */}
+                {/* Row 2: Score fields + Place */}
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'flex-end' }}>
                   {SCORE_FIELDS.map(f => (
                     <div key={f.key} style={{ flex: '1 1 0', minWidth: '48px' }}>
                       <label style={labelStyle}>{f.label}</label>
                       <input
                         type="number"
-                        min={0}
+                        step="1"
+                        min={f.min}
                         {...register(`players.${index}.${f.key}`)}
                         style={inputStyle}
                       />
                     </div>
                   ))}
+                  <div style={{ flex: '0 0 72px' }}>
+                    <label style={labelStyle}>Place</label>
+                    <select {...register(`players.${index}.position`)} style={inputStyle}>
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 {/* Row 3: Strategy notes + Moon VP */}
