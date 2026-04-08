@@ -455,7 +455,7 @@ export default function AddGame() {
           <div style={sectionLabel}>Session</div>
 
           {/* Date / Map / Generations / Game code */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+          <div className="addgame-session-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
             <div>
               <label style={labelStyle}>Date *</label>
               <input type="date" {...register('date')} style={inputStyle} />
@@ -597,7 +597,7 @@ export default function AddGame() {
               <div key={field.id} style={{ border: '1px solid #322850', borderRadius: '5px', padding: '16px' }}>
 
                 {/* Row 1: Player + Corporation(s) */}
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '12px', alignItems: 'flex-end' }}>
+                <div className="addgame-player-row1" style={{ display: 'flex', gap: '10px', marginBottom: '12px', alignItems: 'flex-end' }}>
 
                   {/* Player name combobox */}
                   <div style={{ flex: '0 0 160px' }}>
@@ -695,7 +695,7 @@ export default function AddGame() {
                 </div>
 
                 {/* Row 2: Score fields + Place */}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'flex-end' }}>
+                <div className="addgame-score-row" style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'flex-end' }}>
                   {SCORE_FIELDS.map(f => (
                     <div key={f.key} style={{ flex: '1 1 0', minWidth: '48px' }}>
                       <label style={labelStyle}>{f.label}</label>
@@ -729,16 +729,16 @@ export default function AddGame() {
                     />
                   </div>
                   {hasMoon && (
-                    <>
+                    <div className="addgame-moon-row" style={{ display: 'contents' }}>
                       {(['habitat_vp', 'logistics_vp', 'mining_vp'] as const).map(f => (
                         <div key={f} style={{ flex: '0 0 75px' }}>
                           <label style={labelStyle}>
                             {f === 'habitat_vp' ? 'Habitat' : f === 'logistics_vp' ? 'Logistics' : 'Mining'} VP
                           </label>
-                          <input type="number" min={0} {...register(`players.${index}.${f}`)} style={inputStyle} />
+                          <input type="number" min={0} step="1" {...register(`players.${index}.${f}`)} style={inputStyle} />
                         </div>
                       ))}
-                    </>
+                    </div>
                   )}
                 </div>
 

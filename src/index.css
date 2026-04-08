@@ -223,6 +223,56 @@ body {
   }
 }
 
+/* Number input spinner arrows – visible on dark backgrounds */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  filter: invert(1);
+  opacity: 1;
+}
+
+/* =====================================================
+   ADDGAME MOBILE OVERRIDES
+   ===================================================== */
+@media (max-width: 768px) {
+  /* Session grid: 4 cols → 2 cols */
+  .addgame-session-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Player row 1: stack name and corp vertically */
+  .addgame-player-row1 {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .addgame-player-row1 > div:first-child {
+    flex: none !important;
+  }
+
+  /* Score row: flex → 3-column grid */
+  .addgame-score-row {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    align-items: end !important;
+  }
+
+  /* Bigger touch targets for score inputs on mobile */
+  .addgame-score-row input,
+  .addgame-score-row select {
+    height: 44px !important;
+    font-size: 1rem !important;
+    text-align: center !important;
+  }
+
+  /* Moon VP row: wrap on small screens */
+  .addgame-moon-row {
+    flex-wrap: wrap !important;
+  }
+  .addgame-moon-row > div {
+    flex: 1 1 80px !important;
+  }
+}
+
 /* Win badge */
 .win-badge {
   display: inline-flex;
