@@ -16,9 +16,25 @@ const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
 const CARD_TYPES = ['Automated', 'Active', 'Event', 'Corporation', 'Prelude'] as const
 type CardType = typeof CARD_TYPES[number]
 
+const TAG_COLORS: Record<string, { bg: string; color: string }> = {
+  'Animal':   { bg: 'rgba(74, 158, 107, 0.12)',  color: '#4a9e6b' },
+  'Building': { bg: 'rgba(180, 120, 60, 0.12)',  color: '#c97b3a' },
+  'City':     { bg: 'rgba(100, 140, 200, 0.12)', color: '#7aa0d0' },
+  'Earth':    { bg: 'rgba(100, 140, 200, 0.12)', color: '#7aa0d0' },
+  'Event':    { bg: 'rgba(200, 80, 60, 0.12)',   color: '#d06050' },
+  'Jovian':   { bg: 'rgba(180, 100, 40, 0.12)',  color: '#c07030' },
+  'Microbe':  { bg: 'rgba(90, 160, 80, 0.12)',   color: '#5aa050' },
+  'Plant':    { bg: 'rgba(60, 160, 80, 0.12)',   color: '#40a060' },
+  'Power':    { bg: 'rgba(180, 90, 200, 0.12)',  color: '#c070d0' },
+  'Science':  { bg: 'rgba(200, 200, 60, 0.12)',  color: '#d0c030' },
+  'Space':    { bg: 'rgba(60, 100, 200, 0.12)',  color: '#5080c0' },
+  'Venus':    { bg: 'rgba(220, 160, 60, 0.12)',  color: '#d0a040' },
+}
+
 export default function Cards() {
   const [search, setSearch] = useState('')
   const [typeFilters, setTypeFilters] = useState<CardType[]>([])
+  const [tagFilters, setTagFilters] = useState<string[]>([])
   const { data: cardStats, isLoading, error } = useCardStats()
   const { data: cardRef } = useCardReference()
 
@@ -33,66 +49,110 @@ export default function Cards() {
     typeMap[key] = c.card_type
   }
 
+  const allTags = [...new Set(
+    Object.values(tagMap).flatMap(t => parseTags(t))
+  )].sort()
+
   const cards = (cardStats ?? []).filter(c => {
     if (!c.card_name.toLowerCase().includes(search.toLowerCase())) return false
     if (typeFilters.length > 0) {
       const type = typeMap[c.card_name.toLowerCase()]
       if (!typeFilters.includes(type as CardType)) return false
     }
+    if (tagFilters.length > 0) {
+      const cardTags = parseTags(tagMap[c.card_name.toLowerCase()] ?? null)
+      if (!tagFilters.some(t => cardTags.includes(t))) return false
+    }
     return true
   })
 
+  const hasFilters = !!search || typeFilters.length > 0 || tagFilters.length > 0
+
+  function toggleType(type: CardType) {
+    setTypeFilters(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])
+  }
+  function toggleTag(tag: string) {
+    setTagFilters(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
+  }
+
   return (
     <div className="page-enter" style={{ padding: '32px 36px' }}>
-      <PageHeader title="Cards" subtitle="Performance analysis across all played games" />
+      <PageHeader
+        title="Cards"
+        subtitle={hasFilters ? `${cards.length} of ${cardStats?.length ?? 0} cards` : 'Performance analysis across all played games'}
+      />
 
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <input
-          type="text"
-          placeholder="Search cards…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{
-            width: '240px',
-            padding: '8px 14px',
-            background: '#1e1835',
-            border: '1px solid #3e325e',
-            borderRadius: '4px',
-            color: '#ece6ff',
-            fontFamily: 'var(--font-body)',
-            fontSize: '0.85rem',
-            outline: 'none',
-          }}
-        />
+      <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {/* Search + clear */}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            placeholder="Search cards…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              width: '240px', height: '34px', padding: '0 12px',
+              background: '#1e1835', border: '1px solid #3e325e', borderRadius: '4px',
+              color: '#ece6ff', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none',
+            }}
+          />
+          {hasFilters && (
+            <button
+              onClick={() => { setSearch(''); setTypeFilters([]); setTagFilters([]) }}
+              style={{
+                height: '34px', padding: '0 12px',
+                background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px',
+                color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.78rem', cursor: 'pointer',
+              }}
+            >
+              Clear all
+            </button>
+          )}
+        </div>
 
-        {/* Type filter chips */}
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        {/* Type pills */}
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginRight: '2px' }}>Type</span>
           {CARD_TYPES.map(type => {
             const active = typeFilters.includes(type)
             const colors = TYPE_COLORS[type]
             return (
-              <button
-                key={type}
-                onClick={() => setTypeFilters(prev =>
-                  active ? prev.filter(t => t !== type) : [...prev, type]
-                )}
-                style={{
-                  padding: '4px 12px',
-                  background: active ? colors.bg : 'transparent',
-                  border: `1px solid ${active ? colors.color : '#3e325e'}`,
-                  borderRadius: '12px',
-                  color: active ? colors.color : '#625c7c',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.12s',
-                }}
-              >
+              <button key={type} onClick={() => toggleType(type)} style={{
+                padding: '3px 11px',
+                background: active ? colors.bg : 'transparent',
+                border: `1px solid ${active ? colors.color : '#3e325e'}`,
+                borderRadius: '12px', cursor: 'pointer', transition: 'all 0.12s',
+                fontFamily: 'var(--font-body)', fontSize: '0.75rem',
+                color: active ? colors.color : '#625c7c',
+              }}>
                 {active ? '✓ ' : ''}{type}
               </button>
             )
           })}
         </div>
+
+        {/* Tag pills */}
+        {allTags.length > 0 && (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginRight: '2px' }}>Tag</span>
+            {allTags.map(tag => {
+              const active = tagFilters.includes(tag)
+              const colors = TAG_COLORS[tag] ?? { bg: 'rgba(100,100,100,0.12)', color: '#8e87a8' }
+              return (
+                <button key={tag} onClick={() => toggleTag(tag)} style={{
+                  padding: '3px 11px',
+                  background: active ? colors.bg : 'transparent',
+                  border: `1px solid ${active ? colors.color : '#3e325e'}`,
+                  borderRadius: '12px', cursor: 'pointer', transition: 'all 0.12s',
+                  fontFamily: 'var(--font-body)', fontSize: '0.75rem',
+                  color: active ? colors.color : '#625c7c',
+                }}>
+                  {active ? '✓ ' : ''}{tag}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {cards.length === 0 ? (
