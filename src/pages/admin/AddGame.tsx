@@ -620,7 +620,7 @@ export default function AddGame() {
                   </div>
 
                   {/* Corporation combobox(es) + Merger controls */}
-                  <div style={{ flex: 1, display: 'flex', gap: '8px', alignItems: 'flex-end', minWidth: 0 }}>
+                  <div className="addgame-corp-row" style={{ flex: 1, display: 'flex', gap: '8px', alignItems: 'flex-end', minWidth: 0 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <label style={labelStyle}>Corporation *</label>
                       <Controller
@@ -719,7 +719,7 @@ export default function AddGame() {
                 </div>
 
                 {/* Row 3: Strategy notes + Moon VP */}
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', marginBottom: hasParams ? '12px' : 0 }}>
+                <div className="addgame-notes-row" style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', marginBottom: hasParams ? '12px' : 0 }}>
                   <div style={{ flex: 1 }}>
                     <label style={labelStyle}>Strategy notes</label>
                     <input

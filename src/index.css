@@ -234,12 +234,12 @@ input[type="number"]::-webkit-outer-spin-button {
    ADDGAME MOBILE OVERRIDES
    ===================================================== */
 @media (max-width: 768px) {
-  /* Session grid: 4 cols → 2 cols */
+  /* Session grid: 4 cols → 1 col (each field its own row) */
   .addgame-session-grid {
-    grid-template-columns: 1fr 1fr !important;
+    grid-template-columns: 1fr !important;
   }
 
-  /* Player row 1: stack name and corp vertically */
+  /* Player row 1: stack name above corp group */
   .addgame-player-row1 {
     flex-direction: column !important;
     align-items: stretch !important;
@@ -248,12 +248,25 @@ input[type="number"]::-webkit-outer-spin-button {
     flex: none !important;
   }
 
-  /* Score row: flex → 3-column grid */
+  /* Corp inner row: corps + merger button stack vertically */
+  .addgame-corp-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .addgame-corp-row > div {
+    flex: none !important;
+  }
+
+  /* Score row: each field on its own full-width row */
   .addgame-score-row {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 8px !important;
-    align-items: end !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+  .addgame-score-row > div {
+    flex: none !important;
+    min-width: 0 !important;
   }
 
   /* Bigger touch targets for score inputs on mobile */
@@ -261,15 +274,15 @@ input[type="number"]::-webkit-outer-spin-button {
   .addgame-score-row select {
     height: 44px !important;
     font-size: 1rem !important;
-    text-align: center !important;
   }
 
-  /* Moon VP row: wrap on small screens */
-  .addgame-moon-row {
-    flex-wrap: wrap !important;
+  /* Notes + Moon VP row: stack vertically */
+  .addgame-notes-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
   }
-  .addgame-moon-row > div {
-    flex: 1 1 80px !important;
+  .addgame-notes-row > div {
+    flex: none !important;
   }
 }
 
