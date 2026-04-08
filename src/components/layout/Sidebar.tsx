@@ -1,6 +1,11 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/useAuth'
 
+interface SidebarProps {
+  open: boolean
+  onClose: () => void
+}
+
 const NAV_ITEMS = [
   { to: '/',              label: 'Overview',     icon: '◈' },
   { to: '/games',         label: 'Games',        icon: '◉' },
@@ -16,7 +21,7 @@ const PARAM_LABELS = [
   { label: 'OCEANS',      color: '#2e8b8b' },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ open, onClose }: SidebarProps) {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
 
@@ -27,6 +32,7 @@ export default function Sidebar() {
 
   return (
     <aside
+      className={`sidebar${open ? ' sidebar--open' : ''}`}
       style={{
         width: '220px',
         minWidth: '220px',
@@ -41,7 +47,15 @@ export default function Sidebar() {
       }}
     >
       {/* Logo / title */}
-      <div style={{ padding: '28px 20px 20px', borderBottom: '1px solid #282042' }}>
+      <div style={{ padding: '28px 20px 20px', borderBottom: '1px solid #282042', position: 'relative' }}>
+        {/* Mobile close button */}
+        <button
+          className="sidebar-close-btn"
+          onClick={onClose}
+          aria-label="Close menu"
+        >
+          ✕
+        </button>
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.65rem', letterSpacing: '0.2em', color: '#625c7c', textTransform: 'uppercase', marginBottom: '6px' }}>
           Mission log
         </div>
@@ -61,6 +75,7 @@ export default function Sidebar() {
             key={to}
             to={to}
             end={to === '/'}
+            onClick={onClose}
             style={({ isActive }) => ({
               display: 'flex',
               alignItems: 'center',
@@ -101,6 +116,7 @@ export default function Sidebar() {
           <div>
             <NavLink
               to="/admin"
+              onClick={onClose}
               style={({ isActive }) => ({
                 display: 'block',
                 padding: '8px 12px',

@@ -12,7 +12,7 @@ export default function AdminDashboard() {
         subtitle={`Signed in as ${user?.email}`}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', maxWidth: '600px' }}>
+      <div className="admin-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', maxWidth: '600px' }}>
         <Link
           to="/admin/games/new"
           style={{

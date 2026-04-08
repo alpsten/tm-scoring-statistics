@@ -56,7 +56,7 @@ export default function Dashboard() {
       />
 
       {/* Stat strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
+      <div className="stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
         <StatCard label="Games logged"    value={totalGames}                                   accent="mars"    />
         <StatCard label="Avg final score" value={avgScore}           sub="VP"                  accent="score"   />
         <StatCard label="Leading player"  value={topPlayer?.player_name ?? '—'} sub={topPlayer ? `${topPlayer.wins} wins` : undefined} accent="atmo" />
@@ -66,7 +66,7 @@ export default function Dashboard() {
       {/* Records */}
       <div style={{ marginBottom: '32px' }}>
         <h2 style={sectionHeader}>Records &amp; highlights</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+        <div className="records-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
           {/* All-time high score */}
           <div style={recordCard}>
             <div style={recordLabel}>All-time high score</div>
@@ -243,7 +243,7 @@ export default function Dashboard() {
       </div>
 
       {/* Quick links */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+      <div className="quick-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
         {[
           { to: '/corporations', label: 'Corporation stats',  sub: `${[...(corpStats ?? [])].filter(c => !c.corporation.includes(', ')).length} corporations played` },
           { to: '/cards',        label: 'Card analysis',      sub: 'Performance by card' },

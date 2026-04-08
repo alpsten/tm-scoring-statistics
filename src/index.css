@@ -105,6 +105,124 @@ body {
 }
 .pulse-mars { animation: mars-pulse 2s ease-in-out infinite; }
 
+/* =====================================================
+   MOBILE NAVIGATION
+   ===================================================== */
+
+/* Hamburger toggle button – hidden on desktop */
+.hamburger-btn {
+  display: none;
+  position: fixed;
+  top: 13px;
+  left: 13px;
+  z-index: 200;
+  width: 36px;
+  height: 36px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0;
+  background: #1e1835;
+  border: 1px solid #3e325e;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.hamburger-btn span {
+  display: block;
+  width: 16px;
+  height: 2px;
+  background: #8e87a8;
+  border-radius: 1px;
+}
+
+/* Sidebar close button – hidden on desktop */
+.sidebar-close-btn {
+  display: none;
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid #3e325e;
+  border-radius: 4px;
+  color: #625c7c;
+  font-size: 0.7rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+/* Sidebar backdrop – hidden on desktop */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 100;
+  backdrop-filter: blur(2px);
+}
+
+/* =====================================================
+   RESPONSIVE GRID HELPERS
+   ===================================================== */
+.stat-grid,
+.records-grid,
+.quick-links-grid,
+.admin-links-grid {
+  /* desktop defaults set inline – classes are used for mobile overrides only */
+}
+
+/* =====================================================
+   MOBILE BREAKPOINT (≤ 768px)
+   ===================================================== */
+@media (max-width: 768px) {
+  /* Show hamburger + close buttons */
+  .hamburger-btn       { display: flex !important; }
+  .sidebar-close-btn   { display: flex !important; }
+
+  /* Sidebar becomes a fixed slide-in overlay */
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    z-index: 150;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 6px 0 32px rgba(0, 0, 0, 0.6);
+  }
+  .sidebar--open {
+    transform: translateX(0) !important;
+  }
+
+  /* Show backdrop when sidebar is open */
+  .sidebar-backdrop--open {
+    display: block !important;
+  }
+
+  /* Reduce page padding; add top offset for hamburger button */
+  .page-enter {
+    padding: 62px 16px 28px !important;
+  }
+
+  /* Tables: enable horizontal scroll */
+  div:has(> table) {
+    overflow-x: auto !important;
+  }
+
+  /* Responsive grids */
+  .stat-grid,
+  .records-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .quick-links-grid,
+  .admin-links-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* Win badge */
 .win-badge {
   display: inline-flex;
