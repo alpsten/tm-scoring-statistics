@@ -13,8 +13,12 @@ const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
   Prelude:     { bg: 'rgba(74, 158, 107, 0.1)',  color: '#4a9e6b' },
 }
 
+const CARD_TYPES = ['Automated', 'Active', 'Event', 'Corporation', 'Prelude'] as const
+type CardType = typeof CARD_TYPES[number]
+
 export default function Cards() {
   const [search, setSearch] = useState('')
+  const [typeFilters, setTypeFilters] = useState<CardType[]>([])
   const { data: cardStats, isLoading, error } = useCardStats()
   const { data: cardRef } = useCardReference()
 
@@ -29,22 +33,27 @@ export default function Cards() {
     typeMap[key] = c.card_type
   }
 
-  const cards = (cardStats ?? []).filter(c =>
-    c.card_name.toLowerCase().includes(search.toLowerCase())
-  )
+  const cards = (cardStats ?? []).filter(c => {
+    if (!c.card_name.toLowerCase().includes(search.toLowerCase())) return false
+    if (typeFilters.length > 0) {
+      const type = typeMap[c.card_name.toLowerCase()]
+      if (!typeFilters.includes(type as CardType)) return false
+    }
+    return true
+  })
 
   return (
     <div className="page-enter" style={{ padding: '32px 36px' }}>
       <PageHeader title="Cards" subtitle="Performance analysis across all played games" />
 
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
         <input
           type="text"
           placeholder="Search cards…"
           value={search}
           onChange={e => setSearch(e.target.value)}
           style={{
-            width: '280px',
+            width: '240px',
             padding: '8px 14px',
             background: '#1e1835',
             border: '1px solid #3e325e',
@@ -55,6 +64,35 @@ export default function Cards() {
             outline: 'none',
           }}
         />
+
+        {/* Type filter chips */}
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {CARD_TYPES.map(type => {
+            const active = typeFilters.includes(type)
+            const colors = TYPE_COLORS[type]
+            return (
+              <button
+                key={type}
+                onClick={() => setTypeFilters(prev =>
+                  active ? prev.filter(t => t !== type) : [...prev, type]
+                )}
+                style={{
+                  padding: '4px 12px',
+                  background: active ? colors.bg : 'transparent',
+                  border: `1px solid ${active ? colors.color : '#3e325e'}`,
+                  borderRadius: '12px',
+                  color: active ? colors.color : '#625c7c',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '0.75rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.12s',
+                }}
+              >
+                {active ? '✓ ' : ''}{type}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {cards.length === 0 ? (

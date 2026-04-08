@@ -8,12 +8,18 @@ import {
   fetchCardReference,
 } from './queries'
 
+export { deleteGame } from './queries'
+
 export function useGames() {
   return useQuery({ queryKey: ['games'], queryFn: fetchGames })
 }
 
-export function useGame(id: string) {
-  return useQuery({ queryKey: ['games', id], queryFn: () => fetchGame(id) })
+export function useGame(id: string, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['games', id],
+    queryFn: () => fetchGame(id),
+    enabled: options?.enabled ?? true,
+  })
 }
 
 export function usePlayerStats() {

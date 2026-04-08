@@ -55,6 +55,7 @@ export default function App() {
               {/* Protected admin routes */}
               <Route path="admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
               <Route path="admin/games/new" element={<AdminGuard><AddGame /></AdminGuard>} />
+              <Route path="admin/games/:id/edit" element={<AdminGuard><AddGame /></AdminGuard>} />
             </Route>
           </Routes>
         </BrowserRouter>

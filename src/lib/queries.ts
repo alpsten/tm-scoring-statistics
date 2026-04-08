@@ -175,6 +175,16 @@ export async function fetchCardStats(): Promise<CardStats[]> {
   })
 }
 
+export async function deleteGame(id: string): Promise<void> {
+  // Delete children first in case CASCADE isn't configured
+  await supabase.from('parameter_contributions').delete().eq('game_id', id)
+  await supabase.from('game_colonies').delete().eq('game_id', id)
+  await supabase.from('game_expansions').delete().eq('game_id', id)
+  await supabase.from('player_results').delete().eq('game_id', id)
+  const { error } = await supabase.from('game_sessions').delete().eq('id', id)
+  if (error) throw error
+}
+
 export async function fetchCardReference(): Promise<CardReference[]> {
   const { data, error } = await supabase
     .from('card_reference')

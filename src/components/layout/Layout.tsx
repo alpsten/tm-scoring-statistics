@@ -15,11 +15,12 @@ export default function Layout() {
         onClick={() => setSidebarOpen(false)}
       />
 
-      {/* Hamburger button – mobile only */}
+      {/* Hamburger button – mobile only, hidden when sidebar is open */}
       <button
         className="hamburger-btn"
         onClick={() => setSidebarOpen(o => !o)}
         aria-label="Toggle menu"
+        style={{ display: sidebarOpen ? 'none' : undefined }}
       >
         <span />
         <span />

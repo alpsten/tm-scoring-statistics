@@ -1,11 +1,34 @@
-import { useParams, Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
-import { useGame } from '../lib/hooks'
+import { useGame, deleteGame } from '../lib/hooks'
+import { useAuth } from '../context/useAuth'
 
 export default function GameDetail() {
   const { id } = useParams<{ id: string }>()
   const { data: game, isLoading, error } = useGame(id!)
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDelete() {
+    setDeleting(true)
+    try {
+      await deleteGame(id!)
+      queryClient.invalidateQueries({ queryKey: ['games'] })
+      queryClient.invalidateQueries({ queryKey: ['player-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['corp-stats'] })
+      navigate('/games')
+    } catch (err) {
+      console.error(err)
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
 
   if (isLoading) return <div style={loadingStyle}>Loading…</div>
   if (error || !game) {
@@ -30,10 +53,46 @@ export default function GameDetail() {
 
   return (
     <div className="page-enter" style={{ padding: '32px 36px' }}>
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '10px' }}>
         <Link to="/games" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', textDecoration: 'none' }}>
           ← Games
         </Link>
+
+        {user && (
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <Link
+              to={`/admin/games/${id}/edit`}
+              style={{ padding: '5px 14px', background: 'rgba(155,80,240,0.08)', border: '1px solid rgba(155,80,240,0.3)', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#b87aff', textDecoration: 'none' }}
+            >
+              Edit
+            </Link>
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                style={{ padding: '5px 14px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', cursor: 'pointer' }}
+              >
+                Delete
+              </button>
+            ) : (
+              <>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#e05535' }}>Permanently delete this game?</span>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  style={{ padding: '5px 14px', background: 'rgba(224,85,53,0.12)', border: '1px solid rgba(224,85,53,0.4)', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#e05535', cursor: deleting ? 'not-allowed' : 'pointer' }}
+                >
+                  {deleting ? 'Deleting…' : 'Yes, delete'}
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  style={{ padding: '5px 14px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <PageHeader

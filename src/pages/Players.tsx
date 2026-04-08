@@ -1,14 +1,50 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
 import { usePlayerStats } from '../lib/hooks'
+import type { PlayerStats } from '../types/database'
+
+type SortKey = keyof Pick<PlayerStats, 'player_name' | 'games_played' | 'wins' | 'win_rate' | 'avg_score' | 'best_score' | 'avg_position'>
 
 export default function Players() {
   const { data, isLoading, error } = usePlayerStats()
+  const [sortKey, setSortKey] = useState<SortKey>('wins')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
   if (isLoading) return <div style={loadingStyle}>Loading…</div>
   if (error) return <div style={loadingStyle}>Failed to load data.</div>
 
-  const players = [...(data ?? [])].sort((a, b) => b.wins - a.wins || b.win_rate - a.win_rate)
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortKey(key)
+      setSortDir(key === 'player_name' ? 'asc' : 'desc')
+    }
+  }
+
+  const players = [...(data ?? [])].sort((a, b) => {
+    const av = a[sortKey]
+    const bv = b[sortKey]
+    const dir = sortDir === 'asc' ? 1 : -1
+    if (typeof av === 'string') return av.localeCompare(bv as string) * dir
+    return ((av as number) - (bv as number)) * dir
+  })
+
+  function SortIndicator({ col }: { col: SortKey }) {
+    if (sortKey !== col) return <span style={{ color: '#3e325e', marginLeft: '3px' }}>⇅</span>
+    return <span style={{ color: '#b87aff', marginLeft: '3px' }}>{sortDir === 'asc' ? '▲' : '▼'}</span>
+  }
+
+  const columns: { label: string; key: SortKey; align: 'left' | 'right' }[] = [
+    { label: 'Player',       key: 'player_name',   align: 'left'  },
+    { label: 'Games',        key: 'games_played',  align: 'right' },
+    { label: 'Wins',         key: 'wins',          align: 'right' },
+    { label: 'Win rate',     key: 'win_rate',      align: 'right' },
+    { label: 'Avg score',    key: 'avg_score',     align: 'right' },
+    { label: 'Best score',   key: 'best_score',    align: 'right' },
+    { label: 'Avg position', key: 'avg_position',  align: 'right' },
+  ]
 
   return (
     <div className="page-enter" style={{ padding: '32px 36px' }}>
@@ -18,9 +54,25 @@ export default function Players() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid #282042' }}>
-              {['Player', 'Games', 'Wins', 'Win rate', 'Avg score', 'Best score', 'Avg position'].map(h => (
-                <th key={h} style={{ padding: '11px 18px', textAlign: h === 'Player' ? 'left' : 'right', fontFamily: 'var(--font-body)', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
-                  {h}
+              {columns.map(col => (
+                <th
+                  key={col.key}
+                  onClick={() => handleSort(col.key)}
+                  style={{
+                    padding: '11px 18px',
+                    textAlign: col.align,
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: sortKey === col.key ? '#8e87a8' : '#504270',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {col.label}<SortIndicator col={col.key} />
                 </th>
               ))}
             </tr>

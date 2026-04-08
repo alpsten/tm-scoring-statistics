@@ -1,11 +1,12 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useForm, useFieldArray, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import PageHeader from '../../components/ui/PageHeader'
 import { supabase } from '../../lib/supabase'
-import { usePlayerStats, useCardReference } from '../../lib/hooks'
+import { usePlayerStats, useCardReference, useGame } from '../../lib/hooks'
 
 // ─── Shared styles (defined before Combobox so it can reference them) ─────────
 
@@ -158,6 +159,10 @@ const DEFAULT_PLAYER = {
 
 export default function AddGame() {
   const navigate = useNavigate()
+  const { id: editId } = useParams<{ id?: string }>()
+  const isEdit = !!editId
+  const queryClient = useQueryClient()
+
   const [saving, setSaving]       = useState(false)
   const [saved, setSaved]         = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -173,6 +178,7 @@ export default function AddGame() {
 
   const { data: playerStats } = usePlayerStats()
   const { data: cardRef }     = useCardReference()
+  const { data: existingGame } = useGame(editId ?? '', { enabled: isEdit })
 
   const existingPlayers = (playerStats ?? []).map(p => p.player_name).sort()
   const corporations = (cardRef ?? [])
@@ -180,7 +186,7 @@ export default function AddGame() {
     .map(c => c.card_name)
     .sort()
 
-  const { register, control, handleSubmit, formState: { errors } } = useForm<GameFormValues>({
+  const { register, control, handleSubmit, reset, formState: { errors } } = useForm<GameFormValues>({
     resolver: zodResolver(gameSchema) as Resolver<GameFormValues>,
     defaultValues: {
       date: new Date().toISOString().slice(0, 10),
@@ -194,6 +200,53 @@ export default function AddGame() {
       ],
     },
   })
+
+  // ── Pre-populate form when editing ───────────────────────────────────────────
+
+  useEffect(() => {
+    if (!existingGame || !isEdit) return
+    const sorted = [...existingGame.player_results].sort((a, b) => a.position - b.position)
+
+    reset({
+      date: existingGame.date,
+      generations: existingGame.generations,
+      map_name: existingGame.map_name ?? '',
+      notes: existingGame.notes ?? '',
+      game_code: existingGame.game_code ?? '',
+      players: sorted.map(r => {
+        const parts = r.corporation.split(', ')
+        const params = existingGame.parameter_contributions.find(p => p.player_name === r.player_name)
+        return {
+          player_name: r.player_name,
+          corporation: parts[0],
+          tr: r.tr,
+          milestone_vp: r.milestone_vp,
+          award_vp: r.award_vp,
+          greenery_vp: r.greenery_vp,
+          city_vp: r.city_vp,
+          card_vp: r.card_vp,
+          habitat_vp: r.habitat_vp,
+          logistics_vp: r.logistics_vp,
+          mining_vp: r.mining_vp,
+          total_vp: r.total_vp,
+          position: r.position,
+          key_notes: r.key_notes ?? '',
+          oxygen_steps: params?.oxygen_steps ?? 0,
+          temperature_steps: params?.temperature_steps ?? 0,
+          ocean_steps: params?.ocean_steps ?? 0,
+          venus_steps: params?.venus_steps ?? 0,
+        }
+      }),
+    })
+
+    setMergerCounts(sorted.map(r => r.corporation.split(', ').length))
+    setExtraCorp2(sorted.map(r => r.corporation.split(', ')[1] ?? ''))
+    setExtraCorp3(sorted.map(r => r.corporation.split(', ')[2] ?? ''))
+    setExpansions(existingGame.expansions)
+    setColonies(existingGame.colonies)
+    setHasMoon(sorted.some(r => r.habitat_vp != null))
+    setHasParams(existingGame.parameter_contributions.length > 0)
+  }, [existingGame, isEdit, reset])
 
   const { fields, append, remove } = useFieldArray({ control, name: 'players' })
 
@@ -280,20 +333,36 @@ export default function AddGame() {
         return { ...p, corporation: corp }
       })
 
-      const { data: session, error: sessionError } = await supabase
-        .from('game_sessions')
-        .insert({
-          date: data.date,
-          player_count: data.players.length,
-          generations: data.generations || null,
-          map_name: data.map_name || null,
-          notes: data.notes || null,
-          game_code: data.game_code || null,
-        })
-        .select('id')
-        .single()
-      if (sessionError) throw sessionError
-      const gameId = session.id
+      const sessionPayload = {
+        date: data.date,
+        player_count: data.players.length,
+        generations: data.generations || null,
+        map_name: data.map_name || null,
+        notes: data.notes || null,
+        game_code: data.game_code || null,
+      }
+
+      let gameId: string
+
+      if (isEdit && editId) {
+        // ── Edit mode: update session, replace children ──────────────────────
+        const { error: sessionError } = await supabase
+          .from('game_sessions').update(sessionPayload).eq('id', editId)
+        if (sessionError) throw sessionError
+        gameId = editId
+
+        // Delete and re-insert all related rows
+        await supabase.from('parameter_contributions').delete().eq('game_id', gameId)
+        await supabase.from('game_colonies').delete().eq('game_id', gameId)
+        await supabase.from('game_expansions').delete().eq('game_id', gameId)
+        await supabase.from('player_results').delete().eq('game_id', gameId)
+      } else {
+        // ── Add mode: insert new session ─────────────────────────────────────
+        const { data: session, error: sessionError } = await supabase
+          .from('game_sessions').insert(sessionPayload).select('id').single()
+        if (sessionError) throw sessionError
+        gameId = session.id
+      }
 
       const { error: resultsError } = await supabase
         .from('player_results')
@@ -345,6 +414,13 @@ export default function AddGame() {
         }
       }
 
+      if (isEdit) {
+        queryClient.invalidateQueries({ queryKey: ['games', editId] })
+        queryClient.invalidateQueries({ queryKey: ['games'] })
+        queryClient.invalidateQueries({ queryKey: ['player-stats'] })
+        queryClient.invalidateQueries({ queryKey: ['corp-stats'] })
+      }
+
       setSaved(true)
       setTimeout(() => navigate(`/games/${gameId}`), 1200)
     } catch (err) {
@@ -360,9 +436,14 @@ export default function AddGame() {
   return (
     <div className="page-enter" style={{ padding: '32px 36px', maxWidth: '1100px' }}>
       <div style={{ marginBottom: '24px' }}>
-        <Link to="/admin" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', textDecoration: 'none' }}>← Admin</Link>
+        <Link
+          to={isEdit ? `/games/${editId}` : '/admin'}
+          style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', textDecoration: 'none' }}
+        >
+          {isEdit ? `← Game` : '← Admin'}
+        </Link>
       </div>
-      <PageHeader title="Log game session" />
+      <PageHeader title={isEdit ? 'Edit game session' : 'Log game session'} />
 
       <form onSubmit={handleSubmit(onSubmit)}>
 
@@ -685,9 +766,12 @@ export default function AddGame() {
               cursor: saving || saved ? 'not-allowed' : 'pointer', transition: 'background 0.15s',
             }}
           >
-            {saved ? '✓ Saved' : saving ? 'Saving…' : 'Save game'}
+            {saved ? '✓ Saved' : saving ? 'Saving…' : isEdit ? 'Update game' : 'Save game'}
           </button>
-          <Link to="/admin" style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#625c7c', textDecoration: 'none' }}>
+          <Link
+            to={isEdit ? `/games/${editId}` : '/admin'}
+            style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#625c7c', textDecoration: 'none' }}
+          >
             Cancel
           </Link>
           {saveError && (
