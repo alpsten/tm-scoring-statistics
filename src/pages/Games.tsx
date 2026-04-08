@@ -5,9 +5,9 @@ import { useGames } from '../lib/hooks'
 
 export default function Games() {
   const { data, isLoading, error } = useGames()
-  const [search, setSearch]             = useState('')
-  const [mapFilter, setMapFilter]       = useState('')
-  const [expansionFilter, setExpansionFilter] = useState('')
+  const [search, setSearch]               = useState('')
+  const [mapFilters, setMapFilters]       = useState<string[]>([])
+  const [expansionFilters, setExpansionFilters] = useState<string[]>([])
 
   if (isLoading) return <div style={loadingStyle}>Loading…</div>
   if (error) return <div style={loadingStyle}>Failed to load data.</div>
@@ -17,8 +17,8 @@ export default function Games() {
   const allExpansions = [...new Set(games.flatMap(g => g.expansions))].sort()
 
   const filtered = games.filter(g => {
-    if (mapFilter && g.map_name !== mapFilter) return false
-    if (expansionFilter && !g.expansions.includes(expansionFilter)) return false
+    if (mapFilters.length > 0 && !mapFilters.includes(g.map_name ?? '')) return false
+    if (expansionFilters.length > 0 && !expansionFilters.some(e => g.expansions.includes(e))) return false
     if (search) {
       const q = search.toLowerCase()
       const matchesPlayer = g.player_results.some(r => r.player_name.toLowerCase().includes(q))
@@ -28,7 +28,14 @@ export default function Games() {
     return true
   })
 
-  const hasFilters = !!search || !!mapFilter || !!expansionFilter
+  const hasFilters = !!search || mapFilters.length > 0 || expansionFilters.length > 0
+
+  function toggleMap(map: string) {
+    setMapFilters(prev => prev.includes(map) ? prev.filter(m => m !== map) : [...prev, map])
+  }
+  function toggleExpansion(exp: string) {
+    setExpansionFilters(prev => prev.includes(exp) ? prev.filter(e => e !== exp) : [...prev, exp])
+  }
 
   return (
     <div className="page-enter" style={{ padding: '32px 36px' }}>
@@ -38,60 +45,76 @@ export default function Games() {
       />
 
       {/* Filter bar */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <input
-          type="text"
-          placeholder="Search player or map…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          style={{
-            width: '220px', height: '34px', padding: '0 12px',
-            background: '#1e1835', border: '1px solid #3e325e', borderRadius: '4px',
-            color: '#ece6ff', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none',
-          }}
-        />
-
-        <select
-          value={mapFilter}
-          onChange={e => setMapFilter(e.target.value)}
-          style={{
-            height: '34px', padding: '0 10px',
-            background: mapFilter ? 'rgba(155,80,240,0.08)' : '#1e1835',
-            border: `1px solid ${mapFilter ? '#9b50f0' : '#3e325e'}`, borderRadius: '4px',
-            color: mapFilter ? '#b87aff' : '#8e87a8', fontFamily: 'var(--font-body)', fontSize: '0.83rem',
-            outline: 'none', cursor: 'pointer',
-          }}
-        >
-          <option value="">All maps</option>
-          {allMaps.map(m => <option key={m} value={m}>{m}</option>)}
-        </select>
-
-        <select
-          value={expansionFilter}
-          onChange={e => setExpansionFilter(e.target.value)}
-          style={{
-            height: '34px', padding: '0 10px',
-            background: expansionFilter ? 'rgba(46,139,139,0.08)' : '#1e1835',
-            border: `1px solid ${expansionFilter ? '#2e8b8b' : '#3e325e'}`, borderRadius: '4px',
-            color: expansionFilter ? '#3bbfbf' : '#8e87a8', fontFamily: 'var(--font-body)', fontSize: '0.83rem',
-            outline: 'none', cursor: 'pointer',
-          }}
-        >
-          <option value="">All expansions</option>
-          {allExpansions.map(e => <option key={e} value={e}>{e}</option>)}
-        </select>
-
-        {hasFilters && (
-          <button
-            onClick={() => { setSearch(''); setMapFilter(''); setExpansionFilter('') }}
+      <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {/* Search */}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <input
+            type="text"
+            placeholder="Search player or map…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
             style={{
-              height: '34px', padding: '0 12px',
-              background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px',
-              color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.78rem', cursor: 'pointer',
+              width: '220px', height: '34px', padding: '0 12px',
+              background: '#1e1835', border: '1px solid #3e325e', borderRadius: '4px',
+              color: '#ece6ff', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none',
             }}
-          >
-            Clear
-          </button>
+          />
+          {hasFilters && (
+            <button
+              onClick={() => { setSearch(''); setMapFilters([]); setExpansionFilters([]) }}
+              style={{
+                height: '34px', padding: '0 12px',
+                background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px',
+                color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.78rem', cursor: 'pointer',
+              }}
+            >
+              Clear all
+            </button>
+          )}
+        </div>
+
+        {/* Map pills */}
+        {allMaps.length > 0 && (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginRight: '2px' }}>Map</span>
+            {allMaps.map(map => {
+              const active = mapFilters.includes(map)
+              return (
+                <button key={map} onClick={() => toggleMap(map)} style={{
+                  padding: '3px 11px',
+                  background: active ? 'rgba(155,80,240,0.12)' : 'transparent',
+                  border: `1px solid ${active ? '#9b50f0' : '#3e325e'}`,
+                  borderRadius: '12px', cursor: 'pointer', transition: 'all 0.12s',
+                  fontFamily: 'var(--font-body)', fontSize: '0.75rem',
+                  color: active ? '#b87aff' : '#625c7c',
+                }}>
+                  {active ? '✓ ' : ''}{map}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Expansion pills */}
+        {allExpansions.length > 0 && (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginRight: '2px' }}>Expansion</span>
+            {allExpansions.map(exp => {
+              const active = expansionFilters.includes(exp)
+              return (
+                <button key={exp} onClick={() => toggleExpansion(exp)} style={{
+                  padding: '3px 11px',
+                  background: active ? 'rgba(46,139,139,0.12)' : 'transparent',
+                  border: `1px solid ${active ? '#2e8b8b' : '#3e325e'}`,
+                  borderRadius: '12px', cursor: 'pointer', transition: 'all 0.12s',
+                  fontFamily: 'var(--font-body)', fontSize: '0.75rem',
+                  color: active ? '#3bbfbf' : '#625c7c',
+                }}>
+                  {active ? '✓ ' : ''}{exp}
+                </button>
+              )
+            })}
+          </div>
         )}
       </div>
 
