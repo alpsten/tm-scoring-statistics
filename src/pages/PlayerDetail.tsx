@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, type DotProps } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import { useGames, usePlayerStats } from '../lib/hooks'
@@ -59,7 +59,7 @@ export default function PlayerDetail() {
               dataKey="score"
               stroke="#504270"
               strokeWidth={1.5}
-              dot={(props: DotProps & { payload?: { win: boolean } }) => {
+              dot={(props: any) => {
                 const { cx, cy, payload } = props
                 return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={5} fill={payload?.win ? '#e05535' : '#3e325e'} stroke="#171228" strokeWidth={1.5} />
               }}
