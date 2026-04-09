@@ -3,12 +3,13 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
-import { useGame, deleteGame } from '../lib/hooks'
+import { useGame, deleteGame, useGameCards } from '../lib/hooks'
 import { useAuth } from '../context/useAuth'
 
 export default function GameDetail() {
   const { id } = useParams<{ id: string }>()
   const { data: game, isLoading, error } = useGame(id!)
+  const { data: gameCards = [] } = useGameCards(id!)
   const { user } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -207,6 +208,60 @@ export default function GameDetail() {
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Cards played */}
+      {gameCards.length > 0 && (() => {
+        const byPlayer: Record<string, typeof gameCards> = {}
+        for (const c of gameCards) {
+          ;(byPlayer[c.player_name] ??= []).push(c)
+        }
+        // Keep player order consistent with score table
+        const playerOrder = sorted.map(r => r.player_name)
+        const players = [...new Set([...playerOrder, ...Object.keys(byPlayer)])]
+
+        return (
+          <div style={{ marginBottom: '32px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }}>
+              Cards played
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${players.length}, 1fr)`, gap: '12px', alignItems: 'start' }}>
+              {players.map(player => {
+                const cards = byPlayer[player] ?? []
+                return (
+                  <div key={player} style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
+                    <div style={{ padding: '10px 14px', borderBottom: '1px solid #282042', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Link to={`/players/${player}`} style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.83rem', color: '#ece6ff', textDecoration: 'none' }}>
+                        {player}
+                      </Link>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#504270' }}>{cards.length}</span>
+                    </div>
+                    <div style={{ padding: '6px 0' }}>
+                      {cards.map((c, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 14px', gap: '6px' }}
+                          onMouseEnter={e => (e.currentTarget.style.background = '#282042')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        >
+                          <Link to={`/cards/${encodeURIComponent(c.card_name)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#bbb4d0', textDecoration: 'none', lineHeight: 1.5 }}>
+                            {c.card_name}
+                          </Link>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                            {c.vp_from_card != null && (
+                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#c9a030' }}>{c.vp_from_card}VP</span>
+                            )}
+                            {c.generation != null && (
+                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#3e325e' }}>g{c.generation}</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )

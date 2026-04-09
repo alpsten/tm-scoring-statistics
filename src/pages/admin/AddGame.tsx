@@ -110,6 +110,7 @@ const gameSchema = z.object({
   date:        z.string().min(1, 'Required'),
   generations: z.coerce.number().min(1).nullable(),
   map_name:    z.string(),
+  format:      z.enum(['Physical', 'Digital']),
   notes:       z.string(),
   game_code:   z.string(),
   players:     z.array(playerSchema).min(1),
@@ -124,7 +125,7 @@ const MAPS = [
   'Amazonis Planitia', 'Terra Cimmeria', 'Vastitas Borealis', 'Utopia Planitia',
   'Vastitas Borealis Nova', 'Hollandia',
 ]
-const EXPANSIONS = ['Prelude', 'Prelude 2', 'Venus Next', 'Colonies', 'Turmoil', 'Moon', 'Pathfinders']
+const EXPANSIONS = ['Prelude', 'Prelude 2', 'Venus Next', 'Colonies', 'Turmoil', 'Moon', 'Pathfinders', 'Promos']
 const COLONY_TILES = [
   'Callisto', 'Ceres', 'Enceladus', 'Europa', 'Ganymede',
   'Io', 'Luna', 'Miranda', 'Pluto', 'Titan', 'Triton',
@@ -194,6 +195,7 @@ export default function AddGame() {
       date: new Date().toISOString().slice(0, 10),
       generations: null,
       map_name: '',
+      format: 'Digital' as const,
       notes: '',
       game_code: '',
       players: [
@@ -213,6 +215,7 @@ export default function AddGame() {
       date: existingGame.date,
       generations: existingGame.generations,
       map_name: existingGame.map_name ?? '',
+      format: (existingGame.format === 'Digital' ? 'Digital' : 'Physical') as 'Physical' | 'Digital',
       notes: existingGame.notes ?? '',
       game_code: existingGame.game_code ?? '',
       players: sorted.map(r => {
@@ -275,7 +278,7 @@ export default function AddGame() {
       const toAdd = Array.from({ length: target - current }, (_, i) => ({
         ...DEFAULT_PLAYER, position: current + i + 1,
       }))
-      toAdd.forEach(p => append(p))
+      toAdd.forEach(p => append(p, { shouldFocus: false }))
       addHelperRows(toAdd.length)
     } else if (target < current) {
       const toRemove = Array.from({ length: current - target }, (_, i) => current - 1 - i)
@@ -340,6 +343,7 @@ export default function AddGame() {
         player_count: data.players.length,
         generations: data.generations || null,
         map_name: data.map_name || null,
+        format: data.format,
         notes: data.notes || null,
         game_code: data.game_code || null,
       }
@@ -454,25 +458,37 @@ export default function AddGame() {
         <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '24px', marginBottom: '24px' }}>
           <div style={sectionLabel}>Session</div>
 
-          {/* Date / Map / Generations / Game code */}
-          <div className="addgame-session-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-            <div>
+          {/* Date / Map / Generations / Format / Game code */}
+          <div className="addgame-session-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '20px' }}>
+            <div style={{ minWidth: 0 }}>
               <label style={labelStyle}>Date *</label>
-              <input type="date" {...register('date')} style={inputStyle} />
+              <input type="date" {...register('date')} style={{ ...inputStyle, width: '100%' }} />
               {errors.date && <span style={errStyle}>{errors.date.message}</span>}
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <label style={labelStyle}>Map</label>
               <select {...register('map_name')} style={inputStyle}>
                 <option value="">Select map…</option>
                 {MAPS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <label style={labelStyle}>Generations</label>
-              <input type="number" min={1} {...register('generations')} placeholder="—" style={inputStyle} />
+              <select {...register('generations')} style={inputStyle}>
+                <option value="">—</option>
+                {Array.from({ length: 20 }, (_, i) => i + 1).map(n => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
+              <label style={labelStyle}>Format</label>
+              <select {...register('format')} style={inputStyle}>
+                <option value="Digital">Digital</option>
+                <option value="Physical">Physical</option>
+              </select>
+            </div>
+            <div style={{ minWidth: 0 }}>
               <label style={labelStyle}>Game code</label>
               <input {...register('game_code')} placeholder="gc…" style={inputStyle} />
             </div>
@@ -810,7 +826,8 @@ const mergerBtnStyle: React.CSSProperties = {
   cursor: 'pointer', whiteSpace: 'nowrap',
 }
 const removeMergerBtnStyle: React.CSSProperties = {
-  padding: '6px 9px', background: 'transparent', border: '1px solid #3e325e',
-  borderRadius: '4px', color: '#625c7c', fontFamily: 'var(--font-body)',
+  padding: '6px 16px', background: 'rgba(224, 85, 53, 0.08)',
+  border: '1px solid rgba(224, 85, 53, 0.4)', borderRadius: '4px',
+  color: '#e05535', fontFamily: 'var(--font-body)',
   fontSize: '0.72rem', cursor: 'pointer',
 }

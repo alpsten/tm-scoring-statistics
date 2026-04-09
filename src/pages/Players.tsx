@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
-import { usePlayerStats } from '../lib/hooks'
+import { usePlayerStats, usePlayerProfiles } from '../lib/hooks'
 import type { PlayerStats } from '../types/database'
 
 type SortKey = keyof Pick<PlayerStats, 'player_name' | 'games_played' | 'wins' | 'win_rate' | 'avg_score' | 'best_score' | 'avg_position'>
 
 export default function Players() {
   const { data, isLoading, error } = usePlayerStats()
+  const { data: profiles = [] } = usePlayerProfiles()
+  const profileMap = Object.fromEntries(profiles.map(p => [p.player_name, p]))
   const [sortKey, setSortKey] = useState<SortKey>('wins')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
@@ -86,7 +88,10 @@ export default function Players() {
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <td style={{ padding: '13px 18px' }}>
-                  <Link to={`/players/${p.player_name}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.9rem', color: '#ece6ff', textDecoration: 'none' }}>
+                  <Link to={`/players/${p.player_name}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.9rem', color: '#ece6ff', textDecoration: 'none' }}>
+                    {profileMap[p.player_name]?.preferred_color && (
+                      <span style={{ width: 10, height: 10, borderRadius: '50%', background: profileMap[p.player_name].preferred_color!, border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0, display: 'inline-block' }} />
+                    )}
                     {p.player_name}
                   </Link>
                 </td>

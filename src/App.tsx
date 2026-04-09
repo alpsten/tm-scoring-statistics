@@ -20,6 +20,9 @@ import Setup from './pages/Setup'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AddGame from './pages/admin/AddGame'
+import CardReferenceAdmin from './pages/admin/CardReferenceAdmin'
+import PlayerProfileAdmin from './pages/admin/PlayerProfileAdmin'
+import ParseLog from './pages/admin/ParseLog'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -56,6 +59,9 @@ export default function App() {
               <Route path="admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
               <Route path="admin/games/new" element={<AdminGuard><AddGame /></AdminGuard>} />
               <Route path="admin/games/:id/edit" element={<AdminGuard><AddGame /></AdminGuard>} />
+              <Route path="admin/cards/reference" element={<AdminGuard><CardReferenceAdmin /></AdminGuard>} />
+              <Route path="admin/players/profiles" element={<AdminGuard><PlayerProfileAdmin /></AdminGuard>} />
+              <Route path="admin/parse-log" element={<AdminGuard><ParseLog /></AdminGuard>} />
             </Route>
           </Routes>
         </BrowserRouter>

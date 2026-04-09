@@ -6,6 +6,9 @@ import {
   fetchCorporationStats,
   fetchCardStats,
   fetchCardReference,
+  fetchPlayerProfiles,
+  fetchPlayerCardStats,
+  fetchGameCards,
 } from './queries'
 
 export { deleteGame } from './queries'
@@ -36,4 +39,24 @@ export function useCardStats() {
 
 export function useCardReference() {
   return useQuery({ queryKey: ['card-reference'], queryFn: fetchCardReference })
+}
+
+export function usePlayerProfiles() {
+  return useQuery({ queryKey: ['player-profiles'], queryFn: fetchPlayerProfiles })
+}
+
+export function useGameCards(gameId: string) {
+  return useQuery({
+    queryKey: ['game-cards', gameId],
+    queryFn: () => fetchGameCards(gameId),
+    enabled: !!gameId,
+  })
+}
+
+export function usePlayerCardStats(playerName: string) {
+  return useQuery({
+    queryKey: ['player-card-stats', playerName],
+    queryFn: () => fetchPlayerCardStats(playerName),
+    enabled: !!playerName,
+  })
 }

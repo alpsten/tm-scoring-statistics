@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { GameWithResults, PlayerStats, CorporationStats, CardStats, CardReference } from '../types/database'
+import type { GameWithResults, PlayerStats, CorporationStats, CardStats, CardReference, PlayerProfile } from '../types/database'
 
 // ── Raw shape returned by Supabase nested selects ─────────────────────────────
 
@@ -11,6 +11,7 @@ interface RawGame {
   map_name: string | null
   notes: string | null
   game_code: string | null
+  format: 'Physical' | 'Digital' | null
   created_at: string
   parameter_contributions?: Array<{
     id: string
@@ -183,6 +184,62 @@ export async function deleteGame(id: string): Promise<void> {
   await supabase.from('player_results').delete().eq('game_id', id)
   const { error } = await supabase.from('game_sessions').delete().eq('id', id)
   if (error) throw error
+}
+
+export interface PlayerCardStat {
+  card_name: string
+  times_played: number
+  avg_vp: number | null
+}
+
+export interface GameCardEntry {
+  player_name: string
+  card_name: string
+  card_order: number | null
+  generation: number | null
+  vp_from_card: number | null
+}
+
+export async function fetchGameCards(gameId: string): Promise<GameCardEntry[]> {
+  const { data, error } = await supabase
+    .from('cards_played')
+    .select('player_name, card_name, card_order, generation, vp_from_card')
+    .eq('game_id', gameId)
+    .order('card_order', { ascending: true })
+  if (error) throw error
+  return data as GameCardEntry[]
+}
+
+export async function fetchPlayerCardStats(playerName: string): Promise<PlayerCardStat[]> {
+  const { data, error } = await supabase
+    .from('cards_played')
+    .select('card_name, vp_from_card')
+    .eq('player_name', playerName)
+  if (error) throw error
+  if (!data || data.length === 0) return []
+
+  const map: Record<string, { count: number; vps: number[] }> = {}
+  for (const row of data) {
+    if (!map[row.card_name]) map[row.card_name] = { count: 0, vps: [] }
+    map[row.card_name].count++
+    if (row.vp_from_card != null) map[row.card_name].vps.push(row.vp_from_card)
+  }
+
+  return Object.entries(map)
+    .map(([card_name, { count, vps }]) => ({
+      card_name,
+      times_played: count,
+      avg_vp: vps.length > 0 ? vps.reduce((s, v) => s + v, 0) / vps.length : null,
+    }))
+    .sort((a, b) => b.times_played - a.times_played || a.card_name.localeCompare(b.card_name))
+}
+
+export async function fetchPlayerProfiles(): Promise<PlayerProfile[]> {
+  const { data, error } = await supabase
+    .from('player_profiles')
+    .select('*')
+  if (error) throw error
+  return data as PlayerProfile[]
 }
 
 export async function fetchCardReference(): Promise<CardReference[]> {

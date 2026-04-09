@@ -1,17 +1,21 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
-import { useGames, usePlayerStats } from '../lib/hooks'
+import { useGames, usePlayerStats, usePlayerProfiles, usePlayerCardStats } from '../lib/hooks'
 
 export default function PlayerDetail() {
   const { name } = useParams<{ name: string }>()
+  const navigate = useNavigate()
   const { data: games, isLoading: gamesLoading } = useGames()
   const { data: playerStats, isLoading: statsLoading } = usePlayerStats()
+  const { data: profiles = [] } = usePlayerProfiles()
+  const { data: playerCards = [] } = usePlayerCardStats(name!)
 
   if (gamesLoading || statsLoading) return <div style={loadingStyle}>Loading…</div>
 
   const stats = (playerStats ?? []).find(p => p.player_name === name)
+  const profile = profiles.find(p => p.player_name === name)
   const playerGames = (games ?? [])
     .filter(g => g.player_results.some(r => r.player_name === name))
     .sort((a, b) => b.date.localeCompare(a.date))
@@ -28,10 +32,55 @@ export default function PlayerDetail() {
   return (
     <div className="page-enter" style={{ padding: '32px 36px' }}>
       <div style={{ marginBottom: '24px' }}>
-        <Link to="/players" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', textDecoration: 'none' }}>← Players</Link>
+        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: '#625c7c', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.78rem', padding: 0 }}>← Back</button>
       </div>
 
-      <PageHeader title={name!} subtitle={`${stats.games_played} games played`} />
+      <PageHeader
+        title={
+          profile?.preferred_color
+            ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ width: 14, height: 14, borderRadius: '50%', background: profile.preferred_color, border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0, display: 'inline-block' }} />
+                {name}
+              </span>
+            : name!
+        }
+        subtitle={`${stats.games_played} games played`}
+      />
+
+      {profile && (profile.playing_style || profile.rival || profile.favorite_card || profile.most_tilting_card || profile.trivia) && (
+        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '16px 20px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+          {profile.playing_style && (
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginBottom: '3px' }}>Style</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#bbb4d0' }}>{profile.playing_style}</div>
+            </div>
+          )}
+          {profile.rival && (
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginBottom: '3px' }}>Rival</div>
+              <Link to={`/players/${profile.rival}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#e05535', textDecoration: 'none' }}>{profile.rival}</Link>
+            </div>
+          )}
+          {profile.favorite_card && (
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginBottom: '3px' }}>Fav card</div>
+              <Link to={`/cards/${encodeURIComponent(profile.favorite_card)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#b87aff', textDecoration: 'none' }}>{profile.favorite_card}</Link>
+            </div>
+          )}
+          {profile.most_tilting_card && (
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginBottom: '3px' }}>Tilting card</div>
+              <Link to={`/cards/${encodeURIComponent(profile.most_tilting_card)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#bbb4d0', textDecoration: 'none' }}>{profile.most_tilting_card}</Link>
+            </div>
+          )}
+          {profile.trivia && (
+            <div style={{ width: '100%' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginBottom: '3px' }}>Trivia</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: '#8e87a8', fontStyle: 'italic', lineHeight: 1.55 }}>{profile.trivia}</div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
         <StatCard label="Wins"        value={stats.wins}                      sub={`of ${stats.games_played} games`} accent="mars"    />
@@ -141,6 +190,50 @@ export default function PlayerDetail() {
           </div>
         )
       })()}
+
+      {/* Cards played */}
+      {playerCards.length > 0 && (
+        <div style={{ marginBottom: '28px' }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }}>
+            Cards played · {playerCards.length} unique
+          </h2>
+          <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #282042' }}>
+                  {['Card', 'Times played', 'Avg VP'].map(h => (
+                    <th key={h} style={{ padding: '9px 16px', textAlign: h === 'Card' ? 'left' : 'right', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {playerCards.map((c, i) => (
+                  <tr
+                    key={c.card_name}
+                    style={{ borderBottom: i < playerCards.length - 1 ? '1px solid #282042' : 'none' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#282042')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <td style={{ padding: '10px 16px' }}>
+                      <Link to={`/cards/${encodeURIComponent(c.card_name)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff', textDecoration: 'none' }}>
+                        {c.card_name}
+                      </Link>
+                    </td>
+                    <td style={{ padding: '10px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: '#bbb4d0' }}>
+                      {c.times_played}
+                    </td>
+                    <td style={{ padding: '10px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: c.avg_vp != null ? '#c9a030' : '#3e325e' }}>
+                      {c.avg_vp != null ? c.avg_vp.toFixed(1) : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Games played */}
       <div>

@@ -8,6 +8,7 @@ export interface GameSession {
   map_name: string | null
   notes: string | null
   game_code: string | null
+  format: 'Physical' | 'Digital' | null
   created_at: string
 }
 
@@ -62,15 +63,32 @@ export interface CardPlayed {
   card_name: string
   vp_from_card: number | null
   notes: string | null
+  generation: number | null
+}
+
+export interface GameMilestone {
+  id: string
+  game_id: string
+  player_name: string
+  milestone_name: string
+}
+
+export interface GameAward {
+  id: string
+  game_id: string
+  player_name: string
+  award_name: string
 }
 
 export interface CardReference {
   id: string
   card_name: string
-  tags: string | null         // Comma-separated, alphabetical: "Animal, Microbe"
+  tags: string | null             // Comma-separated, alphabetical: "Animal, Microbe"
   card_type: 'Automated' | 'Active' | 'Event' | 'Prelude' | 'Corporation'
   expansion: string | null
   base_vp: number | null
+  resource_vp_type: string | null // Resource type that generates VP, e.g. "Floater", "Animal"
+  resource_vp_per: number | null  // Resources needed per 1 VP, e.g. 2 = "1 VP per 2 resources"
 }
 
 // ─── Reference / lookup types ─────────────────────────────────────────────────
@@ -163,4 +181,14 @@ export interface CardPlayedInput {
   vp_from_card: number | null
   card_order: number | null
   notes: string
+}
+
+export interface PlayerProfile {
+  player_name: string
+  preferred_color: string | null
+  trivia: string | null
+  favorite_card: string | null
+  most_tilting_card: string | null
+  playing_style: string | null
+  rival: string | null
 }

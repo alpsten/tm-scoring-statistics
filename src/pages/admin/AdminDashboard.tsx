@@ -33,6 +33,44 @@ export default function AdminDashboard() {
         </Link>
 
         <Link
+          to="/admin/parse-log"
+          style={{
+            display: 'block',
+            padding: '24px',
+            background: '#1e1835',
+            border: '1px solid rgba(224, 85, 53, 0.2)',
+            borderRadius: '6px',
+            textDecoration: 'none',
+            transition: 'border-color 0.15s',
+          }}
+          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(224, 85, 53, 0.4)')}
+          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(224, 85, 53, 0.2)')}
+        >
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.4rem', color: '#e05535', marginBottom: '8px' }}>⌨</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.92rem', color: '#ece6ff', marginBottom: '4px' }}>Parse game log</div>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#625c7c' }}>Import cards played and milestones from a game log</div>
+        </Link>
+
+        <Link
+          to="/admin/players/profiles"
+          style={{
+            display: 'block',
+            padding: '24px',
+            background: '#1e1835',
+            border: '1px solid #282042',
+            borderRadius: '6px',
+            textDecoration: 'none',
+            transition: 'border-color 0.15s',
+          }}
+          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(155,80,240,0.3)')}
+          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = '#282042')}
+        >
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.4rem', color: '#9b50f0', marginBottom: '8px' }}>◉</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.92rem', color: '#ece6ff', marginBottom: '4px' }}>Player profiles</div>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#625c7c' }}>Colors, playing styles, rivals, and trivia</div>
+        </Link>
+
+        <Link
           to="/admin/cards/reference"
           style={{
             display: 'block',
