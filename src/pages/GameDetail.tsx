@@ -2,24 +2,38 @@ import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import PageHeader from '../components/ui/PageHeader'
-import StatCard from '../components/ui/StatCard'
-import { useGame, deleteGame, useGameCards } from '../lib/hooks'
+import { useGame, useGameByNumber, deleteGame, useGameCards } from '../lib/hooks'
 import { useAuth } from '../context/useAuth'
 
 export default function GameDetail() {
-  const { id } = useParams<{ id: string }>()
-  const { data: game, isLoading, error } = useGame(id!)
-  const { data: gameCards = [] } = useGameCards(id!)
+  const { id: urlId } = useParams<{ id: string }>()
+  const isNumeric = /^\d+$/.test(urlId ?? '')
+  // Numeric URLs: direct DB query by game_number (fast, indexed)
+  const { data: gameByNum, isLoading: numLoading, error: numError } = useGameByNumber(
+    isNumeric ? Number(urlId) : 0,
+    { enabled: isNumeric }
+  )
+  // Legacy text-ID URLs: query by the text id
+  const { data: gameByText, isLoading: textLoading, error: textError } = useGame(
+    isNumeric ? '' : (urlId ?? ''),
+    { enabled: !isNumeric }
+  )
+  const game = isNumeric ? gameByNum : gameByText
+  const isLoading = isNumeric ? numLoading : textLoading
+  const error = isNumeric ? numError : textError
+  const dbId = game?.id
+  const { data: gameCards = [] } = useGameCards(dbId ?? '')
   const { user } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [expandedPlayers, setExpandedPlayers] = useState<Set<string>>(new Set())
 
   async function handleDelete() {
     setDeleting(true)
     try {
-      await deleteGame(id!)
+      await deleteGame(dbId!)
       queryClient.invalidateQueries({ queryKey: ['games'] })
       queryClient.invalidateQueries({ queryKey: ['player-stats'] })
       queryClient.invalidateQueries({ queryKey: ['corp-stats'] })
@@ -42,14 +56,19 @@ export default function GameDetail() {
 
   const sorted = [...game.player_results].sort((a, b) => a.position - b.position)
   const winner = sorted[0]
+  const gameNum = game?.game_number ?? null
+  const expDisplayName = (n: string) => n === 'Venus' ? 'Venus Next' : n
 
-  const scoreFields: { key: keyof typeof winner; label: string }[] = [
-    { key: 'tr',           label: 'TR'         },
-    { key: 'milestone_vp', label: 'Milestones' },
-    { key: 'award_vp',     label: 'Awards'     },
-    { key: 'greenery_vp',  label: 'Greeneries' },
-    { key: 'city_vp',      label: 'Cities'     },
-    { key: 'card_vp',      label: 'Cards'      },
+  const GEN_COLORS = ['#625c7c', '#3bbfbf', '#b87aff', '#c9a030', '#e05535', '#4a9e6b', '#9b50f0', '#2e8b8b']
+  const genColor = (gen: number) => GEN_COLORS[(gen - 1) % GEN_COLORS.length]
+
+  const scoreFields: { key: keyof typeof winner; label: string; short: string }[] = [
+    { key: 'tr',           label: 'TR',          short: 'TR' },
+    { key: 'milestone_vp', label: 'Milestones',  short: 'MS' },
+    { key: 'award_vp',     label: 'Awards',      short: 'AW' },
+    { key: 'greenery_vp',  label: 'Greeneries',  short: 'GR' },
+    { key: 'city_vp',      label: 'Cities',      short: 'CI' },
+    { key: 'card_vp',      label: 'Cards',       short: 'CA' },
   ]
 
   return (
@@ -62,7 +81,7 @@ export default function GameDetail() {
         {user && (
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <Link
-              to={`/admin/games/${id}/edit`}
+              to={`/admin/games/${dbId}/edit`}
               style={{ padding: '5px 14px', background: 'rgba(155,80,240,0.08)', border: '1px solid rgba(155,80,240,0.3)', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#b87aff', textDecoration: 'none' }}
             >
               Edit
@@ -97,16 +116,52 @@ export default function GameDetail() {
       </div>
 
       <PageHeader
-        title={`${game.map_name ?? 'Digital'} — ${new Date(game.date).toLocaleDateString('sv-SE')}`}
-        subtitle={`${game.player_count} players · ${game.generations ?? '?'} generations · GameID ${game.id}`}
+        title={game.map_name ?? 'Digital'}
+        subtitle={`${gameNum ? `#${gameNum} · ` : ''}${new Date(game.date).toLocaleDateString('sv-SE')} · ${game.player_count} players${game.generations ? ` · ${game.generations} generations` : ''}`}
       />
 
       {/* Game meta */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
-        <StatCard label="Winner"        value={winner.player_name} sub={winner.corporation}                   accent="mars"    />
-        <StatCard label="Winning score" value={winner.total_vp}    sub="VP"                                   accent="score"   />
-        <StatCard label="Expansions"    value={game.expansions.length || '—'} sub={game.expansions.join(', ') || 'Base only'} accent="atmo" />
-        <StatCard label="Colonies"      value={game.colonies.length || '—'}   sub={game.colonies.join(', ') || 'None'}        accent="neutral" />
+      <div className="game-meta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '32px' }}>
+        <div style={{ background: '#1e1835', border: '1px solid rgba(224,85,53,0.2)', borderRadius: '6px', padding: '14px 16px' }}>
+          <div style={metaLabelStyle}>Winner</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '6px' }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.95rem', color: '#ece6ff' }}>{winner.player_name}</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', marginTop: '3px' }}>{winner.corporation}</div>
+            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1.3rem', color: '#c9a030', lineHeight: 1, flexShrink: 0 }}>
+              {winner.total_vp}<span style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: '#c9a030', marginLeft: '4px', fontWeight: 700 }}>VP</span>
+            </div>
+          </div>
+        </div>
+        <div style={{ background: '#1e1835', border: '1px solid rgba(46,139,139,0.2)', borderRadius: '6px', padding: '14px 16px' }}>
+          <div style={metaLabelStyle}>Expansions</div>
+          {game.expansions.length > 0 ? (
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+              {game.expansions.map(exp => (
+                <span key={exp} style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '3px', background: 'rgba(46,139,139,0.1)', color: '#3bbfbf', border: '1px solid rgba(46,139,139,0.25)' }}>
+                  {expDisplayName(exp)}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: '#625c7c', marginTop: '8px' }}>Base only</div>
+          )}
+        </div>
+        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '14px 16px', gridColumn: '1 / -1' }}>
+          <div style={metaLabelStyle}>Colonies</div>
+          {game.colonies.length > 0 ? (
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+              {game.colonies.map(colony => (
+                <span key={colony} style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '3px', background: 'rgba(155,80,240,0.08)', color: '#b87aff', border: '1px solid rgba(155,80,240,0.2)' }}>
+                  {colony}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: '#625c7c', marginTop: '8px' }}>None</div>
+          )}
+        </div>
       </div>
 
       {/* Score breakdown table */}
@@ -114,16 +169,22 @@ export default function GameDetail() {
         <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }}>
           Score breakdown
         </h2>
-        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
+        <div className="game-score-table" style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #282042' }}>
                 <th style={thStyle}>Player</th>
-                <th style={thStyle}>Corporation</th>
+                <th className="corp-col" style={thStyle}>Corporation</th>
                 {scoreFields.map(f => (
-                  <th key={f.key} style={{ ...thStyle, textAlign: 'right' }}>{f.label}</th>
+                  <th key={f.key} style={{ ...thStyle, textAlign: 'right' }}>
+                    <span className="col-label-full">{f.label}</span>
+                    <span className="col-label-short">{f.short}</span>
+                  </th>
                 ))}
-                <th style={{ ...thStyle, textAlign: 'right', color: '#c9a030' }}>Total</th>
+                <th style={{ ...thStyle, textAlign: 'right', color: '#c9a030' }}>
+                  <span className="col-label-full">Total</span>
+                  <span className="col-label-short">VP</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -134,12 +195,17 @@ export default function GameDetail() {
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: r.position === 1 ? '#e05535' : '#504270' }}>
                         #{r.position}
                       </span>
-                      <Link to={`/players/${r.player_name}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: '#ece6ff', textDecoration: 'none', fontWeight: r.position === 1 ? 600 : 400 }}>
-                        {r.player_name}
-                      </Link>
+                      <div>
+                        <Link to={`/players/${encodeURIComponent(r.player_name)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: '#ece6ff', textDecoration: 'none', fontWeight: r.position === 1 ? 600 : 400 }}>
+                          {r.player_name}
+                        </Link>
+                        <Link to={`/corporations/${encodeURIComponent(r.corporation)}`} className="corp-inline" style={{ display: 'none', fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: '#625c7c', textDecoration: 'none' }}>
+                          {r.corporation}
+                        </Link>
+                      </div>
                     </div>
                   </td>
-                  <td style={tdStyle}>
+                  <td className="corp-col" style={tdStyle}>
                     <Link to={`/corporations/${encodeURIComponent(r.corporation)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#8e87a8', textDecoration: 'none' }}>
                       {r.corporation}
                     </Link>
@@ -163,38 +229,51 @@ export default function GameDetail() {
       {game.parameter_contributions.length > 0 && (() => {
         const params = game.parameter_contributions
         const hasVenus = params.some(p => p.venus_steps > 0)
-        const paramCols: { key: keyof typeof params[0]; label: string; color: string }[] = [
-          { key: 'oxygen_steps',      label: 'Oxygen',      color: '#4a9e6b' },
-          { key: 'temperature_steps', label: 'Temperature', color: '#e05535' },
-          { key: 'ocean_steps',       label: 'Oceans',      color: '#2e8b8b' },
-          ...(hasVenus ? [{ key: 'venus_steps' as const, label: 'Venus', color: '#b87aff' }] : []),
+        const paramCols: { key: keyof typeof params[0]; label: string; short: string; color: string }[] = [
+          { key: 'oxygen_steps',      label: 'Oxygen',      short: 'OX',   color: '#4a9e6b' },
+          { key: 'temperature_steps', label: 'Temperature', short: 'TEMP', color: '#e05535' },
+          { key: 'ocean_steps',       label: 'Oceans',      short: 'OC',   color: '#2e8b8b' },
+          ...(hasVenus ? [{ key: 'venus_steps' as const, label: 'Venus Next', short: 'VN', color: '#b87aff' }] : []),
         ]
         return (
           <div style={{ marginBottom: '32px' }}>
             <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }}>
               Parameter contributions
             </h2>
-            <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'auto' }}>
+            <div className="game-param-table" style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid #282042' }}>
                     <th style={thStyle}>Player</th>
                     {paramCols.map(col => (
-                      <th key={col.key} style={{ ...thStyle, textAlign: 'right', color: col.color }}>{col.label}</th>
+                      <th key={col.key} style={{ ...thStyle, textAlign: 'right', color: col.color }}>
+                        <span className="col-label-full">{col.label}</span>
+                        <span className="col-label-short">{col.short}</span>
+                      </th>
                     ))}
+                    <th style={{ ...thStyle, textAlign: 'right', color: '#bbb4d0' }}>
+                      <span className="col-label-full">Total</span>
+                      <span className="col-label-short">TOT</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {params.map((p, i) => (
-                    <tr key={p.player_name} style={{ borderBottom: i < params.length - 1 ? '1px solid #282042' : 'none' }}>
-                      <td style={{ ...tdStyle, fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: '#ece6ff' }}>{p.player_name}</td>
-                      {paramCols.map(col => (
-                        <td key={col.key} style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: (p[col.key] as number) > 0 ? col.color : '#504270' }}>
-                          {p[col.key] as number}
+                  {params.map((p, i) => {
+                    const rowTotal = paramCols.reduce((s, col) => s + (p[col.key] as number), 0)
+                    return (
+                      <tr key={p.player_name} style={{ borderBottom: i < params.length - 1 ? '1px solid #282042' : 'none' }}>
+                        <td style={{ ...tdStyle, fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: '#ece6ff' }}>{p.player_name}</td>
+                        {paramCols.map(col => (
+                          <td key={col.key} style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: (p[col.key] as number) > 0 ? col.color : '#504270' }}>
+                            {p[col.key] as number}
+                          </td>
+                        ))}
+                        <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: '#bbb4d0' }}>
+                          {rowTotal}
                         </td>
-                      ))}
-                    </tr>
-                  ))}
+                      </tr>
+                    )
+                  })}
                   <tr style={{ borderTop: '1px solid #282042', background: 'rgba(155,80,240,0.04)' }}>
                     <td style={{ ...tdStyle, fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', fontStyle: 'italic' }}>Total</td>
                     {paramCols.map(col => {
@@ -205,6 +284,9 @@ export default function GameDetail() {
                         </td>
                       )
                     })}
+                    <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: '#bbb4d0' }}>
+                      {params.reduce((s, p) => s + paramCols.reduce((ss, col) => ss + (p[col.key] as number), 0), 0)}
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -228,37 +310,63 @@ export default function GameDetail() {
             <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }}>
               Cards played
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${players.length}, 1fr)`, gap: '12px', alignItems: 'start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {players.map(player => {
                 const cards = byPlayer[player] ?? []
+                const isExpanded = expandedPlayers.has(player)
+                const posResult = sorted.find(r => r.player_name === player)
                 return (
                   <div key={player} style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
-                    <div style={{ padding: '10px 14px', borderBottom: '1px solid #282042', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Link to={`/players/${player}`} style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.83rem', color: '#ece6ff', textDecoration: 'none' }}>
-                        {player}
-                      </Link>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#504270' }}>{cards.length}</span>
-                    </div>
-                    <div style={{ padding: '6px 0' }}>
-                      {cards.map((c, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 14px', gap: '6px' }}
-                          onMouseEnter={e => (e.currentTarget.style.background = '#282042')}
-                          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    <button
+                      onClick={() => setExpandedPlayers(prev => {
+                        const next = new Set(prev)
+                        if (next.has(player)) next.delete(player)
+                        else next.add(player)
+                        return next
+                      })}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {posResult && (
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: posResult.position === 1 ? '#e05535' : '#504270' }}>
+                            #{posResult.position}
+                          </span>
+                        )}
+                        <Link
+                          to={`/players/${encodeURIComponent(player)}`}
+                          onClick={e => e.stopPropagation()}
+                          style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.87rem', color: '#ece6ff', textDecoration: 'none' }}
                         >
-                          <Link to={`/cards/${encodeURIComponent(c.card_name)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#bbb4d0', textDecoration: 'none', lineHeight: 1.5 }}>
-                            {c.card_name}
-                          </Link>
-                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                            {c.vp_from_card != null && (
-                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#c9a030' }}>{c.vp_from_card}VP</span>
-                            )}
-                            {c.generation != null && (
-                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#3e325e' }}>g{c.generation}</span>
-                            )}
+                          {player}
+                        </Link>
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#504270' }}>{cards.length} cards</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#504270' }}>{isExpanded ? '▲' : '▼'}</span>
+                      </div>
+                    </button>
+                    {isExpanded && (
+                      <div style={{ borderTop: '1px solid #282042', padding: '4px 0' }}>
+                        {cards.map((c, i) => (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 14px', gap: '6px' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#282042')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                          >
+                            <Link to={`/cards/${encodeURIComponent(c.card_name)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#bbb4d0', textDecoration: 'none', lineHeight: 1.5 }}>
+                              {c.card_name}
+                            </Link>
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                              {c.vp_from_card != null && (
+                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#c9a030' }}>{c.vp_from_card}VP</span>
+                              )}
+                              {c.generation != null && (
+                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: genColor(c.generation) }}>G{c.generation}</span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -310,4 +418,13 @@ const thStyle: React.CSSProperties = {
 
 const tdStyle: React.CSSProperties = {
   padding: '12px 16px',
+}
+
+const metaLabelStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-body)',
+  fontSize: '0.67rem',
+  fontWeight: 600,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: '#504270',
 }

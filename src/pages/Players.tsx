@@ -52,7 +52,8 @@ export default function Players() {
     <div className="page-enter" style={{ padding: '32px 36px' }}>
       <PageHeader title="Players" subtitle={`${players.length} players in the record`} />
 
-      <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
+      {/* Desktop table */}
+      <div className="players-table" style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid #282042' }}>
@@ -88,7 +89,7 @@ export default function Players() {
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <td style={{ padding: '13px 18px' }}>
-                  <Link to={`/players/${p.player_name}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.9rem', color: '#ece6ff', textDecoration: 'none' }}>
+                  <Link to={`/players/${encodeURIComponent(p.player_name)}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.9rem', color: '#ece6ff', textDecoration: 'none' }}>
                     {profileMap[p.player_name]?.preferred_color && (
                       <span style={{ width: 10, height: 10, borderRadius: '50%', background: profileMap[p.player_name].preferred_color!, border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0, display: 'inline-block' }} />
                     )}
@@ -108,6 +109,45 @@ export default function Players() {
           </tbody>
         </table>
       </div>
+
+      {/* Mobile card list */}
+      <div className="players-mobile" style={{ gap: '1px', background: '#282042', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
+        {players.map(p => {
+          const color = profileMap[p.player_name]?.preferred_color
+          return (
+            <div key={p.player_name} style={{ background: '#1e1835', padding: '14px 16px' }}>
+              <Link
+                to={`/players/${encodeURIComponent(p.player_name)}`}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.95rem', color: '#ece6ff', textDecoration: 'none', marginBottom: '10px' }}
+              >
+                {color && (
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: color, border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0, display: 'inline-block' }} />
+                )}
+                {p.player_name}
+                <span style={{ marginLeft: 'auto', color: '#504270', fontSize: '0.75rem' }}>→</span>
+              </Link>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: '7px', columnGap: '16px' }}>
+                <div>
+                  <div style={mobileLabel}>Wins</div>
+                  <div style={mobileValue}>{p.wins} <span style={mobileSub}>of {p.games_played} games</span></div>
+                </div>
+                <div>
+                  <div style={mobileLabel}>Win rate</div>
+                  <div style={{ ...mobileValue, color: p.win_rate >= 50 ? '#4a9e6b' : p.win_rate > 0 ? '#c9a030' : '#625c7c' }}>{p.win_rate.toFixed(1)}%</div>
+                </div>
+                <div>
+                  <div style={mobileLabel}>Avg score</div>
+                  <div style={mobileValue}>{p.avg_score.toFixed(1)} <span style={mobileSub}>VP</span></div>
+                </div>
+                <div>
+                  <div style={mobileLabel}>Best score</div>
+                  <div style={{ ...mobileValue, color: '#c9a030', fontWeight: 700 }}>{p.best_score} <span style={{ ...mobileSub, color: '#625c7c' }}>VP</span></div>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -124,4 +164,25 @@ const numTd: React.CSSProperties = {
   fontFamily: 'var(--font-mono)',
   fontSize: '0.85rem',
   color: '#bbb4d0',
+}
+
+const mobileLabel: React.CSSProperties = {
+  fontFamily: 'var(--font-mono)',
+  fontSize: '0.6rem',
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: '#504270',
+  marginBottom: '2px',
+}
+
+const mobileValue: React.CSSProperties = {
+  fontFamily: 'var(--font-mono)',
+  fontSize: '0.85rem',
+  color: '#bbb4d0',
+}
+
+const mobileSub: React.CSSProperties = {
+  fontFamily: 'var(--font-body)',
+  fontSize: '0.72rem',
+  color: '#504270',
 }

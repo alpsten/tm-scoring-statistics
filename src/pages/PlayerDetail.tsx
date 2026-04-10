@@ -5,7 +5,8 @@ import StatCard from '../components/ui/StatCard'
 import { useGames, usePlayerStats, usePlayerProfiles, usePlayerCardStats } from '../lib/hooks'
 
 export default function PlayerDetail() {
-  const { name } = useParams<{ name: string }>()
+  const rawName = useParams<{ name: string }>().name
+  const name = rawName ? decodeURIComponent(rawName) : rawName
   const navigate = useNavigate()
   const { data: games, isLoading: gamesLoading } = useGames()
   const { data: playerStats, isLoading: statsLoading } = usePlayerStats()
@@ -58,7 +59,7 @@ export default function PlayerDetail() {
           {profile.rival && (
             <div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginBottom: '3px' }}>Rival</div>
-              <Link to={`/players/${profile.rival}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#e05535', textDecoration: 'none' }}>{profile.rival}</Link>
+              <Link to={`/players/${encodeURIComponent(profile.rival)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#e05535', textDecoration: 'none' }}>{profile.rival}</Link>
             </div>
           )}
           {profile.favorite_card && (
@@ -94,10 +95,11 @@ export default function PlayerDetail() {
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '16px' }}>
           Score trend
         </div>
-        <ResponsiveContainer width="100%" height={180}>
+        <div className="player-score-chart">
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
             <XAxis dataKey="date" tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#504270' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#504270' }} axisLine={false} tickLine={false} width={32} />
+            <YAxis domain={[0, 'auto']} tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#504270' }} axisLine={false} tickLine={false} width={32} />
             <Tooltip
               contentStyle={{ background: '#282042', border: '1px solid #3e325e', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#ece6ff' }}
               cursor={{ stroke: 'rgba(255,255,255,0.06)' }}
@@ -116,6 +118,7 @@ export default function PlayerDetail() {
             />
           </LineChart>
         </ResponsiveContainer>
+        </div>
         <div style={{ display: 'flex', gap: '16px', marginTop: '10px', fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: '#504270' }}>
           <span><span style={{ color: '#e05535' }}>●</span> Win</span>
           <span><span style={{ color: '#3e325e' }}>●</span> Other finish</span>
@@ -153,7 +156,7 @@ export default function PlayerDetail() {
                 return (
                   <div key={opp} style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '14px 16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                      <Link to={`/players/${opp}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.87rem', color: '#ece6ff', textDecoration: 'none' }}>
+                      <Link to={`/players/${encodeURIComponent(opp)}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.87rem', color: '#ece6ff', textDecoration: 'none' }}>
                         {opp}
                       </Link>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#504270' }}>

@@ -64,7 +64,7 @@ export default function CorporationDetail() {
                   </td>
                   <td style={{ padding: '11px 16px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>{game.map_name ?? '—'}</td>
                   <td style={{ padding: '11px 16px' }}>
-                    <Link to={`/players/${result.player_name}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#8e87a8', textDecoration: 'none' }}>
+                    <Link to={`/players/${encodeURIComponent(result.player_name)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#8e87a8', textDecoration: 'none' }}>
                       {result.player_name}
                     </Link>
                   </td>

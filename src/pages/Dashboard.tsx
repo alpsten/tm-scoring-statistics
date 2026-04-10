@@ -73,7 +73,7 @@ export default function Dashboard() {
             {highScoreResult && highScoreGame ? (
               <>
                 <div style={recordValue}>{highScoreResult.total_vp} <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: '#625c7c' }}>VP</span></div>
-                <Link to={`/players/${highScoreResult.player_name}`} style={recordSub}>{highScoreResult.player_name}</Link>
+                <Link to={`/players/${encodeURIComponent(highScoreResult.player_name)}`} style={recordSub}>{highScoreResult.player_name}</Link>
                 <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: '#504270', marginTop: '2px' }}>
                   {highScoreResult.corporation} ·{' '}
                   <Link to={`/games/${highScoreGame.id}`} style={{ color: '#504270', textDecoration: 'none' }}>
@@ -90,7 +90,7 @@ export default function Dashboard() {
             {bestWinRate ? (
               <>
                 <div style={recordValue}>{bestWinRate.win_rate.toFixed(0)}<span style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: '#625c7c' }}>%</span></div>
-                <Link to={`/players/${bestWinRate.player_name}`} style={recordSub}>{bestWinRate.player_name}</Link>
+                <Link to={`/players/${encodeURIComponent(bestWinRate.player_name)}`} style={recordSub}>{bestWinRate.player_name}</Link>
                 <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: '#504270', marginTop: '2px' }}>
                   {bestWinRate.wins}W / {bestWinRate.games_played - bestWinRate.wins}L
                 </div>
@@ -159,7 +159,7 @@ export default function Dashboard() {
                     {i + 1}
                   </td>
                   <td style={{ padding: '11px 16px' }}>
-                    <Link to={`/players/${p.player_name}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.87rem', color: '#ece6ff', textDecoration: 'none', fontWeight: i === 0 ? 600 : 400 }}>
+                    <Link to={`/players/${encodeURIComponent(p.player_name)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.87rem', color: '#ece6ff', textDecoration: 'none', fontWeight: i === 0 ? 600 : 400 }}>
                       {p.player_name}
                     </Link>
                   </td>
@@ -223,7 +223,7 @@ export default function Dashboard() {
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       {winner && (
-                        <Link to={`/players/${winner.player_name}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff', textDecoration: 'none', fontWeight: 500 }}>
+                        <Link to={`/players/${encodeURIComponent(winner.player_name)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff', textDecoration: 'none', fontWeight: 500 }}>
                           {winner.player_name}
                           <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: '#625c7c', marginLeft: '6px' }}>
                             {winner.corporation}

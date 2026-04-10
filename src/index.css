@@ -286,6 +286,40 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 }
 
+/* Responsive column labels: full shown by default, short hidden */
+.col-label-short { display: none; }
+
+/* Players page – desktop table / mobile card list */
+.players-table  { /* shown by default */ }
+.players-mobile { display: none; flex-direction: column; }
+
+/* Score trend chart wrapper */
+.player-score-chart { height: 180px; }
+
+@media (max-width: 768px) {
+  .players-table  { display: none !important; }
+  .players-mobile { display: flex !important; }
+  .player-score-chart { height: 260px; }
+
+  /* Swap full ↔ short column labels */
+  .col-label-full  { display: none; }
+  .col-label-short { display: inline; }
+
+  /* Score/param tables: hide corp column, tight cells */
+  .game-score-table .corp-col { display: none !important; }
+  .corp-inline { display: block !important; }
+  .game-score-table th,
+  .game-score-table td,
+  .game-param-table th,
+  .game-param-table td {
+    padding: 6px 7px !important;
+    font-size: 0.7rem !important;
+  }
+
+  /* Meta grid: 2 cols → 1 col */
+  .game-meta-grid { grid-template-columns: 1fr !important; }
+}
+
 /* Win badge */
 .win-badge {
   display: inline-flex;
