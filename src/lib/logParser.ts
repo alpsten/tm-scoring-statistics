@@ -28,7 +28,6 @@ export interface ParsedAward {
 }
 
 export interface ParsedLog {
-  game_code: string | null
   players: string[]
   first_player: string | null
   total_generations: number
@@ -42,7 +41,6 @@ export function parseGameLog(raw: string): ParsedLog {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
 
   const result: ParsedLog = {
-    game_code: null,
     players: [],
     first_player: null,
     total_generations: 0,
@@ -57,13 +55,6 @@ export function parseGameLog(raw: string): ParsedLog {
   const seenCards = new Set<string>()
 
   for (const line of lines) {
-    // Game ID: "This game id was gb43492047bea"
-    const gameIdMatch = line.match(/^This game id was (.+)$/)
-    if (gameIdMatch) {
-      result.game_code = gameIdMatch[1].trim()
-      continue
-    }
-
     // Player names: "Good luck Emil Alpsten!"
     const playerMatch = line.match(/^Good luck (.+)!$/)
     if (playerMatch) {

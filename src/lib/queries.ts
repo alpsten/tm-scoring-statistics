@@ -5,12 +5,12 @@ import type { GameWithResults, PlayerStats, CorporationStats, CardStats, CardRef
 
 interface RawGame {
   id: string
+  game_number: number | null
   date: string
   player_count: number
   generations: number | null
   map_name: string | null
   notes: string | null
-  game_code: string | null
   format: 'Physical' | 'Digital' | null
   created_at: string
   parameter_contributions?: Array<{
@@ -74,6 +74,16 @@ export async function fetchGame(id: string): Promise<GameWithResults> {
     .from('game_sessions')
     .select(GAME_DETAIL_SELECT)
     .eq('id', id)
+    .single()
+  if (error) throw error
+  return mapGame(data as RawGame)
+}
+
+export async function fetchGameByNumber(num: number): Promise<GameWithResults> {
+  const { data, error } = await supabase
+    .from('game_sessions')
+    .select(GAME_DETAIL_SELECT)
+    .eq('game_number', num)
     .single()
   if (error) throw error
   return mapGame(data as RawGame)

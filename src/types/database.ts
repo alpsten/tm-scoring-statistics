@@ -2,12 +2,12 @@
 
 export interface GameSession {
   id: string
+  game_number: number | null
   date: string          // ISO date string
   player_count: number
   generations: number | null
   map_name: string | null
   notes: string | null
-  game_code: string | null
   format: 'Physical' | 'Digital' | null
   created_at: string
 }
@@ -152,7 +152,6 @@ export interface GameSessionInput {
   generations: number | null
   map_name: string | null
   notes: string
-  game_code: string
   expansions: string[]
   colonies: string[]
 }

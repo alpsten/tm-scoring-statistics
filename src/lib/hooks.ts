@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   fetchGames,
   fetchGame,
+  fetchGameByNumber,
   fetchPlayerStats,
   fetchCorporationStats,
   fetchCardStats,
@@ -21,6 +22,14 @@ export function useGame(id: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['games', id],
     queryFn: () => fetchGame(id),
+    enabled: options?.enabled ?? true,
+  })
+}
+
+export function useGameByNumber(num: number, options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['games', 'num', num],
+    queryFn: () => fetchGameByNumber(num),
     enabled: options?.enabled ?? true,
   })
 }

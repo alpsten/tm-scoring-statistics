@@ -112,7 +112,6 @@ const gameSchema = z.object({
   map_name:    z.string(),
   format:      z.enum(['Physical', 'Digital']),
   notes:       z.string(),
-  game_code:   z.string(),
   players:     z.array(playerSchema).min(1),
 })
 
@@ -197,7 +196,6 @@ export default function AddGame() {
       map_name: '',
       format: 'Digital' as const,
       notes: '',
-      game_code: '',
       players: [
         { ...DEFAULT_PLAYER, position: 1 },
         { ...DEFAULT_PLAYER, position: 2 },
@@ -217,7 +215,6 @@ export default function AddGame() {
       map_name: existingGame.map_name ?? '',
       format: (existingGame.format === 'Digital' ? 'Digital' : 'Physical') as 'Physical' | 'Digital',
       notes: existingGame.notes ?? '',
-      game_code: existingGame.game_code ?? '',
       players: sorted.map(r => {
         const parts = r.corporation.split(', ')
         const params = existingGame.parameter_contributions.find(p => p.player_name === r.player_name)
@@ -345,7 +342,6 @@ export default function AddGame() {
         map_name: data.map_name || null,
         format: data.format,
         notes: data.notes || null,
-        game_code: data.game_code || null,
       }
 
       let gameId: string
@@ -458,8 +454,8 @@ export default function AddGame() {
         <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '24px', marginBottom: '24px' }}>
           <div style={sectionLabel}>Session</div>
 
-          {/* Date / Map / Generations / Format / Game code */}
-          <div className="addgame-session-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '20px' }}>
+          {/* Date / Map / Generations / Format */}
+          <div className="addgame-session-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
             <div style={{ minWidth: 0 }}>
               <label style={labelStyle}>Date *</label>
               <input type="date" {...register('date')} style={{ ...inputStyle, width: '100%' }} />
@@ -487,10 +483,6 @@ export default function AddGame() {
                 <option value="Digital">Digital</option>
                 <option value="Physical">Physical</option>
               </select>
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <label style={labelStyle}>Game code</label>
-              <input {...register('game_code')} placeholder="gc…" style={inputStyle} />
             </div>
           </div>
 
