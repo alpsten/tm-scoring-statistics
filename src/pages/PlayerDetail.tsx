@@ -1,13 +1,19 @@
+import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import PageHeader from '../components/ui/PageHeader'
-import StatCard from '../components/ui/StatCard'
 import { useGames, usePlayerStats, usePlayerProfiles, usePlayerCardStats } from '../lib/hooks'
 
 export default function PlayerDetail() {
   const rawName = useParams<{ name: string }>().name
   const name = rawName ? decodeURIComponent(rawName) : rawName
   const navigate = useNavigate()
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
   const { data: games, isLoading: gamesLoading } = useGames()
   const { data: playerStats, isLoading: statsLoading } = usePlayerStats()
   const { data: profiles = [] } = usePlayerProfiles()
@@ -83,11 +89,21 @@ export default function PlayerDetail() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
-        <StatCard label="Wins"        value={stats.wins}                      sub={`of ${stats.games_played} games`} accent="mars"    />
-        <StatCard label="Win rate"    value={`${stats.win_rate.toFixed(1)}%`}                                        accent="atmo"    />
-        <StatCard label="Avg score"   value={stats.avg_score.toFixed(1)}      sub="VP"                               accent="score"   />
-        <StatCard label="Best score"  value={stats.best_score}                sub="VP"                               accent="neutral" />
+      <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '4px 16px', marginBottom: '32px' }}>
+        {([
+          { label: 'Wins',       value: String(stats.wins),              sub: `of ${stats.games_played} games`, color: '#e05535' },
+          { label: 'Win rate',   value: `${stats.win_rate.toFixed(1)}%`, sub: null,                             color: '#2e8b8b' },
+          { label: 'Avg score',  value: stats.avg_score.toFixed(1),      sub: 'VP',                             color: '#c9a030' },
+          { label: 'Best score', value: String(stats.best_score),        sub: 'VP',                             color: '#8e87a8' },
+        ]).map((row, i, arr) => (
+          <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < arr.length - 1 ? '1px solid #282042' : 'none' }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c' }}>{row.label}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: row.color }}>
+              {row.value}
+              {row.sub && <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#504270', marginLeft: '5px', fontWeight: 400 }}>{row.sub}</span>}
+            </span>
+          </div>
+        ))}
       </div>
 
       {/* Score trend chart */}
@@ -95,6 +111,27 @@ export default function PlayerDetail() {
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '16px' }}>
           Score trend
         </div>
+        {isMobile ? (
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+            <div style={{ width: Math.max(chartData.length * 22, 300), height: 220 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <XAxis dataKey="date" tick={{ fontFamily: 'var(--font-mono)', fontSize: 9, fill: '#504270' }} axisLine={false} tickLine={false} interval={Math.floor(chartData.length / 8)} />
+                  <YAxis domain={['auto', 'auto']} tick={{ fontFamily: 'var(--font-mono)', fontSize: 9, fill: '#504270' }} axisLine={false} tickLine={false} width={26} />
+                  <Tooltip contentStyle={{ background: '#282042', border: '1px solid #3e325e', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#ece6ff' }} cursor={{ stroke: 'rgba(255,255,255,0.06)' }} />
+                  <ReferenceLine y={stats.avg_score} stroke="#3e325e" strokeDasharray="4 3" />
+                  <Line type="monotone" dataKey="score" stroke="#504270" strokeWidth={1.5}
+                    dot={(props: any) => {
+                      const { cx, cy, payload } = props
+                      return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={4} fill={payload?.win ? '#e05535' : '#3e325e'} stroke="#171228" strokeWidth={1.5} />
+                    }}
+                    activeDot={{ r: 5, fill: '#b87aff', stroke: '#171228', strokeWidth: 1.5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        ) : (
         <div className="player-score-chart">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
@@ -119,6 +156,7 @@ export default function PlayerDetail() {
           </LineChart>
         </ResponsiveContainer>
         </div>
+        )}
         <div style={{ display: 'flex', gap: '16px', marginTop: '10px', fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: '#504270' }}>
           <span><span style={{ color: '#e05535' }}>●</span> Win</span>
           <span><span style={{ color: '#3e325e' }}>●</span> Other finish</span>
@@ -263,7 +301,7 @@ export default function PlayerDetail() {
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
                     <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: '#8e87a8' }}>
-                      <Link to={`/games/${game.id}`} style={{ color: '#8e87a8', textDecoration: 'none' }}>
+                      <Link to={`/games/${game.game_number}`} style={{ color: '#8e87a8', textDecoration: 'none' }}>
                         {new Date(game.date).toLocaleDateString('sv-SE')}
                       </Link>
                     </td>
