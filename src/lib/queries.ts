@@ -44,6 +44,7 @@ interface RawGame {
   }>
   game_expansions: Array<{ expansion_name: string }>
   game_colonies: Array<{ colony_name: string }>
+  turn_order: string[] | null
 }
 
 function mapGame(raw: RawGame): GameWithResults {

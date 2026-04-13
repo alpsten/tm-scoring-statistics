@@ -31,17 +31,6 @@ const sectionLabel: React.CSSProperties = {
   marginBottom: '8px',
 }
 
-const pill = (active: boolean, color = '#b87aff'): React.CSSProperties => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  padding: '2px 9px',
-  borderRadius: '12px',
-  fontSize: '0.72rem',
-  fontFamily: 'var(--font-body)',
-  background: active ? `${color}22` : 'transparent',
-  border: `1px solid ${active ? color : '#3e325e'}`,
-  color: active ? color : '#625c7c',
-})
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -194,7 +183,6 @@ export default function ParseLog() {
       ;(cardsByPlayer[c.player_name] ??= []).push(c)
     }
 
-    const configuredNames = selectedGameMilestones.map(m => m.milestone_name)
     type MilestoneAmbiguity = { logName: string; options: string[] }
     const milestoneAmbiguities: MilestoneAmbiguity[] = [
       ...new Set(parsed.milestones.map(m => m.milestone_name)),
