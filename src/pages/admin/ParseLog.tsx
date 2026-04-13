@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
-import { useGames, usePlayerStats, useGameMilestones } from '../../lib/hooks'
+import { useGames, usePlayerStats } from '../../lib/hooks'
 import { parseGameLog } from '../../lib/logParser'
 import type { ParsedLog } from '../../lib/logParser'
 import PageHeader from '../../components/ui/PageHeader'
@@ -58,7 +58,6 @@ export default function ParseLog() {
 
   const { data: games = [] } = useGames()
   const { data: playerStats = [] } = usePlayerStats()
-  const { data: selectedGameMilestones = [] } = useGameMilestones(selectedGameId)
   const allDbPlayers = [...new Set(playerStats.map(p => p.player_name))].sort()
 
   function handleParse() {
