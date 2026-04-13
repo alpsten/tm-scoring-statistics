@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import PageHeader from '../components/ui/PageHeader'
-import { useGame, useGameByNumber, deleteGame, useGameCards } from '../lib/hooks'
+import { useGame, useGameByNumber, deleteGame, useGameCards, useGameMilestones, useGameAwards } from '../lib/hooks'
 import { useAuth } from '../context/useAuth'
 
 export default function GameDetail() {
@@ -23,6 +23,8 @@ export default function GameDetail() {
   const error = isNumeric ? numError : textError
   const dbId = game?.id
   const { data: gameCards = [] } = useGameCards(dbId ?? '')
+  const { data: gameMilestones = [] } = useGameMilestones(dbId ?? '')
+  const { data: gameAwards = [] } = useGameAwards(dbId ?? '')
   const { user } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -122,7 +124,8 @@ export default function GameDetail() {
 
       {/* Game meta */}
       <div className="game-meta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '32px' }}>
-        <div style={{ background: '#1e1835', border: '1px solid rgba(224,85,53,0.2)', borderRadius: '6px', padding: '14px 16px' }}>
+        {/* Row 1: Winner | Turn Order */}
+        <div style={{ background: '#1e1835', border: '1px solid rgba(224,85,53,0.2)', borderRadius: '6px', padding: '14px 16px', gridColumn: game.turn_order?.length ? undefined : '1 / -1' }}>
           <div style={metaLabelStyle}>Winner</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '6px' }}>
             <div>
@@ -134,6 +137,20 @@ export default function GameDetail() {
             </div>
           </div>
         </div>
+        {game.turn_order && game.turn_order.length > 0 && (
+          <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '14px 16px' }}>
+            <div style={metaLabelStyle}>Turn order</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '8px' }}>
+              {game.turn_order.map((name, i) => (
+                <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#504270', minWidth: '14px' }}>#{i + 1}</span>
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>{name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Row 2: Expansions | Colonies */}
         <div style={{ background: '#1e1835', border: '1px solid rgba(46,139,139,0.2)', borderRadius: '6px', padding: '14px 16px' }}>
           <div style={metaLabelStyle}>Expansions</div>
           {game.expansions.length > 0 ? (
@@ -148,7 +165,7 @@ export default function GameDetail() {
             <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: '#625c7c', marginTop: '8px' }}>Base only</div>
           )}
         </div>
-        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '14px 16px', gridColumn: '1 / -1' }}>
+        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '14px 16px' }}>
           <div style={metaLabelStyle}>Colonies</div>
           {game.colonies.length > 0 ? (
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
@@ -164,6 +181,95 @@ export default function GameDetail() {
         </div>
       </div>
 
+      {/* Milestones & Awards */}
+      {(gameMilestones.length > 0 || gameAwards.length > 0) && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '32px' }}>
+          {gameMilestones.length > 0 && (
+            <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '14px 16px' }}>
+              <div style={metaLabelStyle}>Milestones</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '10px' }}>
+                {[...gameMilestones]
+                  .sort((a, b) => {
+                    if (a.claimed_order !== null && b.claimed_order !== null) return a.claimed_order - b.claimed_order
+                    if (a.claimed_order !== null) return -1
+                    if (b.claimed_order !== null) return 1
+                    return 0
+                  })
+                  .map(m => (
+                    <div key={m.milestone_name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: '#ece6ff' }}>{m.milestone_name}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
+                        {m.claimed_order !== null && (
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.63rem', color: '#504270' }}>#{m.claimed_order}</span>
+                        )}
+                        {m.player_name ? (
+                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#3bbfbf' }}>{m.player_name}</span>
+                        ) : (
+                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270' }}>—</span>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          )}
+          {gameAwards.length > 0 && (
+            <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '14px 16px' }}>
+              <div style={metaLabelStyle}>Awards</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                {gameAwards.map(a => (
+                  <div key={a.award_name}>
+                    {/* Award name */}
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: '#ece6ff', marginBottom: '4px' }}>{a.award_name}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '8px', borderLeft: '2px solid #282042' }}>
+                      {/* Funder */}
+                      {a.funder_name && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#504270', minWidth: '16px' }}>
+                            {a.funded_order === 1 ? 'Funded first' : a.funded_order === 2 ? 'Funded second' : a.funded_order === 3 ? 'Funded third' : 'Funded by'}
+                          </span>
+                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#625c7c' }}>{a.funder_name}</span>
+                        </div>
+                      )}
+                      {/* Winner(s) */}
+                      {(a.winner_name || a.winner_name_2) && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#504270', minWidth: '16px' }}>1st</span>
+                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#c9a030' }}>{a.winner_name}</span>
+                          {a.winner_name_2 && (
+                            <>
+                              <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.6rem', color: '#504270' }}>tie</span>
+                              <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#c9a030' }}>{a.winner_name_2}</span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      {/* Second place */}
+                      {(a.second_name || a.second_name_2) && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#504270', minWidth: '16px' }}>2nd</span>
+                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#8e87a8' }}>{a.second_name}</span>
+                          {a.second_name_2 && (
+                            <>
+                              <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.6rem', color: '#504270' }}>tie</span>
+                              <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#8e87a8' }}>{a.second_name_2}</span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      {!a.funder_name && !a.winner_name && !a.second_name && (
+                        <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270' }}>—</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Score breakdown table */}
       <div style={{ marginBottom: '32px' }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }}>
@@ -176,14 +282,18 @@ export default function GameDetail() {
                 <th style={thStyle}>Player</th>
                 <th className="corp-col" style={thStyle}>Corporation</th>
                 {scoreFields.map(f => (
-                  <th key={f.key} style={{ ...thStyle, textAlign: 'right' }}>
+                  <th key={f.key} style={{ ...thStyle, textAlign: 'center' }}>
                     <span className="col-label-full">{f.label}</span>
                     <span className="col-label-short">{f.short}</span>
                   </th>
                 ))}
-                <th style={{ ...thStyle, textAlign: 'right', color: '#c9a030' }}>
+                <th style={{ ...thStyle, textAlign: 'center', color: '#c9a030' }}>
                   <span className="col-label-full">Total</span>
                   <span className="col-label-short">VP</span>
+                </th>
+                <th style={{ ...thStyle, textAlign: 'center', color: '#3bbfbf' }}>
+                  <span className="col-label-full">MC</span>
+                  <span className="col-label-short">MC</span>
                 </th>
               </tr>
             </thead>
@@ -211,12 +321,15 @@ export default function GameDetail() {
                     </Link>
                   </td>
                   {scoreFields.map(f => (
-                    <td key={f.key} style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: '#bbb4d0' }}>
+                    <td key={f.key} style={{ ...tdStyle, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: '#bbb4d0' }}>
                       {r[f.key] ?? '—'}
                     </td>
                   ))}
-                  <td style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1rem', color: r.position === 1 ? '#c9a030' : '#8e87a8' }}>
+                  <td style={{ ...tdStyle, textAlign: 'center', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1rem', color: r.position === 1 ? '#c9a030' : '#8e87a8' }}>
                     {r.total_vp}
+                  </td>
+                  <td style={{ ...tdStyle, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: r.mc != null ? '#3bbfbf' : '#3e325e' }}>
+                    {r.mc != null ? r.mc : '—'}
                   </td>
                 </tr>
               ))}
@@ -230,10 +343,10 @@ export default function GameDetail() {
         const params = game.parameter_contributions
         const hasVenus = params.some(p => p.venus_steps > 0)
         const paramCols: { key: keyof typeof params[0]; label: string; short: string; color: string }[] = [
-          { key: 'oxygen_steps',      label: 'Oxygen',      short: 'OX',   color: '#4a9e6b' },
           { key: 'temperature_steps', label: 'Temperature', short: 'TEMP', color: '#e05535' },
+          { key: 'oxygen_steps',      label: 'Oxygen',      short: 'OX',   color: '#4a9e6b' },
           { key: 'ocean_steps',       label: 'Oceans',      short: 'OC',   color: '#2e8b8b' },
-          ...(hasVenus ? [{ key: 'venus_steps' as const, label: 'Venus Next', short: 'VN', color: '#b87aff' }] : []),
+          ...(hasVenus ? [{ key: 'venus_steps' as const, label: 'Venus', short: 'VN', color: '#b87aff' }] : []),
         ]
         return (
           <div style={{ marginBottom: '32px' }}>
@@ -246,7 +359,7 @@ export default function GameDetail() {
                   <tr style={{ borderBottom: '1px solid #282042' }}>
                     <th style={thStyle}>Player</th>
                     {paramCols.map(col => (
-                      <th key={col.key} style={{ ...thStyle, textAlign: 'right', color: col.color }}>
+                      <th key={col.key} style={{ ...thStyle, textAlign: 'center', color: col.color }}>
                         <span className="col-label-full">{col.label}</span>
                         <span className="col-label-short">{col.short}</span>
                       </th>
@@ -264,7 +377,7 @@ export default function GameDetail() {
                       <tr key={p.player_name} style={{ borderBottom: i < params.length - 1 ? '1px solid #282042' : 'none' }}>
                         <td style={{ ...tdStyle, fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: '#ece6ff' }}>{p.player_name}</td>
                         {paramCols.map(col => (
-                          <td key={col.key} style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: (p[col.key] as number) > 0 ? col.color : '#504270' }}>
+                          <td key={col.key} style={{ ...tdStyle, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: (p[col.key] as number) > 0 ? col.color : '#504270' }}>
                             {p[col.key] as number}
                           </td>
                         ))}
@@ -279,7 +392,7 @@ export default function GameDetail() {
                     {paramCols.map(col => {
                       const total = params.reduce((s, p) => s + (p[col.key] as number), 0)
                       return (
-                        <td key={col.key} style={{ ...tdStyle, textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: col.color }}>
+                        <td key={col.key} style={{ ...tdStyle, textAlign: 'center', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: col.color }}>
                           {total}
                         </td>
                       )

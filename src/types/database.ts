@@ -9,6 +9,7 @@ export interface GameSession {
   map_name: string | null
   notes: string | null
   format: 'Physical' | 'Digital' | null
+  turn_order: string[] | null
   created_at: string
 }
 

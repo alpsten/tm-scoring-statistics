@@ -91,17 +91,39 @@ export default function PlayerDetail() {
 
       <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '4px 16px', marginBottom: '32px' }}>
         {([
-          { label: 'Wins',       value: String(stats.wins),              sub: `of ${stats.games_played} games`, color: '#e05535' },
-          { label: 'Win rate',   value: `${stats.win_rate.toFixed(1)}%`, sub: null,                             color: '#2e8b8b' },
-          { label: 'Avg score',  value: stats.avg_score.toFixed(1),      sub: 'VP',                             color: '#c9a030' },
-          { label: 'Best score', value: String(stats.best_score),        sub: 'VP',                             color: '#8e87a8' },
+          {
+            label: 'Wins',
+            node: (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', fontWeight: 700 }}>
+                <span style={{ color: '#c9a030' }}>{stats.wins}</span>
+                <span style={{ color: '#2e8b8b' }}> of {stats.games_played} games</span>
+              </span>
+            ),
+          },
+          {
+            label: 'Win rate',
+            node: <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#2e8b8b' }}>{stats.win_rate.toFixed(1)}%</span>,
+          },
+          {
+            label: 'Average score',
+            node: (
+              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#c9a030' }}>
+                {stats.avg_score.toFixed(1)}<span style={{ marginLeft: '5px' }}>VP</span>
+              </span>
+            ),
+          },
+          {
+            label: 'Best score',
+            node: (
+              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#c9a030', background: 'rgba(201,160,48,0.12)', border: '1px solid rgba(201,160,48,0.4)', borderRadius: '4px', padding: '3px 10px' }}>
+                {stats.best_score} VP
+              </span>
+            ),
+          },
         ]).map((row, i, arr) => (
           <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < arr.length - 1 ? '1px solid #282042' : 'none' }}>
             <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c' }}>{row.label}</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: row.color }}>
-              {row.value}
-              {row.sub && <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#504270', marginLeft: '5px', fontWeight: 400 }}>{row.sub}</span>}
-            </span>
+            {row.node}
           </div>
         ))}
       </div>

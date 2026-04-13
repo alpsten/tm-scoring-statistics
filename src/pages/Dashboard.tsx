@@ -141,7 +141,7 @@ export default function Dashboard() {
             <thead>
               <tr style={{ borderBottom: '1px solid #282042' }}>
                 {['#', 'Player', 'Games', 'Wins', 'Win rate', 'Avg score', 'Best'].map((h, i) => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: i <= 1 ? 'left' : 'right', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
+                  <th key={h} style={{ padding: '10px 16px', textAlign: i <= 1 ? 'left' : 'center', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
                     {h}
                   </th>
                 ))}
@@ -277,7 +277,7 @@ export default function Dashboard() {
 
 const loadingStyle: React.CSSProperties = { padding: '32px 36px', color: '#625c7c', fontFamily: 'var(--font-body)' }
 const sectionHeader: React.CSSProperties = { fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }
-const numTd: React.CSSProperties = { padding: '11px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.83rem', color: '#bbb4d0' }
+const numTd: React.CSSProperties = { padding: '11px 16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.83rem', color: '#bbb4d0' }
 const recordCard: React.CSSProperties = { background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '16px 18px' }
 const recordLabel: React.CSSProperties = { fontFamily: 'var(--font-body)', fontSize: '0.67rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginBottom: '8px' }
 const recordValue: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1.6rem', color: '#ece6ff', lineHeight: 1, marginBottom: '6px' }

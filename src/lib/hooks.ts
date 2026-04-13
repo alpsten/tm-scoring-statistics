@@ -10,6 +10,8 @@ import {
   fetchPlayerProfiles,
   fetchPlayerCardStats,
   fetchGameCards,
+  fetchGameMilestones,
+  fetchGameAwards,
 } from './queries'
 
 export { deleteGame } from './queries'
@@ -58,6 +60,22 @@ export function useGameCards(gameId: string) {
   return useQuery({
     queryKey: ['game-cards', gameId],
     queryFn: () => fetchGameCards(gameId),
+    enabled: !!gameId,
+  })
+}
+
+export function useGameMilestones(gameId: string) {
+  return useQuery({
+    queryKey: ['game-milestones', gameId],
+    queryFn: () => fetchGameMilestones(gameId),
+    enabled: !!gameId,
+  })
+}
+
+export function useGameAwards(gameId: string) {
+  return useQuery({
+    queryKey: ['game-awards', gameId],
+    queryFn: () => fetchGameAwards(gameId),
     enabled: !!gameId,
   })
 }

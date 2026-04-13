@@ -2,12 +2,25 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
-import { useGames, usePlayerStats } from '../../lib/hooks'
+import { useGames, usePlayerStats, useGameMilestones } from '../../lib/hooks'
 import { parseGameLog } from '../../lib/logParser'
 import type { ParsedLog } from '../../lib/logParser'
 import PageHeader from '../../components/ui/PageHeader'
 
 type Step = 'input' | 'preview' | 'done'
+
+// TM app outputs bare milestone names for versioned milestones — user must pick which variant
+const MILESTONE_DISAMBIGUATION: Record<string, string[]> = {
+  'Builder':    ['Builder7', 'Builder8'],
+  'Forester':   ['Forester3', 'Forester4'],
+  'Legend':     ['Legend4', 'Legend5'],
+  'Pioneer':    ['Pioneer3', 'Pioneer4'],
+  'Spacefarer': ['Spacefarer4', 'Spacefarer6'],
+  'Tactician':  ['Tactician4', 'Tactician5'],
+  'Terraformer':['Terraformer29', 'Terraformer35'],
+  'Terran':     ['Terran5', 'Terran6'],
+  'Tycoon':     ['Tycoon10', 'Tycoon15'],
+}
 
 const sectionLabel: React.CSSProperties = {
   fontFamily: 'var(--font-mono)',
@@ -52,9 +65,11 @@ export default function ParseLog() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [importResult, setImportResult] = useState<{ cards: number; milestones: number } | null>(null)
+  const [milestoneResolutions, setMilestoneResolutions] = useState<Record<string, string>>({})
 
   const { data: games = [] } = useGames()
   const { data: playerStats = [] } = usePlayerStats()
+  const { data: selectedGameMilestones = [] } = useGameMilestones(selectedGameId)
   const allDbPlayers = [...new Set(playerStats.map(p => p.player_name))].sort()
 
   function handleParse() {
@@ -69,6 +84,7 @@ export default function ParseLog() {
     }
     setPlayerMap(map)
     setSelectedGameId('')
+    setMilestoneResolutions({})
     setSaveError(null)
     setExpandedPlayers(new Set())
     setStep('preview')
@@ -80,8 +96,9 @@ export default function ParseLog() {
     setSaveError(null)
     try {
       // Clear existing data so re-imports are safe
+      // Only delete log-claimed rows (player_name IS NOT NULL) — preserve config entries (player_name IS NULL)
       await supabase.from('cards_played').delete().eq('game_id', selectedGameId)
-      await supabase.from('game_milestones').delete().eq('game_id', selectedGameId)
+      await supabase.from('game_milestones').delete().eq('game_id', selectedGameId).not('player_name', 'is', null)
 
       const resolvedName = (logName: string) => playerMap[logName] || logName
 
@@ -101,11 +118,14 @@ export default function ParseLog() {
       }
 
       if (parsed.milestones.length > 0) {
+        const resolveMilestoneName = (logName: string): string =>
+          milestoneResolutions[logName] ?? logName
         const { error } = await supabase.from('game_milestones').insert(
           parsed.milestones.map(m => ({
             game_id: selectedGameId,
             player_name: resolvedName(m.player_name),
-            milestone_name: m.milestone_name,
+            milestone_name: resolveMilestoneName(m.milestone_name),
+            claimed_order: m.claimed_order,
           }))
         )
         if (error) throw error
@@ -174,7 +194,22 @@ export default function ParseLog() {
       ;(cardsByPlayer[c.player_name] ??= []).push(c)
     }
 
-    const canImport = selectedGameId && parsed.players.every(p => playerMap[p])
+    const configuredNames = selectedGameMilestones.map(m => m.milestone_name)
+    type MilestoneAmbiguity = { logName: string; options: string[] }
+    const milestoneAmbiguities: MilestoneAmbiguity[] = [
+      ...new Set(parsed.milestones.map(m => m.milestone_name)),
+    ].flatMap(logName =>
+      MILESTONE_DISAMBIGUATION[logName] ? [{ logName, options: MILESTONE_DISAMBIGUATION[logName] }] : []
+    )
+
+    const resolveMilestoneName = (logName: string): string => {
+      if (milestoneResolutions[logName]) return milestoneResolutions[logName]
+      if (MILESTONE_DISAMBIGUATION[logName]) return logName // unresolved — return as-is until user picks
+      return logName
+    }
+
+    const ambiguousUnresolved = milestoneAmbiguities.some(a => !milestoneResolutions[a.logName])
+    const canImport = selectedGameId && parsed.players.every(p => playerMap[p]) && !ambiguousUnresolved
 
     return (
       <div className="page-enter" style={{ padding: '32px 36px' }}>
@@ -189,12 +224,6 @@ export default function ParseLog() {
 
         {/* Summary row */}
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '28px' }}>
-          {parsed.first_player && (
-            <span style={pill(true, '#e05535')}>First player: {parsed.first_player}</span>
-          )}
-          {parsed.awards.map(a => (
-            <span key={`${a.player_name}-${a.award_name}`} style={pill(true, '#d4a820')}>{a.player_name} — {a.award_name} award</span>
-          ))}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
@@ -208,12 +237,12 @@ export default function ParseLog() {
               <select
                 style={{ ...inputStyle, height: '38px' }}
                 value={selectedGameId}
-                onChange={e => setSelectedGameId(e.target.value)}
+                onChange={e => { setSelectedGameId(e.target.value); setMilestoneResolutions({}) }}
               >
                 <option value="">— select a game —</option>
-                {[...games].sort((a, b) => b.date.localeCompare(a.date)).map(g => (
+                {[...games].sort((a, b) => (b.game_number ?? 0) - (a.game_number ?? 0)).map(g => (
                   <option key={g.id} value={g.id}>
-                    {g.date} · {g.map_name ?? 'No map'} · {g.player_results.map(r => r.player_name).join(', ')}
+                    {g.date} · {g.map_name ?? 'No map'}{g.game_number != null ? ` · #${g.game_number}` : ''}
                   </option>
                 ))}
               </select>
@@ -250,17 +279,56 @@ export default function ParseLog() {
               )}
             </div>
 
+            {/* Milestone disambiguation */}
+            {milestoneAmbiguities.length > 0 && (
+              <div>
+                <div style={{ ...sectionLabel, color: '#d4a820' }}>Milestone disambiguation</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {milestoneAmbiguities.map(({ logName, options }) => (
+                    <div key={logName} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#d4a820', minWidth: '120px' }}>
+                        "{logName}"
+                      </div>
+                      <div style={{ color: '#504270', fontSize: '0.7rem' }}>→</div>
+                      <select
+                        style={{ ...inputStyle, flex: 1, height: '34px', borderColor: milestoneResolutions[logName] ? '#3e325e' : '#d4a820' }}
+                        value={milestoneResolutions[logName] ?? ''}
+                        onChange={e => setMilestoneResolutions(prev => ({ ...prev, [logName]: e.target.value }))}
+                      >
+                        <option value="">— choose version —</option>
+                        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+                {ambiguousUnresolved && (
+                  <div style={{ marginTop: '8px', fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#d4a820' }}>
+                    Resolve all milestone versions before importing.
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Milestones */}
             {parsed.milestones.length > 0 && (
               <div>
                 <div style={sectionLabel}>Milestones ({parsed.milestones.length})</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {parsed.milestones.map((m, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 12px', background: '#1e1835', borderRadius: '4px', border: '1px solid #282042' }}>
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: '#ece6ff' }}>{m.milestone_name}</span>
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c' }}>{playerMap[m.player_name] || m.player_name}</span>
-                    </div>
-                  ))}
+                  {parsed.milestones.map((m, i) => {
+                    const resolved = resolveMilestoneName(m.milestone_name)
+                    const wasResolved = resolved !== m.milestone_name
+                    return (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 12px', background: '#1e1835', borderRadius: '4px', border: '1px solid #282042' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: '#ece6ff' }}>{resolved}</span>
+                          {wasResolved && (
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#504270' }}>({m.milestone_name})</span>
+                          )}
+                        </div>
+                        <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c' }}>{playerMap[m.player_name] || m.player_name}</span>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}

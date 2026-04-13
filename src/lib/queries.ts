@@ -189,6 +189,8 @@ export async function fetchCardStats(): Promise<CardStats[]> {
 export async function deleteGame(id: string): Promise<void> {
   // Delete children first in case CASCADE isn't configured
   await supabase.from('parameter_contributions').delete().eq('game_id', id)
+  await supabase.from('game_milestones').delete().eq('game_id', id)
+  await supabase.from('game_awards').delete().eq('game_id', id)
   await supabase.from('game_colonies').delete().eq('game_id', id)
   await supabase.from('game_expansions').delete().eq('game_id', id)
   await supabase.from('player_results').delete().eq('game_id', id)
@@ -250,6 +252,76 @@ export async function fetchPlayerProfiles(): Promise<PlayerProfile[]> {
     .select('*')
   if (error) throw error
   return data as PlayerProfile[]
+}
+
+export interface GameMilestoneEntry {
+  milestone_name: string
+  player_name: string | null
+  claimed_order: number | null
+}
+
+export interface GameAwardEntry {
+  award_name: string
+  funded_order: number | null
+  funder_name: string | null
+  winner_name: string | null
+  winner_name_2: string | null
+  second_name: string | null
+  second_name_2: string | null
+}
+
+export async function fetchGameMilestones(gameId: string): Promise<GameMilestoneEntry[]> {
+  const { data, error } = await supabase
+    .from('game_milestones')
+    .select('milestone_name, player_name, claimed_order')
+    .eq('game_id', gameId)
+  if (error) throw error
+
+  type RawRow = { milestone_name: string; player_name: string | null; claimed_order: number | null }
+  // Merge: prefer claimed (non-null player) over config entry (null player)
+  const map = new Map<string, { player_name: string | null; claimed_order: number | null }>()
+  for (const row of data as RawRow[]) {
+    if (!map.has(row.milestone_name) || row.player_name !== null) {
+      map.set(row.milestone_name, { player_name: row.player_name, claimed_order: row.claimed_order })
+    }
+  }
+  return Array.from(map.entries()).map(([milestone_name, { player_name, claimed_order }]) => ({
+    milestone_name, player_name, claimed_order,
+  }))
+}
+
+export async function fetchGameAwards(gameId: string): Promise<GameAwardEntry[]> {
+  const { data, error } = await supabase
+    .from('game_awards')
+    .select('award_name, player_name, funded_order, winner_name, winner_name_2, second_name, second_name_2')
+    .eq('game_id', gameId)
+    .order('funded_order', { ascending: true, nullsFirst: false })
+  if (error) throw error
+
+  type RawRow = {
+    award_name: string; player_name: string | null; funded_order: number | null
+    winner_name: string | null; winner_name_2: string | null
+    second_name: string | null; second_name_2: string | null
+  }
+  const map = new Map<string, Omit<GameAwardEntry, 'award_name'>>()
+  for (const row of data as RawRow[]) {
+    if (!map.has(row.award_name)) {
+      map.set(row.award_name, {
+        funder_name: row.player_name, funded_order: row.funded_order,
+        winner_name: row.winner_name, winner_name_2: row.winner_name_2,
+        second_name: row.second_name, second_name_2: row.second_name_2,
+      })
+    } else {
+      const e = map.get(row.award_name)!
+      if (row.player_name)   e.funder_name   = row.player_name
+      if (row.funded_order)  e.funded_order  = row.funded_order
+      if (row.winner_name)   e.winner_name   = row.winner_name
+      if (row.winner_name_2) e.winner_name_2 = row.winner_name_2
+      if (row.second_name)   e.second_name   = row.second_name
+      if (row.second_name_2) e.second_name_2 = row.second_name_2
+    }
+  }
+  return Array.from(map.entries()).map(([award_name, rest]) => ({ award_name, ...rest }))
 }
 
 export async function fetchCardReference(): Promise<CardReference[]> {

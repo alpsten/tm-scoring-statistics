@@ -26,7 +26,7 @@ export default function Games() {
       if (!matchesPlayer && !matchesMap) return false
     }
     return true
-  })
+  }).sort((a, b) => (b.game_number ?? 0) - (a.game_number ?? 0))
 
   const hasFilters = !!search || mapFilters.length > 0 || expansionFilters.length > 0
 
@@ -128,7 +128,7 @@ export default function Games() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {filtered.map(game => {
             const sorted = [...game.player_results].sort((a, b) => a.position - b.position)
-            const gameNum = games.length - games.findIndex(g => g.id === game.id)
+            const gameNum = game.game_number
 
             return (
               <Link

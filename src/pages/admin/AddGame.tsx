@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useForm, useFieldArray, Controller, type Resolver } from 'react-hook-form'
@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import PageHeader from '../../components/ui/PageHeader'
 import { supabase } from '../../lib/supabase'
-import { usePlayerStats, useCardReference, useGame } from '../../lib/hooks'
+import { usePlayerStats, useCardReference, useGame, useGameMilestones, useGameAwards } from '../../lib/hooks'
 
 // ─── Shared styles (defined before Combobox so it can reference them) ─────────
 
@@ -37,15 +37,26 @@ const labelStyle: React.CSSProperties = {
 
 // ─── Combobox ─────────────────────────────────────────────────────────────────
 
-function Combobox({ value, onChange, options, placeholder }: {
+function Combobox({ value, onChange, options, placeholder, strict }: {
   value: string
   onChange: (v: string) => void
   options: string[]
   placeholder?: string
+  strict?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const q = value.toLowerCase()
   const filtered = (q ? options.filter(o => o.toLowerCase().includes(q)) : options).slice(0, 12)
+  const isValid = !strict || !value || options.some(o => o.toLowerCase() === value.toLowerCase())
+
+  function handleBlur() {
+    setTimeout(() => {
+      setOpen(false)
+      if (strict && value && !options.some(o => o.toLowerCase() === value.toLowerCase())) {
+        onChange('')
+      }
+    }, 150)
+  }
 
   return (
     <div style={{ position: 'relative' }}>
@@ -53,10 +64,10 @@ function Combobox({ value, onChange, options, placeholder }: {
         value={value}
         onChange={e => onChange(e.target.value)}
         onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onBlur={handleBlur}
         placeholder={placeholder}
         autoComplete="off"
-        style={inputStyle}
+        style={{ ...inputStyle, borderColor: isValid ? '#3e325e' : '#e05535' }}
       />
       {open && filtered.length > 0 && (
         <div style={{
@@ -130,6 +141,43 @@ const COLONY_TILES = [
   'Io', 'Luna', 'Miranda', 'Pluto', 'Titan', 'Triton',
 ]
 
+const MAP_MILESTONES: Record<string, string[]> = {
+  'Tharsis':           ['Terraformer29', 'Mayor', 'Gardener', 'Builder7', 'Planner'],
+  'Hellas':            ['Diversifier', 'Tactician4', 'Polar Explorer', 'Energizer', 'Rim Settler'],
+  'Elysium':           ['Generalist', 'Specialist', 'Ecologist', 'Tycoon10', 'Legend4'],
+  'Utopia Planitia':   ['Manager', 'Pioneer3', 'Trader', 'Metallurgist', 'Researcher'],
+  'Terra Cimmeria':    ['Planetologist', 'Architect', 'Coast Guard', 'Forester3', 'Fundraiser'],
+  'Vastitas Borealis': ['Agronomist', 'Spacefarer4', 'Geologist', 'Engineer', 'Farmer'],
+}
+
+const MAP_AWARDS: Record<string, string[]> = {
+  'Tharsis':           ['Landlord', 'Scientist', 'Banker', 'Thermalist', 'Miner'],
+  'Hellas':            ['Cultivator', 'Magnate', 'Space Baron', 'Excentric', 'Contractor'],
+  'Elysium':           ['Celebrity', 'Industrialist', 'Desert Settler', 'Estate Dealer', 'Benefactor'],
+  'Utopia Planitia':   ['Suburbian', 'Investor', 'Botanist', 'Incorporator', 'Metropolist'],
+  'Terra Cimmeria':    ['Electrician', 'Founder', 'Mogul', 'Zoologist', 'Forecaster'],
+  'Vastitas Borealis': ['Traveller', 'Landscaper', 'Highlander', 'Promoter', 'Blacksmith'],
+}
+
+const RANDOM_MILESTONES = [
+  'Briber', 'Builder7', 'Builder8', 'Coastguard', 'Diversifier', 'Ecologist', 'Economizer',
+  'Energizer', 'Engineer', 'Farmer', 'Forester3', 'Forester4', 'Fundraiser', 'Gardener',
+  'Generalist', 'Hoverlord', 'Hydrologist', 'Land Specialist', 'Landshaper', 'Legend4', 'Legend5',
+  'Lobbyist', 'Martian', 'Mayor', 'Merchant', 'Metallurgist', 'Philanthropist', 'Pioneer3',
+  'Pioneer4', 'Planetologist', 'Planner', 'Producer', 'Researcher', 'Rim Settler', 'Spacefarer4',
+  'Spacefarer6', 'Sponsor', 'Tactician4', 'Tactician5', 'Terraformer29', 'Terraformer35',
+  'Terran5', 'Terran6', 'Thawer', 'Trader', 'Tycoon10', 'Tycoon15',
+].sort()
+
+const RANDOM_AWARDS = [
+  'Administrator', 'Banker', 'Benefactor', 'Biologist', 'Botanist', 'Celebrity', 'Collector',
+  'Constructor', 'Contractor', 'Cosmic Settler', 'Cultivator', 'Electrician', 'Estate Dealer',
+  'Excentric', 'Forecaster', 'Founder', 'Highlander', 'Incorporator', 'Industrialist', 'Investor',
+  'Landlord', 'Landscaper', 'Magnate', 'Manufacturer', 'Metropolist', 'Miner', 'Mogul',
+  'Politician', 'Promoter', 'Scientist', 'Space Baron', 'Suburbian', 'Thermalist', 'Traveller',
+  'Venuphile', 'Visionary', 'Zoologist',
+].sort()
+
 const SCORE_FIELDS: { key: keyof GameFormValues['players'][0]; label: string; min?: number }[] = [
   { key: 'tr',           label: 'TR',          min: 0 },
   { key: 'milestone_vp', label: 'Milestones',  min: 0 },
@@ -142,8 +190,8 @@ const SCORE_FIELDS: { key: keyof GameFormValues['players'][0]; label: string; mi
 ]
 
 const PARAM_FIELDS: { key: 'oxygen_steps' | 'temperature_steps' | 'ocean_steps' | 'venus_steps'; label: string; color: string }[] = [
-  { key: 'oxygen_steps',      label: 'Oxygen',      color: '#4a9e6b' },
   { key: 'temperature_steps', label: 'Temperature', color: '#e05535' },
+  { key: 'oxygen_steps',      label: 'Oxygen',      color: '#4a9e6b' },
   { key: 'ocean_steps',       label: 'Oceans',      color: '#2e8b8b' },
   { key: 'venus_steps',       label: 'Venus',       color: '#b87aff' },
 ]
@@ -171,7 +219,22 @@ export default function AddGame() {
   const [expansions, setExpansions] = useState<string[]>([])
   const [colonies, setColonies]     = useState<string[]>([])
 
-  const hasMoon = expansions.includes('Moon')
+  const hasMoon   = expansions.includes('Moon')
+  const hasVenusNext = expansions.includes('Venus Next')
+  const maSlots   = hasVenusNext ? 6 : 5
+
+  const [milestones, setMilestones]       = useState<string[]>(Array(6).fill(''))
+  const [awards, setAwards]                   = useState<string[]>(Array(6).fill(''))
+  const [awardFunders, setAwardFunders]       = useState<string[]>(Array(6).fill(''))
+  const [awardFundOrders, setAwardFundOrders] = useState<string[]>(Array(6).fill(''))
+  const [awardWinners, setAwardWinners]       = useState<string[]>(Array(6).fill(''))
+  const [awardWinners2, setAwardWinners2]     = useState<string[]>(Array(6).fill(''))
+  const [awardWinnerTied, setAwardWinnerTied] = useState<boolean[]>(Array(6).fill(false))
+  const [awardSecond, setAwardSecond]         = useState<string[]>(Array(6).fill(''))
+  const [awardSecond2, setAwardSecond2]       = useState<string[]>(Array(6).fill(''))
+  const [awardSecondTied, setAwardSecondTied] = useState<boolean[]>(Array(6).fill(false))
+  const [awardExpanded, setAwardExpanded]     = useState<boolean[]>(Array(6).fill(false))
+  const [startOrders, setStartOrders] = useState<number[]>([0, 0])
 
   // Per-player merger state: how many corps each player has (1, 2, or 3)
   const [mergerCounts, setMergerCounts] = useState<number[]>([1, 1])
@@ -181,6 +244,8 @@ export default function AddGame() {
   const { data: playerStats } = usePlayerStats()
   const { data: cardRef }     = useCardReference()
   const { data: existingGame } = useGame(editId ?? '', { enabled: isEdit })
+  const { data: existingMilestones } = useGameMilestones(isEdit ? (editId ?? '') : '')
+  const { data: existingAwards }     = useGameAwards(isEdit ? (editId ?? '') : '')
 
   const existingPlayers = (playerStats ?? []).map(p => p.player_name).sort()
   const corporations = (cardRef ?? [])
@@ -188,7 +253,7 @@ export default function AddGame() {
     .map(c => c.card_name)
     .sort()
 
-  const { register, control, handleSubmit, reset, formState: { errors } } = useForm<GameFormValues>({
+  const { register, control, handleSubmit, reset, watch, formState: { errors } } = useForm<GameFormValues>({
     resolver: zodResolver(gameSchema) as Resolver<GameFormValues>,
     defaultValues: {
       date: new Date().toISOString().slice(0, 10),
@@ -202,6 +267,51 @@ export default function AddGame() {
       ],
     },
   })
+
+  const watchedMap = watch('map_name')
+
+  const populateFromMap = useCallback((mapName: string) => {
+    const ms = MAP_MILESTONES[mapName] ?? []
+    const as = MAP_AWARDS[mapName] ?? []
+    setMilestones(Array(6).fill('').map((_, i) => ms[i] ?? ''))
+    setAwards(Array(6).fill('').map((_, i) => as[i] ?? ''))
+    setAwardFunders(Array(6).fill(''))
+    setAwardFundOrders(Array(6).fill(''))
+    setAwardWinners(Array(6).fill(''))
+    setAwardWinners2(Array(6).fill(''))
+    setAwardWinnerTied(Array(6).fill(false))
+    setAwardSecond(Array(6).fill(''))
+    setAwardSecond2(Array(6).fill(''))
+    setAwardSecondTied(Array(6).fill(false))
+    setAwardExpanded(Array(6).fill(false))
+  }, [])
+
+  useEffect(() => {
+    if (watchedMap && !isEdit) populateFromMap(watchedMap)
+  }, [watchedMap, populateFromMap, isEdit])
+
+  // ── Pre-populate milestones/awards from DB when editing ──────────────────────
+
+  useEffect(() => {
+    if (!isEdit || !existingMilestones || existingMilestones.length === 0) return
+    setMilestones(Array(6).fill('').map((_, i) => existingMilestones[i]?.milestone_name ?? ''))
+  }, [existingMilestones, isEdit])
+
+  useEffect(() => {
+    if (!isEdit || !existingAwards || existingAwards.length === 0) return
+    setAwards(Array(6).fill('').map((_, i) => existingAwards[i]?.award_name ?? ''))
+    setAwardFunders(Array(6).fill('').map((_, i) => existingAwards[i]?.funder_name ?? ''))
+    setAwardFundOrders(Array(6).fill('').map((_, i) => existingAwards[i]?.funded_order?.toString() ?? ''))
+    setAwardWinners(Array(6).fill('').map((_, i) => existingAwards[i]?.winner_name ?? ''))
+    setAwardWinners2(Array(6).fill('').map((_, i) => existingAwards[i]?.winner_name_2 ?? ''))
+    setAwardWinnerTied(Array(6).fill(false).map((_, i) => !!(existingAwards[i]?.winner_name_2)))
+    setAwardSecond(Array(6).fill('').map((_, i) => existingAwards[i]?.second_name ?? ''))
+    setAwardSecond2(Array(6).fill('').map((_, i) => existingAwards[i]?.second_name_2 ?? ''))
+    setAwardSecondTied(Array(6).fill(false).map((_, i) => !!(existingAwards[i]?.second_name_2)))
+    setAwardExpanded(Array(6).fill(false).map((_, i) =>
+      !!(existingAwards[i]?.funder_name || existingAwards[i]?.winner_name)
+    ))
+  }, [existingAwards, isEdit])
 
   // ── Pre-populate form when editing ───────────────────────────────────────────
 
@@ -248,6 +358,11 @@ export default function AddGame() {
     setExpansions(existingGame.expansions)
     setColonies(existingGame.colonies)
     setHasParams(existingGame.parameter_contributions.length > 0)
+    const savedOrder = existingGame.turn_order ?? []
+    setStartOrders(sorted.map(r => {
+      const idx = savedOrder.indexOf(r.player_name)
+      return idx >= 0 ? idx + 1 : 0
+    }))
   }, [existingGame, isEdit, reset])
 
   const { fields, append, remove } = useFieldArray({ control, name: 'players' })
@@ -258,6 +373,7 @@ export default function AddGame() {
     setMergerCounts(prev => [...prev, ...Array(count).fill(1)])
     setExtraCorp2(prev => [...prev, ...Array(count).fill('')])
     setExtraCorp3(prev => [...prev, ...Array(count).fill('')])
+    setStartOrders(prev => [...prev, ...Array(count).fill(0)])
   }
 
   function removeHelperRows(indices: number[]) {
@@ -265,6 +381,7 @@ export default function AddGame() {
     setMergerCounts(prev => prev.filter((_, i) => !set.has(i)))
     setExtraCorp2(prev => prev.filter((_, i) => !set.has(i)))
     setExtraCorp3(prev => prev.filter((_, i) => !set.has(i)))
+    setStartOrders(prev => prev.filter((_, i) => !set.has(i)))
   }
 
   // ── Player count selector ────────────────────────────────────────────────────
@@ -324,6 +441,18 @@ export default function AddGame() {
   // ── Submit ───────────────────────────────────────────────────────────────────
 
   async function onSubmit(data: GameFormValues) {
+    // Validate milestones & awards against allowed lists
+    const invalidMs = milestones.slice(0, maSlots).filter(m => m && !RANDOM_MILESTONES.includes(m))
+    const invalidAs = awards.slice(0, maSlots).filter(a => a && !RANDOM_AWARDS.includes(a))
+    if (invalidMs.length > 0 || invalidAs.length > 0) {
+      const parts = [
+        ...invalidMs.map(m => `"${m}" is not a valid milestone`),
+        ...invalidAs.map(a => `"${a}" is not a valid award`),
+      ]
+      setSaveError(`Invalid values: ${parts.join(', ')}. Select from the dropdown list only.`)
+      return
+    }
+
     setSaving(true)
     setSaveError(null)
     try {
@@ -342,6 +471,14 @@ export default function AddGame() {
         map_name: data.map_name || null,
         format: data.format,
         notes: data.notes || null,
+        turn_order: (() => {
+          const ordered = playersWithCorps
+            .map((p, i) => ({ name: p.player_name, order: startOrders[i] ?? 0 }))
+            .filter(x => x.order > 0)
+            .sort((a, b) => a.order - b.order)
+            .map(x => x.name)
+          return ordered.length > 0 ? ordered : null
+        })(),
       }
 
       let gameId: string
@@ -415,6 +552,45 @@ export default function AddGame() {
           const { error } = await supabase.from('parameter_contributions').insert(params)
           if (error) throw error
         }
+      }
+
+      // Save milestones & awards (null player_name = game config, not log-imported)
+      await supabase.from('game_milestones').delete().eq('game_id', gameId).is('player_name', null)
+      await supabase.from('game_awards').delete().eq('game_id', gameId)
+
+      const msToSave = milestones.slice(0, maSlots).filter(m => m.trim())
+      const awardEntries = awards.slice(0, maSlots)
+        .map((a, i) => ({
+          award_name: a.trim(),
+          funded_order: awardFundOrders[i] ? parseInt(awardFundOrders[i]) : null,
+          funder_name: awardFunders[i]?.trim() || null,
+          winner_name: awardWinners[i]?.trim() || null,
+          winner_name_2: awardWinners2[i]?.trim() || null,
+          second_name: awardSecond[i]?.trim() || null,
+          second_name_2: awardSecond2[i]?.trim() || null,
+        }))
+        .filter(e => e.award_name)
+
+      if (msToSave.length > 0) {
+        const { error } = await supabase.from('game_milestones').insert(
+          msToSave.map(m => ({ game_id: gameId, milestone_name: m, player_name: null }))
+        )
+        if (error) throw error
+      }
+      if (awardEntries.length > 0) {
+        const { error } = await supabase.from('game_awards').insert(
+          awardEntries.map(e => ({
+            game_id: gameId,
+            award_name: e.award_name,
+            funded_order: e.funded_order,
+            player_name: e.funder_name,
+            winner_name: e.winner_name,
+            winner_name_2: e.winner_name_2,
+            second_name: e.second_name,
+            second_name_2: e.second_name_2,
+          }))
+        )
+        if (error) throw error
       }
 
       if (isEdit) {
@@ -577,7 +753,7 @@ export default function AddGame() {
           )}
 
           {/* Options */}
-          <div style={{ display: 'flex', gap: '20px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', gap: '20px', marginBottom: '16px', flexWrap: 'wrap' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#8e87a8' }}>
               <input type="checkbox" checked={hasParams} onChange={e => setHasParams(e.target.checked)} style={{ accentColor: '#9b50f0' }} />
               Track parameter contributions
@@ -596,6 +772,190 @@ export default function AddGame() {
           </div>
         </div>
 
+        {/* ── MILESTONES & AWARDS ──────────────────────────────────────────── */}
+        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '24px', marginBottom: '24px' }}>
+          <div style={sectionLabel}>Milestones &amp; Awards{hasVenusNext ? ' · Venus Next adds 6th slot' : ''}</div>
+          {MAP_MILESTONES[watchedMap] ? (
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#2e8b8b', marginBottom: '14px' }}>
+              Pre-filled from {watchedMap} — edit any field to override.
+            </div>
+          ) : (
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', marginBottom: '14px' }}>
+              {watchedMap ? 'No preset for this map — search below.' : 'Select a map above for auto-fill, or search manually.'}
+            </div>
+          )}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+              {/* Milestones */}
+              <div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '10px' }}>
+                  Milestones
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {Array.from({ length: maSlots }).map((_, i) => (
+                    <Combobox
+                      key={i}
+                      value={milestones[i] ?? ''}
+                      onChange={v => setMilestones(prev => { const n = [...prev]; n[i] = v; return n })}
+                      options={RANDOM_MILESTONES}
+                      placeholder={`Milestone ${i + 1}${i === 5 ? ' (Venus Next)' : ''}`}
+                      strict
+                    />
+                  ))}
+                </div>
+              </div>
+              {/* Awards */}
+              <div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '10px' }}>
+                  Awards
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {Array.from({ length: maSlots }).map((_, i) => (
+                    <div key={i}>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <div style={{ flex: 1 }}>
+                          <Combobox
+                            value={awards[i] ?? ''}
+                            onChange={v => setAwards(prev => { const n = [...prev]; n[i] = v; return n })}
+                            options={RANDOM_AWARDS}
+                            placeholder={`Award ${i + 1}${i === 5 ? ' (Venus Next)' : ''}`}
+                            strict
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAwardExpanded(prev => {
+                            const n = [...prev]
+                            const closing = n[i]
+                            n[i] = !n[i]
+                            if (closing) {
+                              setAwardFunders(pf => { const nf = [...pf]; nf[i] = ''; return nf })
+                              setAwardFundOrders(po => { const no = [...po]; no[i] = ''; return no })
+                              setAwardWinners(pw => { const nw = [...pw]; nw[i] = ''; return nw })
+                              setAwardWinners2(pw => { const nw = [...pw]; nw[i] = ''; return nw })
+                              setAwardWinnerTied(pt => { const nt = [...pt]; nt[i] = false; return nt })
+                              setAwardSecond(ps => { const ns = [...ps]; ns[i] = ''; return ns })
+                              setAwardSecond2(ps => { const ns = [...ps]; ns[i] = ''; return ns })
+                              setAwardSecondTied(pt => { const nt = [...pt]; nt[i] = false; return nt })
+                            }
+                            return n
+                          })}
+                          style={{
+                            width: '28px', height: '34px', flexShrink: 0,
+                            background: awardExpanded[i] ? 'rgba(201,160,48,0.1)' : 'transparent',
+                            border: `1px solid ${awardExpanded[i] ? 'rgba(201,160,48,0.35)' : '#3e325e'}`,
+                            borderRadius: '4px',
+                            color: awardExpanded[i] ? '#c9a030' : '#625c7c',
+                            fontFamily: 'var(--font-mono)', fontSize: '1rem', lineHeight: 1,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {awardExpanded[i] ? '−' : '+'}
+                        </button>
+                      </div>
+                      {awardExpanded[i] && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px', paddingLeft: '2px' }}>
+                          {/* Row 1: Fund order + Funded by */}
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end' }}>
+                            <div style={{ flexShrink: 0 }}>
+                              <label style={{ ...labelStyle, color: '#8e87a8' }}>Order</label>
+                              <select
+                                value={awardFundOrders[i] ?? ''}
+                                onChange={e => setAwardFundOrders(prev => { const n = [...prev]; n[i] = e.target.value; return n })}
+                                style={{ width: '52px', height: '34px', background: '#110d1e', border: '1px solid #3e325e', borderRadius: '4px', color: '#ece6ff', fontFamily: 'var(--font-body)', fontSize: '0.82rem', padding: '0 6px' }}
+                              >
+                                <option value="">—</option>
+                                <option value="1">#1</option>
+                                <option value="2">#2</option>
+                                <option value="3">#3</option>
+                              </select>
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ ...labelStyle, color: '#8e87a8' }}>Funded by</label>
+                              <Combobox
+                                value={awardFunders[i] ?? ''}
+                                onChange={v => setAwardFunders(prev => { const n = [...prev]; n[i] = v; return n })}
+                                options={existingPlayers}
+                                placeholder="Who funded…"
+                              />
+                            </div>
+                          </div>
+                          {/* Row 2: Winner + Tied toggle */}
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end' }}>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ ...labelStyle, color: '#c9a030' }}>Winner</label>
+                              <Combobox
+                                value={awardWinners[i] ?? ''}
+                                onChange={v => setAwardWinners(prev => { const n = [...prev]; n[i] = v; return n })}
+                                options={existingPlayers}
+                                placeholder="Who won…"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setAwardWinnerTied(prev => {
+                                const n = [...prev]; n[i] = !n[i]
+                                if (!n[i]) setAwardWinners2(pw => { const nw = [...pw]; nw[i] = ''; return nw })
+                                return n
+                              })}
+                              style={{ height: '34px', padding: '0 10px', flexShrink: 0, background: awardWinnerTied[i] ? 'rgba(201,160,48,0.12)' : 'transparent', border: `1px solid ${awardWinnerTied[i] ? 'rgba(201,160,48,0.5)' : '#3e325e'}`, borderRadius: '4px', color: awardWinnerTied[i] ? '#c9a030' : '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.68rem', letterSpacing: '0.05em', cursor: 'pointer' }}
+                            >
+                              Tied
+                            </button>
+                            {awardWinnerTied[i] && (
+                              <div style={{ flex: 1 }}>
+                                <label style={{ ...labelStyle, color: '#c9a030' }}>Also won</label>
+                                <Combobox
+                                  value={awardWinners2[i] ?? ''}
+                                  onChange={v => setAwardWinners2(prev => { const n = [...prev]; n[i] = v; return n })}
+                                  options={existingPlayers}
+                                  placeholder="Tied winner…"
+                                />
+                              </div>
+                            )}
+                          </div>
+                          {/* Row 3: Second place + Tied toggle (hidden in 2-player games) */}
+                          {fields.length > 2 && <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end' }}>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ ...labelStyle, color: '#625c7c' }}>2nd place</label>
+                              <Combobox
+                                value={awardSecond[i] ?? ''}
+                                onChange={v => setAwardSecond(prev => { const n = [...prev]; n[i] = v; return n })}
+                                options={existingPlayers}
+                                placeholder="Second place…"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setAwardSecondTied(prev => {
+                                const n = [...prev]; n[i] = !n[i]
+                                if (!n[i]) setAwardSecond2(ps => { const ns = [...ps]; ns[i] = ''; return ns })
+                                return n
+                              })}
+                              style={{ height: '34px', padding: '0 10px', flexShrink: 0, background: awardSecondTied[i] ? 'rgba(201,160,48,0.12)' : 'transparent', border: `1px solid ${awardSecondTied[i] ? 'rgba(201,160,48,0.5)' : '#3e325e'}`, borderRadius: '4px', color: awardSecondTied[i] ? '#c9a030' : '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.68rem', letterSpacing: '0.05em', cursor: 'pointer' }}
+                            >
+                              Tied
+                            </button>
+                            {awardSecondTied[i] && (
+                              <div style={{ flex: 1 }}>
+                                <label style={{ ...labelStyle, color: '#625c7c' }}>Also 2nd</label>
+                                <Combobox
+                                  value={awardSecond2[i] ?? ''}
+                                  onChange={v => setAwardSecond2(prev => { const n = [...prev]; n[i] = v; return n })}
+                                  options={existingPlayers}
+                                  placeholder="Tied 2nd…"
+                                />
+                              </div>
+                            )}
+                          </div>}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+        </div>
+
         {/* ── PLAYER RESULTS ───────────────────────────────────────────────── */}
         <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '24px', marginBottom: '24px' }}>
           <div style={sectionLabel}>Player results</div>
@@ -604,7 +964,7 @@ export default function AddGame() {
             {fields.map((field, index) => (
               <div key={field.id} style={{ border: '1px solid #322850', borderRadius: '5px', padding: '16px' }}>
 
-                {/* Row 1: Player + Corporation(s) */}
+                {/* Row 1: Player + Start + Corporation(s) */}
                 <div className="addgame-player-row1" style={{ display: 'flex', gap: '10px', marginBottom: '12px', alignItems: 'flex-end' }}>
 
                   {/* Player name combobox */}
@@ -625,6 +985,21 @@ export default function AddGame() {
                     {errors.players?.[index]?.player_name && (
                       <span style={errStyle}>{errors.players[index]!.player_name!.message}</span>
                     )}
+                  </div>
+
+                  {/* Start order */}
+                  <div style={{ flex: '0 0 68px' }}>
+                    <label style={labelStyle}>Start</label>
+                    <select
+                      value={startOrders[index] ?? 0}
+                      onChange={e => setStartOrders(prev => { const n = [...prev]; n[index] = Number(e.target.value); return n })}
+                      style={{ ...inputStyle, height: '34px', width: '68px' }}
+                    >
+                      <option value={0}>—</option>
+                      {Array.from({ length: fields.length }).map((_, i) => (
+                        <option key={i + 1} value={i + 1}>{i + 1}</option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* Corporation combobox(es) + Merger controls */}

@@ -1,5 +1,10 @@
 const CARD_BLOCKLIST = new Set(['Law Suit'])
 
+// Known misspellings in the TM app log output → corrected names
+const MILESTONE_NAME_CORRECTIONS: Record<string, string> = {
+  'Philantropist': 'Philanthropist',
+}
+
 // Fix UTF-8 text that was mis-decoded as Latin-1 (mojibake)
 // e.g. "RÃ¶nnegÃ¥rd" → "Rönnegård"
 function fixEncoding(s: string): string {
@@ -20,6 +25,7 @@ export interface ParsedCard {
 export interface ParsedMilestone {
   player_name: string
   milestone_name: string
+  claimed_order: number  // 1 = first claimed, 2 = second, 3 = third
 }
 
 export interface ParsedAward {
@@ -50,6 +56,7 @@ export function parseGameLog(raw: string): ParsedLog {
   }
 
   let currentGeneration = 0
+  let milestoneClaimOrder = 0
   const cardOrderByPlayer: Record<string, number> = {}
   // Deduplication: player::card — handles Astra Mechanica replays
   const seenCards = new Set<string>()
@@ -85,9 +92,12 @@ export function parseGameLog(raw: string): ParsedLog {
     // Milestone: "Emil Alpsten claimed Terran milestone"
     const milestoneMatch = line.match(/^(.+) claimed (.+) milestone$/)
     if (milestoneMatch) {
+      milestoneClaimOrder++
+      const rawName = milestoneMatch[2].trim()
       result.milestones.push({
         player_name: milestoneMatch[1].trim(),
-        milestone_name: milestoneMatch[2].trim(),
+        milestone_name: MILESTONE_NAME_CORRECTIONS[rawName] ?? rawName,
+        claimed_order: milestoneClaimOrder,
       })
       continue
     }
