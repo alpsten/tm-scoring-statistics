@@ -164,7 +164,7 @@ export default function Corporations() {
                         return (
                           <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
                             style={{ fontSize: '9px', fontFamily: 'Space Mono, monospace', fill: 'rgba(255,255,255,0.8)', fontWeight: 700 }}>
-                            {`${(percent * 100).toFixed(0)}%`}
+                            {`${((percent ?? 0) * 100).toFixed(0)}%`}
                           </text>
                         )
                       }}
