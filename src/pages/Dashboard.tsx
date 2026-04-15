@@ -20,7 +20,6 @@ export default function Dashboard() {
     ? Math.round(allResults.reduce((s, r) => s + r.total_vp, 0) / allResults.length)
     : 0
 
-  const topPlayer = [...(playerStats ?? [])].sort((a, b) => b.wins - a.wins)[0]
 
   const mapCounts: Record<string, number> = {}
   for (const g of games ?? []) {

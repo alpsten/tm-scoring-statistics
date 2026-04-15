@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts'
 import PageHeader from '../components/ui/PageHeader'
 import { useCorpStats } from '../lib/hooks'
 import type { CorporationStats } from '../types/database'
@@ -155,12 +155,12 @@ export default function Corporations() {
                       cy="50%"
                       outerRadius="80%"
                       paddingAngle={1}
-                      label={({ cx, cy, midAngle, outerRadius, percent }: { cx: number; cy: number; midAngle: number; outerRadius: number; percent: number }) => {
-                        if (percent <= 0.04) return null
+                      label={({ cx, cy, midAngle, outerRadius, percent }: { cx?: number; cy?: number; midAngle?: number; outerRadius?: number; percent?: number }) => {
+                        if ((percent ?? 0) <= 0.04) return null
                         const RADIAN = Math.PI / 180
-                        const r = outerRadius * 0.75
-                        const x = cx + r * Math.cos(-midAngle * RADIAN)
-                        const y = cy + r * Math.sin(-midAngle * RADIAN)
+                        const r = (outerRadius ?? 0) * 0.75
+                        const x = (cx ?? 0) + r * Math.cos(-(midAngle ?? 0) * RADIAN)
+                        const y = (cy ?? 0) + r * Math.sin(-(midAngle ?? 0) * RADIAN)
                         return (
                           <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
                             style={{ fontSize: '9px', fontFamily: 'Space Mono, monospace', fill: 'rgba(255,255,255,0.8)', fontWeight: 700 }}>
@@ -176,7 +176,7 @@ export default function Corporations() {
                     </Pie>
                     <Tooltip
                       contentStyle={{ background: '#282042', border: '1px solid #3e325e', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#ece6ff' }}
-                      formatter={(value: number, name: string) => [`${value} games`, name]}
+                      formatter={(value, name) => [`${value} games`, name]}
                     />
                   </PieChart>
                 </ResponsiveContainer>

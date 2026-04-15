@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import PageHeader from '../components/ui/PageHeader'
 import { useGame, useGameByNumber, deleteGame, useGameCards, useGameMilestones, useGameAwards } from '../lib/hooks'
 import { useAuth } from '../context/useAuth'
 import { EXPANSION_ICONS, MAP_PILL } from '../lib/expansions'
