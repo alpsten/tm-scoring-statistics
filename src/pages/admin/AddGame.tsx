@@ -98,16 +98,20 @@ function Combobox({ value, onChange, options, placeholder, strict }: {
 const playerSchema = z.object({
   player_name:       z.string().min(1, 'Required'),
   corporation:       z.string().min(1, 'Required'),
-  tr:                z.coerce.number().int().min(0).max(63),
+  tr:                z.coerce.number().int().min(0).max(200),
   milestone_vp:      z.coerce.number().int().min(0),
   award_vp:          z.coerce.number().int().min(0),
   greenery_vp:       z.coerce.number().int().min(0),
   city_vp:           z.coerce.number().int().min(0),
   card_vp:           z.coerce.number().int(),
-  habitat_vp:        z.coerce.number().int().min(0).nullable(),
-  logistics_vp:      z.coerce.number().int().min(0).nullable(),
-  mining_vp:         z.coerce.number().int().min(0).nullable(),
+  habitat_vp:        z.preprocess(v => (v === '' || v == null ? null : v), z.coerce.number().int().min(0).nullable()),
+  logistics_vp:      z.preprocess(v => (v === '' || v == null ? null : v), z.coerce.number().int().min(0).nullable()),
+  mining_vp:         z.preprocess(v => (v === '' || v == null ? null : v), z.coerce.number().int().min(0).nullable()),
+  plantery_vp:       z.preprocess(v => (v === '' || v == null ? null : v), z.coerce.number().int().min(0).nullable()),
   mc:                z.preprocess(v => (v === '' || v == null ? null : v), z.coerce.number().int().min(0).nullable()),
+  habitat_steps:     z.coerce.number().int().min(0).default(0),
+  mining_steps:      z.coerce.number().int().min(0).default(0),
+  logistics_steps:   z.coerce.number().int().min(0).default(0),
   total_vp:          z.coerce.number().int().min(0),
   position:          z.coerce.number().int().min(1).max(5),
   key_notes:         z.string(),
@@ -119,7 +123,7 @@ const playerSchema = z.object({
 
 const gameSchema = z.object({
   date:        z.string().min(1, 'Required'),
-  generations: z.coerce.number().min(1).nullable(),
+  generations: z.preprocess(v => (v === '' || v == null ? null : v), z.coerce.number().min(1).nullable()),
   map_name:    z.string(),
   format:      z.enum(['Physical', 'Digital']),
   notes:       z.string(),
@@ -140,6 +144,7 @@ const COLONY_TILES = [
   'Callisto', 'Ceres', 'Enceladus', 'Europa', 'Ganymede',
   'Io', 'Luna', 'Miranda', 'Pluto', 'Titan', 'Triton',
 ]
+const PATHFINDERS_COLONY_TILES = ['Iapetus II']
 
 const MAP_MILESTONES: Record<string, string[]> = {
   'Tharsis':           ['Terraformer29', 'Mayor', 'Gardener', 'Builder7', 'Planner'],
@@ -163,17 +168,17 @@ const RANDOM_MILESTONES = [
   'Briber', 'Builder7', 'Builder8', 'Coastguard', 'Diversifier', 'Ecologist', 'Economizer',
   'Energizer', 'Engineer', 'Farmer', 'Forester3', 'Forester4', 'Fundraiser', 'Gardener',
   'Generalist', 'Hoverlord', 'Hydrologist', 'Land Specialist', 'Landshaper', 'Legend4', 'Legend5',
-  'Lobbyist', 'Martian', 'Mayor', 'Merchant', 'Metallurgist', 'Philanthropist', 'Pioneer3',
-  'Pioneer4', 'Planetologist', 'Planner', 'Producer', 'Researcher', 'Rim Settler', 'Spacefarer4',
-  'Spacefarer6', 'Sponsor', 'Tactician4', 'Tactician5', 'Terraformer29', 'Terraformer35',
-  'Terran5', 'Terran6', 'Thawer', 'Trader', 'Tycoon10', 'Tycoon15',
+  'Lobbyist', 'Manager', 'Martian', 'Mayor', 'Merchant', 'Metallurgist', 'Philanthropist', 'Pioneer3',
+  'Pioneer4', 'Planetologist', 'Planner', 'Polar Explorer', 'Producer', 'Researcher', 'Rim Settler',
+  'One Giant Step', 'Spacefarer4', 'Spacefarer6', 'Specialist', 'Sponsor', 'Tactician4', 'Tactician5', 'Terraformer29',
+  'Terraformer35', 'Terran5', 'Terran6', 'Thawer', 'Trader', 'Tycoon10', 'Tycoon15',
 ].sort()
 
 const RANDOM_AWARDS = [
   'Administrator', 'Banker', 'Benefactor', 'Biologist', 'Botanist', 'Celebrity', 'Collector',
-  'Constructor', 'Contractor', 'Cosmic Settler', 'Cultivator', 'Electrician', 'Estate Dealer',
-  'Excentric', 'Forecaster', 'Founder', 'Highlander', 'Incorporator', 'Industrialist', 'Investor',
-  'Landlord', 'Landscaper', 'Magnate', 'Manufacturer', 'Metropolist', 'Miner', 'Mogul',
+  'Constructor', 'Contractor', 'Cosmic Settler', 'Cultivator', 'Desert Settler', 'Electrician',
+  'Estate Dealer', 'Excentric', 'Forecaster', 'Founder', 'Highlander', 'Incorporator', 'Industrialist',
+  'Investor', 'Landlord', 'Landscaper', 'Lunar Magnate', 'Magnate', 'Manufacturer', 'Metropolist', 'Miner', 'Mogul',
   'Politician', 'Promoter', 'Scientist', 'Space Baron', 'Suburbian', 'Thermalist', 'Traveller',
   'Venuphile', 'Visionary', 'Zoologist',
 ].sort()
@@ -199,9 +204,10 @@ const PARAM_FIELDS: { key: 'oxygen_steps' | 'temperature_steps' | 'ocean_steps' 
 const DEFAULT_PLAYER = {
   player_name: '', corporation: '',
   tr: 20, milestone_vp: 0, award_vp: 0, greenery_vp: 0, city_vp: 0, card_vp: 0,
-  habitat_vp: null, logistics_vp: null, mining_vp: null, mc: null,
+  habitat_vp: null, logistics_vp: null, mining_vp: null, plantery_vp: null, mc: null,
   total_vp: 0, position: 1, key_notes: '',
   oxygen_steps: 0, temperature_steps: 0, ocean_steps: 0, venus_steps: 0,
+  habitat_steps: 0, mining_steps: 0, logistics_steps: 0,
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -219,10 +225,12 @@ export default function AddGame() {
   const [expansions, setExpansions] = useState<string[]>([])
   const [colonies, setColonies]     = useState<string[]>([])
 
-  const hasMoon   = expansions.includes('Moon')
-  const hasVenusNext = expansions.includes('Venus Next')
+  const hasMoon        = expansions.includes('Moon')
+  const hasPathfinders = expansions.includes('Pathfinders')
+  const hasVenusNext   = expansions.includes('Venus Next')
   const maSlots   = hasVenusNext ? 6 : 5
 
+  const [useRandomMA, setUseRandomMA]     = useState(false)
   const [milestones, setMilestones]       = useState<string[]>(Array(6).fill(''))
   const [awards, setAwards]                   = useState<string[]>(Array(6).fill(''))
   const [awardFunders, setAwardFunders]       = useState<string[]>(Array(6).fill(''))
@@ -287,7 +295,10 @@ export default function AddGame() {
   }, [])
 
   useEffect(() => {
-    if (watchedMap && !isEdit) populateFromMap(watchedMap)
+    if (watchedMap && !isEdit) {
+      setUseRandomMA(false)
+      populateFromMap(watchedMap)
+    }
   }, [watchedMap, populateFromMap, isEdit])
 
   // ── Pre-populate milestones/awards from DB when editing ──────────────────────
@@ -295,7 +306,10 @@ export default function AddGame() {
   useEffect(() => {
     if (!isEdit || !existingMilestones || existingMilestones.length === 0) return
     setMilestones(Array(6).fill('').map((_, i) => existingMilestones[i]?.milestone_name ?? ''))
-  }, [existingMilestones, isEdit])
+    const mapMs = MAP_MILESTONES[existingGame?.map_name ?? ''] ?? []
+    const saved = existingMilestones.map(m => m.milestone_name).filter(Boolean)
+    if (saved.some(m => !mapMs.includes(m))) setUseRandomMA(true)
+  }, [existingMilestones, existingGame, isEdit])
 
   useEffect(() => {
     if (!isEdit || !existingAwards || existingAwards.length === 0) return
@@ -340,6 +354,7 @@ export default function AddGame() {
           habitat_vp: r.habitat_vp,
           logistics_vp: r.logistics_vp,
           mining_vp: r.mining_vp,
+          plantery_vp: r.plantery_vp,
           mc: r.mc,
           total_vp: r.total_vp,
           position: r.position,
@@ -348,6 +363,9 @@ export default function AddGame() {
           temperature_steps: params?.temperature_steps ?? 0,
           ocean_steps: params?.ocean_steps ?? 0,
           venus_steps: params?.venus_steps ?? 0,
+          habitat_steps: (params as any)?.habitat_steps ?? 0,
+          mining_steps: (params as any)?.mining_steps ?? 0,
+          logistics_steps: (params as any)?.logistics_steps ?? 0,
         }
       }),
     })
@@ -442,8 +460,10 @@ export default function AddGame() {
 
   async function onSubmit(data: GameFormValues) {
     // Validate milestones & awards against allowed lists
-    const invalidMs = milestones.slice(0, maSlots).filter(m => m && !RANDOM_MILESTONES.includes(m))
-    const invalidAs = awards.slice(0, maSlots).filter(a => a && !RANDOM_AWARDS.includes(a))
+    const validMs = (!useRandomMA && MAP_MILESTONES[data.map_name]) ? MAP_MILESTONES[data.map_name] : RANDOM_MILESTONES
+    const validAs = (!useRandomMA && MAP_AWARDS[data.map_name]) ? MAP_AWARDS[data.map_name] : RANDOM_AWARDS
+    const invalidMs = milestones.slice(0, maSlots).filter(m => m && !validMs.includes(m))
+    const invalidAs = awards.slice(0, maSlots).filter(a => a && !validAs.includes(a))
     if (invalidMs.length > 0 || invalidAs.length > 0) {
       const parts = [
         ...invalidMs.map(m => `"${m}" is not a valid milestone`),
@@ -518,6 +538,7 @@ export default function AddGame() {
           habitat_vp: hasMoon ? p.habitat_vp : null,
           logistics_vp: hasMoon ? p.logistics_vp : null,
           mining_vp: hasMoon ? p.mining_vp : null,
+          plantery_vp: hasPathfinders ? p.plantery_vp : null,
           mc: p.mc ?? null,
           total_vp: p.total_vp,
           position: p.position,
@@ -546,8 +567,13 @@ export default function AddGame() {
             temperature_steps: p.temperature_steps ?? 0,
             ocean_steps: p.ocean_steps ?? 0,
             venus_steps: p.venus_steps ?? 0,
+            ...(hasMoon ? {
+              habitat_steps: p.habitat_steps ?? 0,
+              mining_steps: p.mining_steps ?? 0,
+              logistics_steps: p.logistics_steps ?? 0,
+            } : {}),
           }))
-          .filter(p => p.oxygen_steps > 0 || p.temperature_steps > 0 || p.ocean_steps > 0 || p.venus_steps > 0)
+          .filter(p => p.oxygen_steps > 0 || p.temperature_steps > 0 || p.ocean_steps > 0 || p.venus_steps > 0 || (p as any).habitat_steps > 0 || (p as any).mining_steps > 0 || (p as any).logistics_steps > 0)
         if (params.length > 0) {
           const { error } = await supabase.from('parameter_contributions').insert(params)
           if (error) throw error
@@ -624,7 +650,15 @@ export default function AddGame() {
       </div>
       <PageHeader title={isEdit ? 'Edit game session' : 'Log game session'} />
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit, (errs) => {
+        const players = (errs.players as any) ?? []
+        players.forEach((p: any, i: number) => {
+          if (!p) return
+          Object.entries(p).forEach(([field, err]: any) => {
+            console.error(`Player ${i} → ${field}: ${err?.message} (value: ${err?.ref?.value})`)
+          })
+        })
+      })}>
 
         {/* ── SESSION ──────────────────────────────────────────────────────── */}
         <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '24px', marginBottom: '24px' }}>
@@ -725,7 +759,7 @@ export default function AddGame() {
             <div style={{ marginBottom: '16px' }}>
               <label style={labelStyle}>Colony tiles in play</label>
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {COLONY_TILES.map(c => {
+                {[...COLONY_TILES, ...(expansions.includes('Pathfinders') ? PATHFINDERS_COLONY_TILES : [])].map(c => {
                   const on = colonies.includes(c)
                   return (
                     <button
@@ -774,16 +808,35 @@ export default function AddGame() {
 
         {/* ── MILESTONES & AWARDS ──────────────────────────────────────────── */}
         <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '24px', marginBottom: '24px' }}>
-          <div style={sectionLabel}>Milestones &amp; Awards{hasVenusNext ? ' · Venus Next adds 6th slot' : ''}</div>
-          {MAP_MILESTONES[watchedMap] ? (
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#2e8b8b', marginBottom: '14px' }}>
-              Pre-filled from {watchedMap} — edit any field to override.
-            </div>
-          ) : (
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', marginBottom: '14px' }}>
-              {watchedMap ? 'No preset for this map — search below.' : 'Select a map above for auto-fill, or search manually.'}
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+            <div style={sectionLabel}>Milestones &amp; Awards{hasVenusNext ? ' · Venus Next adds 6th slot' : ''}</div>
+            {MAP_MILESTONES[watchedMap] && (
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !useRandomMA
+                  setUseRandomMA(next)
+                  if (!next) populateFromMap(watchedMap)
+                }}
+                style={{
+                  padding: '3px 10px', borderRadius: '4px', cursor: 'pointer',
+                  fontFamily: 'var(--font-body)', fontSize: '0.72rem', fontWeight: 600,
+                  background: useRandomMA ? 'rgba(91,141,217,0.15)' : 'transparent',
+                  border: `1px solid ${useRandomMA ? '#5b8dd9' : '#3e325e'}`,
+                  color: useRandomMA ? '#5b8dd9' : '#625c7c',
+                  transition: 'all 0.12s',
+                }}
+              >
+                {useRandomMA ? '✓ Random M&A' : 'Random M&A'}
+              </button>
+            )}
+          </div>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: MAP_MILESTONES[watchedMap] && !useRandomMA ? '#2e8b8b' : '#504270', marginBottom: '14px' }}>
+            {MAP_MILESTONES[watchedMap] && !useRandomMA
+              ? `Pre-filled from ${watchedMap} — edit any field to override.`
+              : watchedMap ? 'No preset for this map — search below.' : 'Select a map above for auto-fill, or search manually.'
+            }
+          </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
               {/* Milestones */}
               <div>
@@ -796,7 +849,7 @@ export default function AddGame() {
                       key={i}
                       value={milestones[i] ?? ''}
                       onChange={v => setMilestones(prev => { const n = [...prev]; n[i] = v; return n })}
-                      options={RANDOM_MILESTONES}
+                      options={(!useRandomMA && MAP_MILESTONES[watchedMap]) ? MAP_MILESTONES[watchedMap] : RANDOM_MILESTONES}
                       placeholder={`Milestone ${i + 1}${i === 5 ? ' (Venus Next)' : ''}`}
                       strict
                     />
@@ -816,7 +869,7 @@ export default function AddGame() {
                           <Combobox
                             value={awards[i] ?? ''}
                             onChange={v => setAwards(prev => { const n = [...prev]; n[i] = v; return n })}
-                            options={RANDOM_AWARDS}
+                            options={(!useRandomMA && MAP_AWARDS[watchedMap]) ? MAP_AWARDS[watchedMap] : RANDOM_AWARDS}
                             placeholder={`Award ${i + 1}${i === 5 ? ' (Venus Next)' : ''}`}
                             strict
                           />
@@ -1116,22 +1169,38 @@ export default function AddGame() {
                       {(['habitat_vp', 'logistics_vp', 'mining_vp'] as const).map(f => (
                         <div key={f} style={{ flex: '0 0 75px' }}>
                           <label style={labelStyle}>
-                            {f === 'habitat_vp' ? 'Habitat' : f === 'logistics_vp' ? 'Logistics' : 'Mining'} VP
+                            {f === 'habitat_vp' ? 'Habitat' : f === 'logistics_vp' ? 'Logistics' : 'Mining'}
                           </label>
                           <input type="number" min={0} step="1" {...register(`players.${index}.${f}`)} style={inputStyle} />
                         </div>
                       ))}
                     </div>
                   )}
+                  {hasPathfinders && (
+                    <div style={{ flex: '0 0 75px' }}>
+                      <label style={labelStyle}>P-Track</label>
+                      <input type="number" min={0} step="1" {...register(`players.${index}.plantery_vp`)} style={inputStyle} />
+                    </div>
+                  )}
                 </div>
 
                 {/* Row 4: Parameter contributions */}
                 {hasParams && (
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', paddingTop: '12px', borderTop: '1px solid #322850' }}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', paddingTop: '12px', borderTop: '1px solid #322850', flexWrap: 'wrap' }}>
                     <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.67rem', letterSpacing: '0.06em', textTransform: 'uppercase', color: '#504270', alignSelf: 'center', whiteSpace: 'nowrap', minWidth: '58px' }}>
                       Steps raised
                     </span>
                     {PARAM_FIELDS.map(f => (
+                      <div key={f.key} style={{ flex: '0 0 80px' }}>
+                        <label style={{ ...labelStyle, color: f.color }}>{f.label}</label>
+                        <input type="number" min={0} {...register(`players.${index}.${f.key}`)} style={inputStyle} />
+                      </div>
+                    ))}
+                    {hasMoon && ([
+                      { key: 'habitat_steps',  label: 'Habitat',   color: '#2e8b8b' },
+                      { key: 'mining_steps',   label: 'Mining',    color: '#a0724a' },
+                      { key: 'logistics_steps',label: 'Logistics', color: '#8e87a8' },
+                    ] as const).map(f => (
                       <div key={f.key} style={{ flex: '0 0 80px' }}>
                         <label style={{ ...labelStyle, color: f.color }}>{f.label}</label>
                         <input type="number" min={0} {...register(`players.${index}.${f.key}`)} style={inputStyle} />

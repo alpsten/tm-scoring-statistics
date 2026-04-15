@@ -38,14 +38,14 @@ export default function Players() {
     return <span style={{ color: '#b87aff', marginLeft: '3px' }}>{sortDir === 'asc' ? '▲' : '▼'}</span>
   }
 
-  const columns: { label: string; key: SortKey; align: 'left' | 'right' }[] = [
-    { label: 'Player',       key: 'player_name',   align: 'left'  },
-    { label: 'Games',        key: 'games_played',  align: 'right' },
-    { label: 'Wins',         key: 'wins',          align: 'right' },
-    { label: 'Win rate',     key: 'win_rate',      align: 'right' },
-    { label: 'Avg score',    key: 'avg_score',     align: 'right' },
-    { label: 'Best score',   key: 'best_score',    align: 'right' },
-    { label: 'Avg position', key: 'avg_position',  align: 'right' },
+  const columns: { label: string; key: SortKey; align: 'left' | 'center' }[] = [
+    { label: 'Player',       key: 'player_name',   align: 'left'   },
+    { label: 'Games',        key: 'games_played',  align: 'center' },
+    { label: 'Wins',         key: 'wins',          align: 'center' },
+    { label: 'Win rate',     key: 'win_rate',      align: 'center' },
+    { label: 'Avg score',    key: 'avg_score',     align: 'center' },
+    { label: 'Best score',   key: 'best_score',    align: 'center' },
+    { label: 'Avg position', key: 'avg_position',  align: 'center' },
   ]
 
   return (
@@ -101,8 +101,8 @@ export default function Players() {
                 <td style={{ ...numTd, color: p.win_rate >= 50 ? '#4a9e6b' : p.win_rate > 0 ? '#c9a030' : '#625c7c' }}>
                   {p.win_rate.toFixed(1)}%
                 </td>
-                <td style={numTd}>{p.avg_score.toFixed(1)}</td>
-                <td style={{ ...numTd, color: '#c9a030', fontWeight: 700 }}>{p.best_score}</td>
+                <td style={numTd}>{Math.round(p.avg_score)}</td>
+                <td style={{ ...numTd, color: '#c9a030', fontWeight: 700 }}>{p.best_score}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 700, color: '#c9a030', marginLeft: '3px' }}>VP</span></td>
                 <td style={{ ...numTd, color: '#8e87a8' }}>{p.avg_position.toFixed(1)}</td>
               </tr>
             ))}
@@ -160,7 +160,7 @@ const loadingStyle: React.CSSProperties = {
 
 const numTd: React.CSSProperties = {
   padding: '13px 18px',
-  textAlign: 'right',
+  textAlign: 'center',
   fontFamily: 'var(--font-mono)',
   fontSize: '0.85rem',
   color: '#bbb4d0',

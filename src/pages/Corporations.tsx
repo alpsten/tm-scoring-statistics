@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts'
 import PageHeader from '../components/ui/PageHeader'
 import { useCorpStats } from '../lib/hooks'
 import type { CorporationStats } from '../types/database'
@@ -8,6 +8,7 @@ import type { CorporationStats } from '../types/database'
 type SortKey = keyof Pick<CorporationStats, 'corporation' | 'games_played' | 'wins' | 'win_rate' | 'avg_score' | 'best_score'>
 
 const CORP_COLORS = ['#9b50f0', '#e05535', '#2e8b8b', '#d4a820', '#4a9e6b', '#b87aff']
+const PIE_COLORS = ['#9b50f0','#e05535','#2e8b8b','#c9a030','#4a9e6b','#b87aff','#3bbfbf','#5b8dd9','#d4a820','#8e87a8','#504270']
 
 export default function Corporations() {
   const { data, isLoading, error } = useCorpStats()
@@ -47,13 +48,13 @@ export default function Corporations() {
 
   const selectedCorps = allCorps.filter(c => selected.includes(c.corporation))
 
-  const COLS: { key: SortKey; label: string; align: 'left' | 'right' }[] = [
-    { key: 'corporation', label: 'Corporation', align: 'left'  },
-    { key: 'games_played', label: 'Games',       align: 'right' },
-    { key: 'wins',         label: 'Wins',        align: 'right' },
-    { key: 'win_rate',     label: 'Win rate',    align: 'right' },
-    { key: 'avg_score',    label: 'Avg score',   align: 'right' },
-    { key: 'best_score',   label: 'Best score',  align: 'right' },
+  const COLS: { key: SortKey; label: string; align: 'left' | 'center' }[] = [
+    { key: 'corporation', label: 'Corporation', align: 'left'   },
+    { key: 'games_played', label: 'Games',       align: 'center' },
+    { key: 'wins',         label: 'Wins',        align: 'center' },
+    { key: 'win_rate',     label: 'Win rate',    align: 'center' },
+    { key: 'avg_score',    label: 'Avg score',   align: 'center' },
+    { key: 'best_score',   label: 'Best score',  align: 'center' },
   ]
 
   return (
@@ -83,7 +84,7 @@ export default function Corporations() {
                   { label: 'Games',     value: c.games_played.toString() },
                   { label: 'Wins',      value: c.wins.toString() },
                   { label: 'Win rate',  value: `${c.win_rate.toFixed(0)}%` },
-                  { label: 'Avg score', value: c.avg_score.toFixed(1) },
+                  { label: 'Avg score', value: Math.round(c.avg_score) },
                   { label: 'Best',      value: c.best_score.toString() },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
@@ -116,6 +117,74 @@ export default function Corporations() {
           </ResponsiveContainer>
         </div>
       )}
+
+      {/* Play count pie chart */}
+      {singleCorps.length > 0 && (() => {
+        const sorted = [...singleCorps].sort((a, b) => b.games_played - a.games_played)
+        const top = sorted.slice(0, 10)
+        const rest = sorted.slice(10)
+        const pieData = [
+          ...top.map(c => ({ name: c.corporation, value: c.games_played })),
+          ...(rest.length > 0 ? [{ name: 'Other', value: rest.reduce((s, c) => s + c.games_played, 0) }] : []),
+        ]
+        return (
+          <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '20px 24px', marginBottom: '28px' }}>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginBottom: '16px' }}>
+              Play count distribution
+            </div>
+            <div className="corp-pie-layout">
+              {/* Custom legend list */}
+              <div className="corp-pie-legend">
+                {pieData.map((item, i) => (
+                  <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: PIE_COLORS[i % PIE_COLORS.length], flexShrink: 0 }} />
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#bbb4d0', flex: 1 }}>{item.name}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#504270' }}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Pie chart */}
+              <div className="corp-pie-container">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius="80%"
+                      paddingAngle={1}
+                      label={({ cx, cy, midAngle, outerRadius, percent }: { cx: number; cy: number; midAngle: number; outerRadius: number; percent: number }) => {
+                        if (percent <= 0.04) return null
+                        const RADIAN = Math.PI / 180
+                        const r = outerRadius * 0.75
+                        const x = cx + r * Math.cos(-midAngle * RADIAN)
+                        const y = cy + r * Math.sin(-midAngle * RADIAN)
+                        return (
+                          <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
+                            style={{ fontSize: '9px', fontFamily: 'Space Mono, monospace', fill: 'rgba(255,255,255,0.8)', fontWeight: 700 }}>
+                            {`${(percent * 100).toFixed(0)}%`}
+                          </text>
+                        )
+                      }}
+                      labelLine={false}
+                    >
+                      {pieData.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ background: '#282042', border: '1px solid #3e325e', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#ece6ff' }}
+                      formatter={(value: number, name: string) => [`${value} games`, name]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Search + hint */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
@@ -197,8 +266,8 @@ export default function Corporations() {
                   <td style={{ ...numTd, color: c.win_rate === 100 ? '#4a9e6b' : c.win_rate > 0 ? '#c9a030' : '#625c7c' }}>
                     {c.win_rate.toFixed(0)}%
                   </td>
-                  <td style={numTd}>{c.avg_score.toFixed(1)}</td>
-                  <td style={{ ...numTd, color: '#c9a030', fontWeight: 700 }}>{c.best_score}</td>
+                  <td style={numTd}>{Math.round(c.avg_score)}</td>
+                  <td style={{ ...numTd, color: '#c9a030', fontWeight: 700 }}>{c.best_score}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 700, color: '#c9a030', marginLeft: '3px' }}>VP</span></td>
                 </tr>
               )
             })}
@@ -271,8 +340,8 @@ export default function Corporations() {
                       <td style={{ ...numTd, color: c.win_rate === 100 ? '#4a9e6b' : c.win_rate > 0 ? '#c9a030' : '#625c7c' }}>
                         {c.win_rate.toFixed(0)}%
                       </td>
-                      <td style={numTd}>{c.avg_score.toFixed(1)}</td>
-                      <td style={{ ...numTd, color: '#c9a030', fontWeight: 700 }}>{c.best_score}</td>
+                      <td style={numTd}>{Math.round(c.avg_score)}</td>
+                      <td style={{ ...numTd, color: '#c9a030', fontWeight: 700 }}>{c.best_score}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 700, color: '#c9a030', marginLeft: '3px' }}>VP</span></td>
                     </tr>
                   )
                 })}
@@ -289,4 +358,4 @@ export default function Corporations() {
 }
 
 const loadingStyle: React.CSSProperties = { padding: '32px 36px', color: '#625c7c', fontFamily: 'var(--font-body)' }
-const numTd: React.CSSProperties = { padding: '13px 18px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#bbb4d0' }
+const numTd: React.CSSProperties = { padding: '13px 18px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#bbb4d0' }

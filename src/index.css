@@ -215,7 +215,7 @@ body {
   /* Responsive grids */
   .stat-grid,
   .records-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: 1fr !important;
   }
   .quick-links-grid,
   .admin-links-grid {
@@ -318,6 +318,48 @@ input[type="number"]::-webkit-outer-spin-button {
 
   /* Meta grid: 2 cols → 1 col */
   .game-meta-grid { grid-template-columns: 1fr !important; }
+
+  /* Milestones/Awards grid: 2 cols → 1 col */
+  .game-milestone-award-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Corp pie chart */
+.corp-pie-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+}
+.corp-pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+  flex-shrink: 0;
+}
+.corp-pie-container {
+  flex: 1;
+  height: 300px;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .corp-pie-layout {
+    flex-direction: column;
+  }
+  .corp-pie-legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 24px;
+    width: 100%;
+    min-width: 0;
+  }
+  .corp-pie-container {
+    flex: none;
+    order: -1;
+    height: 260px;
+    width: 100%;
+  }
 }
 
 /* Win badge */

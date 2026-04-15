@@ -3,6 +3,8 @@ interface StatCardProps {
   value: string | number
   sub?: string
   accent?: 'mars' | 'atmo' | 'score' | 'neutral'
+  valueSuffix?: string
+  suffixColor?: string
 }
 
 const ACCENT_COLORS = {
@@ -12,7 +14,7 @@ const ACCENT_COLORS = {
   neutral: '#8e87a8',
 }
 
-export default function StatCard({ label, value, sub, accent = 'neutral' }: StatCardProps) {
+export default function StatCard({ label, value, sub, accent = 'neutral', valueSuffix, suffixColor }: StatCardProps) {
   const color = ACCENT_COLORS[accent]
 
   return (
@@ -22,20 +24,31 @@ export default function StatCard({ label, value, sub, accent = 'neutral' }: Stat
         background: '#1e1835',
         border: '1px solid #282042',
         borderRadius: '6px',
-        padding: '20px 22px',
+        padding: '14px 20px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: '12px',
       }}
     >
-      <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '10px' }}>
+      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', fontWeight: 500, color: '#504270', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
         {label}
-      </div>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.8rem', fontWeight: 700, color, lineHeight: 1, marginBottom: sub ? '6px' : 0 }}>
-        {value}
-      </div>
-      {sub && (
-        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#625c7c', marginTop: '4px' }}>
-          {sub}
-        </div>
-      )}
+      </span>
+      <span style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: '6px', flexShrink: 0 }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 700, color }}>
+          {value}
+          {valueSuffix && (
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 700, color: suffixColor ?? '#625c7c', marginLeft: '4px' }}>
+              {valueSuffix}
+            </span>
+          )}
+        </span>
+        {sub && (
+          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270' }}>
+            {sub}
+          </span>
+        )}
+      </span>
     </div>
   )
 }

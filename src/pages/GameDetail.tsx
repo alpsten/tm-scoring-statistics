@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import PageHeader from '../components/ui/PageHeader'
 import { useGame, useGameByNumber, deleteGame, useGameCards, useGameMilestones, useGameAwards } from '../lib/hooks'
 import { useAuth } from '../context/useAuth'
+import { EXPANSION_ICONS, MAP_PILL } from '../lib/expansions'
 
 export default function GameDetail() {
   const { id: urlId } = useParams<{ id: string }>()
@@ -117,10 +118,12 @@ export default function GameDetail() {
         )}
       </div>
 
-      <PageHeader
-        title={game.map_name ?? 'Digital'}
-        subtitle={`${gameNum ? `#${gameNum} · ` : ''}${new Date(game.date).toLocaleDateString('sv-SE')} · ${game.player_count} players${game.generations ? ` · ${game.generations} generations` : ''}`}
-      />
+      <div style={{ marginBottom: '24px' }}>
+        <span style={MAP_PILL}>{game.map_name ?? 'Digital'}</span>
+        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#625c7c', marginTop: '6px' }}>
+          {gameNum ? `#${gameNum} · ` : ''}{new Date(game.date).toLocaleDateString('sv-SE')} · {game.player_count} players{game.generations ? ` · ${game.generations} generations` : ''}
+        </div>
+      </div>
 
       {/* Game meta */}
       <div className="game-meta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '32px' }}>
@@ -154,8 +157,10 @@ export default function GameDetail() {
         <div style={{ background: '#1e1835', border: '1px solid rgba(46,139,139,0.2)', borderRadius: '6px', padding: '14px 16px' }}>
           <div style={metaLabelStyle}>Expansions</div>
           {game.expansions.length > 0 ? (
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
-              {game.expansions.map(exp => (
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px', alignItems: 'center' }}>
+              {game.expansions.map(exp => EXPANSION_ICONS[exp] ? (
+                <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+              ) : (
                 <span key={exp} style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '3px', background: 'rgba(46,139,139,0.1)', color: '#3bbfbf', border: '1px solid rgba(46,139,139,0.25)' }}>
                   {expDisplayName(exp)}
                 </span>
@@ -183,7 +188,7 @@ export default function GameDetail() {
 
       {/* Milestones & Awards */}
       {(gameMilestones.length > 0 || gameAwards.length > 0) && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '32px' }}>
+        <div className="game-milestone-award-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '32px' }}>
           {gameMilestones.length > 0 && (
             <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '14px 16px' }}>
               <div style={metaLabelStyle}>Milestones</div>
