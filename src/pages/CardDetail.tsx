@@ -8,7 +8,7 @@ import { useCardStats, useCardReference } from '../lib/hooks'
 const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
   Automated:   { bg: 'rgba(74,158,107,0.1)',  color: '#4a9e6b' },
   Active:      { bg: 'rgba(91,141,217,0.1)',  color: '#5b8dd9' },
-  Event:       { bg: 'rgba(74,158,107,0.1)',  color: '#4a9e6b' },
+  Event:       { bg: 'rgba(224,85,53,0.1)',   color: '#e05535' },
   Corporation: { bg: 'rgba(201,160,48,0.1)',  color: '#c9a030' },
   Prelude:     { bg: 'rgba(220,100,150,0.1)', color: '#d46496' },
   CEO:         { bg: 'rgba(210,120,50,0.1)',  color: '#d07832' },
