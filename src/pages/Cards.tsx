@@ -175,7 +175,7 @@ export default function Cards() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #282042' }}>
-                {['Card', 'Type', 'Tags', 'Played', 'Win rate', 'Avg VP', 'Avg player score'].map(h => (
+                {['Card', 'Type', 'Tags', 'Played', 'Win rate', 'Avg VP'].map(h => (
                   <th key={h} style={{ padding: '11px 16px', textAlign: h === 'Card' || h === 'Type' || h === 'Tags' ? 'left' : 'right', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
                     {h}
                   </th>
@@ -220,7 +220,6 @@ export default function Cards() {
                       </span>
                     </td>
                     <td style={{ ...numTd, color: '#c9a030' }}>{Math.round(card.avg_vp_contribution)}</td>
-                    <td style={numTd}>{Math.round(card.avg_player_score)}</td>
                   </tr>
                 )
               })}
