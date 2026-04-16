@@ -5,6 +5,7 @@ interface StatCardProps {
   accent?: 'mars' | 'atmo' | 'score' | 'neutral' | 'win'
   valueSuffix?: string
   suffixColor?: string
+  badge?: boolean
 }
 
 const ACCENT_COLORS = {
@@ -15,7 +16,7 @@ const ACCENT_COLORS = {
   win:     '#4a9e6b',
 }
 
-export default function StatCard({ label, value, sub, accent = 'neutral', valueSuffix, suffixColor }: StatCardProps) {
+export default function StatCard({ label, value, sub, accent = 'neutral', valueSuffix, suffixColor, badge }: StatCardProps) {
   const color = ACCENT_COLORS[accent]
 
   return (
@@ -36,7 +37,10 @@ export default function StatCard({ label, value, sub, accent = 'neutral', valueS
         {label}
       </span>
       <span style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: '6px', flexShrink: 0 }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 700, color }}>
+        <span style={{
+          fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 700, color,
+          ...(badge ? { background: `${color}1f`, border: `1px solid ${color}66`, borderRadius: '4px', padding: '3px 10px' } : {}),
+        }}>
           {value}
           {valueSuffix && (
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 700, color: suffixColor ?? color, marginLeft: '4px' }}>

@@ -39,7 +39,7 @@ export default function CorporationDetail() {
         <StatCard label="Wins"       value={stats.wins}                      sub={`of ${stats.games_played}`} accent="win"   />
         <StatCard label="Win rate"   value={`${Math.round(stats.win_rate)}%`}                                  accent="atmo"  />
         <StatCard label="Avg score"  value={Math.round(stats.avg_score)}      valueSuffix="VP"                 accent="score" />
-        <StatCard label="Best score" value={stats.best_score}                valueSuffix="VP"                 accent="score" />
+        <StatCard label="Best score" value={stats.best_score}                valueSuffix="VP"                 accent="score" badge />
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }}>
