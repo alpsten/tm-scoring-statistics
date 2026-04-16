@@ -83,7 +83,7 @@ export default function Corporations() {
                 {[
                   { label: 'Games',     value: c.games_played.toString() },
                   { label: 'Wins',      value: c.wins.toString() },
-                  { label: 'Win rate',  value: `${c.win_rate.toFixed(0)}%` },
+                  { label: 'Win rate',  value: `${Math.round(c.win_rate)}%` },
                   { label: 'Avg score', value: Math.round(c.avg_score) },
                   { label: 'Best',      value: c.best_score.toString() },
                 ].map(({ label, value }) => (
@@ -164,7 +164,7 @@ export default function Corporations() {
                         return (
                           <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
                             style={{ fontSize: '9px', fontFamily: 'Space Mono, monospace', fill: 'rgba(255,255,255,0.8)', fontWeight: 700 }}>
-                            {`${((percent ?? 0) * 100).toFixed(0)}%`}
+                            {`${Math.round((percent ?? 0) * 100)}%`}
                           </text>
                         )
                       }}
@@ -264,7 +264,7 @@ export default function Corporations() {
                   <td style={numTd}>{c.games_played}</td>
                   <td style={numTd}>{c.wins}</td>
                   <td style={{ ...numTd, color: c.win_rate === 100 ? '#4a9e6b' : c.win_rate > 0 ? '#c9a030' : '#625c7c' }}>
-                    {c.win_rate.toFixed(0)}%
+                    {Math.round(c.win_rate)}%
                   </td>
                   <td style={numTd}>{Math.round(c.avg_score)}</td>
                   <td style={{ ...numTd, color: '#c9a030', fontWeight: 700 }}>{c.best_score}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 700, color: '#c9a030', marginLeft: '3px' }}>VP</span></td>
@@ -338,7 +338,7 @@ export default function Corporations() {
                       <td style={numTd}>{c.games_played}</td>
                       <td style={numTd}>{c.wins}</td>
                       <td style={{ ...numTd, color: c.win_rate === 100 ? '#4a9e6b' : c.win_rate > 0 ? '#c9a030' : '#625c7c' }}>
-                        {c.win_rate.toFixed(0)}%
+                        {Math.round(c.win_rate)}%
                       </td>
                       <td style={numTd}>{Math.round(c.avg_score)}</td>
                       <td style={{ ...numTd, color: '#c9a030', fontWeight: 700 }}>{c.best_score}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 700, color: '#c9a030', marginLeft: '3px' }}>VP</span></td>

@@ -203,13 +203,13 @@ export default function Cards() {
                     </td>
                     <td style={numTd}>{card.times_played}</td>
                     <td style={{ ...numTd, color: card.win_rate >= 66 ? '#4a9e6b' : card.win_rate >= 33 ? '#c9a030' : '#625c7c' }}>
-                      {card.win_rate.toFixed(1)}%
+                      {Math.round(card.win_rate)}%
                       <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: '#504270', marginLeft: '4px' }}>
                         ({card.win_count}/{card.times_played})
                       </span>
                     </td>
-                    <td style={{ ...numTd, color: '#c9a030' }}>{card.avg_vp_contribution.toFixed(1)}</td>
-                    <td style={numTd}>{card.avg_player_score.toFixed(1)}</td>
+                    <td style={{ ...numTd, color: '#c9a030' }}>{Math.round(card.avg_vp_contribution)}</td>
+                    <td style={numTd}>{Math.round(card.avg_player_score)}</td>
                   </tr>
                 )
               })}

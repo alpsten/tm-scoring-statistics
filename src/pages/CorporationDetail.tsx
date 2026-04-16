@@ -30,8 +30,8 @@ export default function CorporationDetail() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
         <StatCard label="Wins"       value={stats.wins}                      sub={`of ${stats.games_played}`} accent="mars"    />
-        <StatCard label="Win rate"   value={`${stats.win_rate.toFixed(0)}%`}                                  accent="atmo"    />
-        <StatCard label="Avg score"  value={stats.avg_score.toFixed(1)}      sub="VP"                        accent="score"   />
+        <StatCard label="Win rate"   value={`${Math.round(stats.win_rate)}%`}                                  accent="atmo"    />
+        <StatCard label="Avg score"  value={Math.round(stats.avg_score)}      sub="VP"                        accent="score"   />
         <StatCard label="Best score" value={stats.best_score}                sub="VP"                        accent="neutral" />
       </div>
 

@@ -103,7 +103,7 @@ export default function Players() {
                 </td>
                 <td style={numTd}>{Math.round(p.avg_score)}</td>
                 <td style={{ ...numTd, color: '#c9a030', fontWeight: 700 }}>{p.best_score}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 700, color: '#c9a030', marginLeft: '3px' }}>VP</span></td>
-                <td style={{ ...numTd, color: '#8e87a8' }}>{p.avg_position.toFixed(1)}</td>
+                <td style={{ ...numTd, color: '#8e87a8' }}>{Math.round(p.avg_position)}</td>
               </tr>
             ))}
           </tbody>
@@ -137,7 +137,7 @@ export default function Players() {
                 </div>
                 <div>
                   <div style={mobileLabel}>Avg score</div>
-                  <div style={mobileValue}>{p.avg_score.toFixed(1)} <span style={mobileSub}>VP</span></div>
+                  <div style={mobileValue}>{Math.round(p.avg_score)} <span style={mobileSub}>VP</span></div>
                 </div>
                 <div>
                   <div style={mobileLabel}>Best score</div>

@@ -316,7 +316,7 @@ export default function PlayerDetail() {
                       {c.times_played}
                     </td>
                     <td style={{ padding: '10px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: c.avg_vp != null ? '#c9a030' : '#3e325e' }}>
-                      {c.avg_vp != null ? c.avg_vp.toFixed(1) : '—'}
+                      {c.avg_vp != null ? Math.round(c.avg_vp) : '—'}
                     </td>
                   </tr>
                 ))}

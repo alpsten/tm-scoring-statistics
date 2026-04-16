@@ -76,9 +76,9 @@ export default function CardDetail() {
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
             <StatCard label="Times played"        value={stats.times_played}                         accent="neutral" />
-            <StatCard label="Win rate"            value={`${stats.win_rate.toFixed(1)}%`} sub={`${stats.win_count} wins`} accent="mars" />
-            <StatCard label="Avg VP contribution" value={stats.avg_vp_contribution.toFixed(1)}       accent="score"   />
-            <StatCard label="Avg player score"    value={stats.avg_player_score.toFixed(1)} sub="VP" accent="atmo"    />
+            <StatCard label="Win rate"            value={`${Math.round(stats.win_rate)}%`} sub={`${stats.win_count} wins`} accent="mars" />
+            <StatCard label="Avg VP contribution" value={Math.round(stats.avg_vp_contribution)}       accent="score"   />
+            <StatCard label="Avg player score"    value={Math.round(stats.avg_player_score)} sub="VP" accent="atmo"    />
           </div>
 
           <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '20px 24px' }}>

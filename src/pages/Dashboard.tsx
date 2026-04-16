@@ -102,7 +102,7 @@ export default function Dashboard() {
             {bestWinRate ? (
               <>
                 <span style={{ ...recordValue, color: '#4a9e6b' }}>
-                  {bestWinRate.win_rate.toFixed(0)}
+                  {Math.round(bestWinRate.win_rate)}
                   <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 700, color: '#4a9e6b', marginLeft: '2px' }}>%</span>
                 </span>
                 <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -133,7 +133,7 @@ export default function Dashboard() {
                   <span>·</span>
                   <span>{topCorp.games_played} games</span>
                   <span>·</span>
-                  <span><span style={{ color: topCorp.win_rate < 40 ? '#e05535' : topCorp.win_rate < 60 ? '#c9a030' : '#4a9e6b' }}>{topCorp.win_rate.toFixed(0)}%</span> win rate</span>
+                  <span><span style={{ color: topCorp.win_rate < 40 ? '#e05535' : topCorp.win_rate < 60 ? '#c9a030' : '#4a9e6b' }}>{Math.round(topCorp.win_rate)}%</span> win rate</span>
                 </span>
               </>
             ) : <span style={recordValue}>—</span>}
@@ -199,7 +199,7 @@ export default function Dashboard() {
                   <td style={numTd}>{p.games_played}</td>
                   <td style={{ ...numTd, color: '#e05535' }}>{p.wins}</td>
                   <td style={{ ...numTd, color: p.win_rate > 50 ? '#4a9e6b' : p.win_rate > 25 ? '#c9a030' : '#625c7c' }}>
-                    {p.win_rate.toFixed(0)}%
+                    {Math.round(p.win_rate)}%
                   </td>
                   <td style={numTd}>{Math.round(p.avg_score)}</td>
                   <td style={{ ...numTd, color: '#c9a030', fontWeight: 700 }}>{p.best_score}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.83rem', fontWeight: 700, color: '#c9a030', marginLeft: '3px' }}>VP</span></td>
