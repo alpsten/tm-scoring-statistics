@@ -1,5 +1,6 @@
 import PageHeader from '../components/ui/PageHeader'
 import { useGames } from '../lib/hooks'
+import { EXPANSION_ICONS } from '../lib/expansions'
 
 export default function Setup() {
   const { data, isLoading, error } = useGames()
@@ -56,7 +57,7 @@ export default function Setup() {
                     <tr key={m.map} style={{ borderBottom: i < mapScores.length - 1 ? '1px solid #282042' : 'none' }}>
                       <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>{m.map}</td>
                       <td style={numTd}>{m.count}</td>
-                      <td style={{ ...numTd, color: '#c9a030' }}>{m.avgScore.toFixed(1)}</td>
+                      <td style={{ ...numTd, color: '#c9a030' }}>{Math.round(m.avgScore)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -83,8 +84,10 @@ export default function Setup() {
                   {Object.entries(expansionCounts).sort((a, b) => b[1] - a[1]).map(([exp, count], i, arr) => (
                     <tr key={exp} style={{ borderBottom: i < arr.length - 1 ? '1px solid #282042' : 'none' }}>
                       <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>
-                        <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#2e8b8b', marginRight: '8px' }} />
-                        {exp}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                          {EXPANSION_ICONS[exp] && <img src={EXPANSION_ICONS[exp]} alt={exp} style={{ width: '16px', height: '16px', objectFit: 'contain' }} />}
+                          {exp}
+                        </span>
                       </td>
                       <td style={numTd}>{count}</td>
                     </tr>

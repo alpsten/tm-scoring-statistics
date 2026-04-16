@@ -23,6 +23,24 @@ export const EXPANSION_ICONS: Record<string, string> = {
   'Venus Next':  '/tm-scoring-statistics/expansions/expansion_icon_venus.png',
 }
 
+export const TAG_ICONS: Record<string, string> = {
+  'Animal':   '/tm-scoring-statistics/tags/animal.png',
+  'Building': '/tm-scoring-statistics/tags/building.png',
+  'City':     '/tm-scoring-statistics/tags/city.png',
+  'Earth':    '/tm-scoring-statistics/tags/earth.png',
+  'Event':    '/tm-scoring-statistics/tags/event.png',
+  'Jovian':   '/tm-scoring-statistics/tags/jovian.png',
+  'Mars':     '/tm-scoring-statistics/tags/mars.png',
+  'Microbe':  '/tm-scoring-statistics/tags/microbe.png',
+  'Moon':     '/tm-scoring-statistics/tags/moon.png',
+  'Plant':    '/tm-scoring-statistics/tags/plant.png',
+  'Power':    '/tm-scoring-statistics/tags/power.png',
+  'Science':  '/tm-scoring-statistics/tags/science.png',
+  'Space':    '/tm-scoring-statistics/tags/space.png',
+  'Venus':    '/tm-scoring-statistics/tags/venus.png',
+  'Wild':     '/tm-scoring-statistics/tags/wild.png',
+}
+
 import type React from 'react'
 
 export const MAP_PILL: React.CSSProperties = {

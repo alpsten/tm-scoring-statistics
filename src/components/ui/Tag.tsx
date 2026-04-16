@@ -1,4 +1,6 @@
-// Renders a single TM tag name as a styled badge
+import { TAG_ICONS } from '../../lib/expansions'
+
+// Renders a single TM tag name as an icon (if available) or styled text badge
 
 const TAG_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   'Animal':   { bg: 'rgba(74, 158, 107, 0.1)',  text: '#4a9e6b', border: 'rgba(74, 158, 107, 0.25)' },
@@ -25,8 +27,20 @@ interface TagProps {
 }
 
 export default function Tag({ name }: TagProps) {
-  const colors = TAG_COLORS[name] ?? DEFAULT_TAG_COLOR
+  const icon = TAG_ICONS[name]
 
+  if (icon) {
+    return (
+      <img
+        src={icon}
+        alt={name}
+        title={name}
+        style={{ width: '18px', height: '18px', objectFit: 'contain', display: 'inline-block', verticalAlign: 'middle' }}
+      />
+    )
+  }
+
+  const colors = TAG_COLORS[name] ?? DEFAULT_TAG_COLOR
   return (
     <span style={{
       display: 'inline-block',
