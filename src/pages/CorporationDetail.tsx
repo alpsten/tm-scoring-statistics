@@ -36,10 +36,10 @@ export default function CorporationDetail() {
       <PageHeader title={corpName} subtitle={`${stats.games_played} game${stats.games_played !== 1 ? 's' : ''} on record`} />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
-        <StatCard label="Wins"       value={stats.wins}                      sub={`of ${stats.games_played}`} accent="mars"    />
-        <StatCard label="Win rate"   value={`${Math.round(stats.win_rate)}%`}                                  accent="atmo"    />
-        <StatCard label="Avg score"  value={Math.round(stats.avg_score)}      sub="VP"                        accent="score"   />
-        <StatCard label="Best score" value={stats.best_score}                sub="VP"                        accent="neutral" />
+        <StatCard label="Wins"       value={stats.wins}                      sub={`of ${stats.games_played}`} accent="win"   />
+        <StatCard label="Win rate"   value={`${Math.round(stats.win_rate)}%`}                                  accent="atmo"  />
+        <StatCard label="Avg score"  value={Math.round(stats.avg_score)}      valueSuffix="VP"                 accent="score" />
+        <StatCard label="Best score" value={stats.best_score}                valueSuffix="VP"                 accent="score" />
       </div>
 
       <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }}>
@@ -84,7 +84,7 @@ export default function CorporationDetail() {
                     }
                   </td>
                   <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: result.position === 1 ? '#c9a030' : '#8e87a8' }}>
-                    {result.total_vp}
+                    {result.total_vp}<span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: result.position === 1 ? '#c9a030' : '#8e87a8', marginLeft: '3px' }}>VP</span>
                   </td>
                 </tr>
               )

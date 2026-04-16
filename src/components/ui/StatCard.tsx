@@ -2,7 +2,7 @@ interface StatCardProps {
   label: string
   value: string | number
   sub?: string
-  accent?: 'mars' | 'atmo' | 'score' | 'neutral'
+  accent?: 'mars' | 'atmo' | 'score' | 'neutral' | 'win'
   valueSuffix?: string
   suffixColor?: string
 }
@@ -12,6 +12,7 @@ const ACCENT_COLORS = {
   atmo:    '#2e8b8b',
   score:   '#c9a030',
   neutral: '#8e87a8',
+  win:     '#4a9e6b',
 }
 
 export default function StatCard({ label, value, sub, accent = 'neutral', valueSuffix, suffixColor }: StatCardProps) {
@@ -38,7 +39,7 @@ export default function StatCard({ label, value, sub, accent = 'neutral', valueS
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 700, color }}>
           {value}
           {valueSuffix && (
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 700, color: suffixColor ?? '#625c7c', marginLeft: '4px' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 700, color: suffixColor ?? color, marginLeft: '4px' }}>
               {valueSuffix}
             </span>
           )}
