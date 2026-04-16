@@ -128,6 +128,14 @@ Used on player leaderboard and player detail:
 | > 0% | `#c9a030` (gold) |
 | 0% | `#625c7c` (dim) |
 
+Card win rate thresholds (used on /cards list and card detail):
+
+| Rate | Color |
+|---|---|
+| ≥ 50% | `#4a9e6b` (green) |
+| > 33% | `#c9a030` (gold) |
+| ≤ 33% | `#e05535` (red) |
+
 Corporation win rate thresholds (used on corp pages):
 
 | Rate | Color |
