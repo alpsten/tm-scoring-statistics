@@ -70,8 +70,10 @@ export default function CorporationDetail() {
                   </td>
                   <td style={{ padding: '11px 16px' }}>
                     {result.position === 1
-                      ? <span className="win-badge">Winner</span>
-                      : <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#625c7c' }}>#{result.position}</span>
+                      ? <span style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', fontWeight: 700, color: '#4a9e6b', letterSpacing: '0.05em', background: 'rgba(74,158,107,0.12)', border: '1px solid rgba(74,158,107,0.35)', borderRadius: '4px', padding: '2px 7px' }}>WINNER</span>
+                      : <span style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', fontWeight: 600, color: '#e05535', letterSpacing: '0.04em', background: 'rgba(224,85,53,0.1)', border: '1px solid rgba(224,85,53,0.3)', borderRadius: '4px', padding: '2px 7px' }}>
+                          {['', '', '2ND', '3RD', '4TH', '5TH'][result.position] ?? `${result.position}TH`} PLACE
+                        </span>
                     }
                   </td>
                   <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: result.position === 1 ? '#c9a030' : '#8e87a8' }}>

@@ -99,15 +99,14 @@ Labels next to a stat value (e.g. in player detail stats box):
 
 ## Position Badges (Game History)
 
-| Position | Text | Color |
-|---|---|---|
-| 1st | `WINNER` | `#4a9e6b` (green) |
-| 2nd | `2ND PLACE` | `#e05535` (red) |
-| 3rd | `3RD PLACE` | `#e05535` (red) |
-| 4th | `4TH PLACE` | `#e05535` (red) |
-| 5th | `5TH PLACE` | `#e05535` (red) |
+Badges are small pill-shaped labels with background + border, `borderRadius: '4px'`, `padding: '2px 7px'`.
 
-Font: `var(--font-mono)`, weight 700 for WINNER, letterSpacing `0.05em`.
+| Position | Text | Color | Background | Border |
+|---|---|---|---|---|
+| 1st | `WINNER` | `#4a9e6b` | `rgba(74,158,107,0.12)` | `rgba(74,158,107,0.35)` |
+| 2nd–5th | `2ND PLACE` etc. | `#e05535` | `rgba(224,85,53,0.1)` | `rgba(224,85,53,0.3)` |
+
+Font: `var(--font-mono)`, `0.68rem`, weight 700 for WINNER / 600 for others, letterSpacing `0.05em`.
 
 ---
 
