@@ -48,16 +48,16 @@ export default function Setup() {
                 <thead>
                   <tr style={{ borderBottom: '1px solid #282042' }}>
                     <th style={th}>Map</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Games</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Avg score</th>
+                    <th style={{ ...th, textAlign: 'center' }}>Games</th>
+                    <th style={{ ...th, textAlign: 'center' }}>Avg score</th>
                   </tr>
                 </thead>
                 <tbody>
                   {mapScores.sort((a, b) => b.count - a.count).map((m, i) => (
                     <tr key={m.map} style={{ borderBottom: i < mapScores.length - 1 ? '1px solid #282042' : 'none' }}>
                       <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>{m.map}</td>
-                      <td style={numTd}>{m.count}</td>
-                      <td style={{ ...numTd, color: '#c9a030' }}>{Math.round(m.avgScore)}</td>
+                      <td style={{ ...numTd, textAlign: 'center' }}>{m.count}</td>
+                      <td style={{ ...numTd, textAlign: 'center', color: '#c9a030' }}>{Math.round(m.avgScore)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -77,7 +77,7 @@ export default function Setup() {
                 <thead>
                   <tr style={{ borderBottom: '1px solid #282042' }}>
                     <th style={th}>Expansion</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Games used</th>
+                    <th style={{ ...th, textAlign: 'center' }}>Games used</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -89,7 +89,7 @@ export default function Setup() {
                           {exp}
                         </span>
                       </td>
-                      <td style={numTd}>{count}</td>
+                      <td style={{ ...numTd, textAlign: 'center' }}>{count}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -109,14 +109,14 @@ export default function Setup() {
                 <thead>
                   <tr style={{ borderBottom: '1px solid #282042' }}>
                     <th style={th}>Colony</th>
-                    <th style={{ ...th, textAlign: 'right' }}>Appearances</th>
+                    <th style={{ ...th, textAlign: 'center' }}>Appearances</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Object.entries(colonyCounts).sort((a, b) => b[1] - a[1]).map(([col, count], i, arr) => (
                     <tr key={col} style={{ borderBottom: i < arr.length - 1 ? '1px solid #282042' : 'none' }}>
                       <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>{col}</td>
-                      <td style={numTd}>{count}</td>
+                      <td style={{ ...numTd, textAlign: 'center' }}>{count}</td>
                     </tr>
                   ))}
                 </tbody>
