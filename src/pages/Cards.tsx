@@ -29,6 +29,9 @@ const TAG_COLORS: Record<string, { bg: string; color: string }> = {
   'Science':  { bg: 'rgba(200, 200, 60, 0.12)',  color: '#d0c030' },
   'Space':    { bg: 'rgba(60, 100, 200, 0.12)',  color: '#5080c0' },
   'Venus':    { bg: 'rgba(220, 160, 60, 0.12)',  color: '#d0a040' },
+  'Moon':     { bg: 'rgba(140, 148, 176, 0.12)', color: '#8c94b0' },
+  'Mars':     { bg: 'rgba(196, 88, 52, 0.12)',   color: '#c45834' },
+  'Planet':   { bg: 'rgba(92, 172, 110, 0.12)',  color: '#5cac6e' },
 }
 
 export default function Cards() {

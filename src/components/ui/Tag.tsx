@@ -13,6 +13,9 @@ const TAG_COLORS: Record<string, { bg: string; text: string; border: string }> =
   'Science':  { bg: 'rgba(200, 200, 60, 0.1)',  text: '#d0c030', border: 'rgba(200, 200, 60, 0.25)' },
   'Space':    { bg: 'rgba(60, 100, 200, 0.1)',  text: '#5080c0', border: 'rgba(60, 100, 200, 0.25)' },
   'Venus':    { bg: 'rgba(220, 160, 60, 0.1)',  text: '#d0a040', border: 'rgba(220, 160, 60, 0.25)' },
+  'Moon':     { bg: 'rgba(140, 148, 176, 0.1)', text: '#8c94b0', border: 'rgba(140, 148, 176, 0.25)' },
+  'Mars':     { bg: 'rgba(196, 88, 52, 0.1)',   text: '#c45834', border: 'rgba(196, 88, 52, 0.25)' },
+  'Planet':   { bg: 'rgba(92, 172, 110, 0.1)',  text: '#5cac6e', border: 'rgba(92, 172, 110, 0.25)' },
 }
 
 const DEFAULT_TAG_COLOR = { bg: 'rgba(100, 100, 100, 0.1)', text: '#8e87a8', border: 'rgba(100, 100, 100, 0.2)' }
