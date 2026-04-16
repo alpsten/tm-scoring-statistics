@@ -4,6 +4,7 @@ import PageHeader from '../components/ui/PageHeader'
 import Tag from '../components/ui/Tag'
 import { parseTags } from '../components/ui/tagUtils'
 import { useCardStats, useCardReference } from '../lib/hooks'
+import { TAG_ICONS } from '../lib/expansions'
 
 const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
   Automated:   { bg: 'rgba(74, 158, 107, 0.1)',  color: '#4a9e6b' },
@@ -141,17 +142,23 @@ export default function Cards() {
             <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginRight: '2px' }}>Tag</span>
             {allTags.map(tag => {
               const active = tagFilters.includes(tag)
+              const icon = TAG_ICONS[tag]
               const colors = TAG_COLORS[tag] ?? { bg: 'rgba(100,100,100,0.12)', color: '#8e87a8' }
               return (
-                <button key={tag} onClick={() => toggleTag(tag)} style={{
-                  padding: '3px 11px',
+                <button key={tag} onClick={() => toggleTag(tag)} title={tag} style={{
+                  padding: icon ? '4px' : '3px 11px',
                   background: active ? colors.bg : 'transparent',
                   border: `1px solid ${active ? colors.color : '#3e325e'}`,
-                  borderRadius: '12px', cursor: 'pointer', transition: 'all 0.12s',
+                  borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  opacity: active ? 1 : 0.45,
                   fontFamily: 'var(--font-body)', fontSize: '0.75rem',
                   color: active ? colors.color : '#625c7c',
                 }}>
-                  {active ? '✓ ' : ''}{tag}
+                  {icon
+                    ? <img src={icon} alt={tag} style={{ width: '20px', height: '20px', objectFit: 'contain', display: 'block' }} />
+                    : <>{active ? '✓ ' : ''}{tag}</>
+                  }
                 </button>
               )
             })}
