@@ -176,7 +176,7 @@ export default function Cards() {
             <thead>
               <tr style={{ borderBottom: '1px solid #282042' }}>
                 {['Card', 'Type', 'Tags', 'Played', 'Win rate', 'Avg VP'].map(h => (
-                  <th key={h} style={{ padding: '11px 16px', textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
+                  <th key={h} style={{ padding: '11px 16px', textAlign: h === 'Card' ? 'left' : 'center', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
                     {h}
                   </th>
                 ))}
@@ -193,7 +193,7 @@ export default function Cards() {
                     onMouseEnter={e => (e.currentTarget.style.background = '#282042')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                    <td style={{ padding: '12px 16px', textAlign: 'left' }}>
                       <Link to={`/cards/${encodeURIComponent(card.card_name)}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: '0.85rem', color: '#ece6ff', textDecoration: 'none' }}>
                         {card.card_name}
                       </Link>
