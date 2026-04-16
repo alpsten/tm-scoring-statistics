@@ -54,7 +54,7 @@ export default function PlayerDetail() {
         subtitle={`${stats.games_played} games played`}
       />
 
-      {profile && (profile.playing_style || profile.rival || profile.favorite_card || profile.most_tilting_card || profile.trivia) && (
+      {profile && (profile.preferred_color || profile.playing_style || profile.rival || profile.favorite_card || profile.most_tilting_card || profile.trivia) && (
         <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '16px 20px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
           {profile.playing_style && (
             <div>
@@ -92,7 +92,7 @@ export default function PlayerDetail() {
       <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '4px 16px', marginBottom: '32px' }}>
         {([
           {
-            label: 'Wins',
+            label: 'Total Wins',
             node: (
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', fontWeight: 700 }}>
                 <span style={{ color: '#c9a030' }}>{stats.wins}</span>
@@ -101,14 +101,14 @@ export default function PlayerDetail() {
             ),
           },
           {
-            label: 'Win rate',
-            node: <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#2e8b8b' }}>{stats.win_rate.toFixed(1)}%</span>,
+            label: 'Win Rate',
+            node: <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#2e8b8b' }}>{Math.round(stats.win_rate)}%</span>,
           },
           {
-            label: 'Average score',
+            label: 'Average Score per Game',
             node: (
               <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#c9a030' }}>
-                {stats.avg_score.toFixed(1)}<span style={{ marginLeft: '5px' }}>VP</span>
+                {Math.round(stats.avg_score)}<span style={{ marginLeft: '5px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#c9a030' }}>VP</span>
               </span>
             ),
           },
@@ -122,7 +122,7 @@ export default function PlayerDetail() {
           },
         ]).map((row, i, arr) => (
           <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < arr.length - 1 ? '1px solid #282042' : 'none' }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c' }}>{row.label}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>{row.label}</span>
             {row.node}
           </div>
         ))}
@@ -219,7 +219,7 @@ export default function PlayerDetail() {
                       <Link to={`/players/${encodeURIComponent(opp)}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.87rem', color: '#ece6ff', textDecoration: 'none' }}>
                         {opp}
                       </Link>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#504270' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#5b8dd9' }}>
                         {rec.games}G
                       </span>
                     </div>
@@ -243,12 +243,40 @@ export default function PlayerDetail() {
                         )}
                       </div>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: avgDiff > 0 ? '#4a9e6b' : avgDiff < 0 ? '#e05535' : '#625c7c' }}>
-                        {avgDiff > 0 ? '+' : ''}{avgDiff.toFixed(1)} VP avg
+                        {avgDiff > 0 ? '+' : ''}{Math.round(avgDiff)} VP avg
                       </span>
                     </div>
                   </div>
                 )
               })}
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Corporations played */}
+      {(() => {
+        const corpCounts: Record<string, number> = {}
+        for (const game of playerGames) {
+          const result = game.player_results.find(r => r.player_name === name)!
+          result.corporation.split(', ').forEach(c => {
+            corpCounts[c] = (corpCounts[c] ?? 0) + 1
+          })
+        }
+        const sorted = Object.entries(corpCounts).sort((a, b) => b[1] - a[1])
+        if (sorted.length === 0) return null
+        return (
+          <div style={{ marginBottom: '28px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }}>
+              Corporations Played
+            </h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {sorted.map(([corp, count]) => (
+                <Link key={corp} to={`/corporations/${encodeURIComponent(corp)}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '8px 14px', textDecoration: 'none' }}>
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#b87aff' }}>{corp}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#504270' }}>({count})</span>
+                </Link>
+              ))}
             </div>
           </div>
         )
@@ -328,19 +356,21 @@ export default function PlayerDetail() {
                       </Link>
                     </td>
                     <td style={{ padding: '11px 16px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>{game.map_name ?? '—'}</td>
-                    <td style={{ padding: '11px 16px', fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#8e87a8' }}>
-                      <Link to={`/corporations/${encodeURIComponent(result.corporation)}`} style={{ color: '#8e87a8', textDecoration: 'none' }}>
+                    <td style={{ padding: '11px 16px', fontFamily: 'var(--font-body)', fontSize: '0.8rem' }}>
+                      <Link to={`/corporations/${encodeURIComponent(result.corporation)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>
                         {result.corporation}
                       </Link>
                     </td>
                     <td style={{ padding: '11px 16px' }}>
                       {result.position === 1
-                        ? <span className="win-badge">Winner</span>
-                        : <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#625c7c' }}>#{result.position}</span>
+                        ? <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, color: '#4a9e6b', letterSpacing: '0.05em' }}>WINNER</span>
+                        : <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#e05535', letterSpacing: '0.04em' }}>
+                            {['', '', '2ND', '3RD', '4TH', '5TH'][result.position] ?? `${result.position}TH`} PLACE
+                          </span>
                       }
                     </td>
                     <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: result.position === 1 ? '#c9a030' : '#8e87a8' }}>
-                      {result.total_vp}
+                      {result.total_vp}<span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: result.position === 1 ? '#c9a030' : '#8e87a8', marginLeft: '3px' }}>VP</span>
                     </td>
                     <td style={{ padding: '11px 16px', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#504270', fontStyle: 'italic' }}>
                       {result.key_notes ?? '—'}

@@ -39,13 +39,13 @@ export default function Players() {
   }
 
   const columns: { label: string; key: SortKey; align: 'left' | 'center' }[] = [
-    { label: 'Player',       key: 'player_name',   align: 'left'   },
-    { label: 'Games',        key: 'games_played',  align: 'center' },
-    { label: 'Wins',         key: 'wins',          align: 'center' },
-    { label: 'Win rate',     key: 'win_rate',      align: 'center' },
-    { label: 'Avg score',    key: 'avg_score',     align: 'center' },
-    { label: 'Best score',   key: 'best_score',    align: 'center' },
-    { label: 'Avg position', key: 'avg_position',  align: 'center' },
+    { label: 'Player',          key: 'player_name',   align: 'left'   },
+    { label: 'Games',           key: 'games_played',  align: 'center' },
+    { label: 'Total Wins',      key: 'wins',          align: 'center' },
+    { label: 'Win Rate',        key: 'win_rate',      align: 'center' },
+    { label: 'Avg Score/Game',  key: 'avg_score',     align: 'center' },
+    { label: 'Best Score',      key: 'best_score',    align: 'center' },
+    { label: 'Avg Position',    key: 'avg_position',  align: 'center' },
   ]
 
   return (
@@ -64,8 +64,8 @@ export default function Players() {
                   style={{
                     padding: '11px 18px',
                     textAlign: col.align,
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '0.7rem',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.68rem',
                     fontWeight: 600,
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
@@ -99,7 +99,7 @@ export default function Players() {
                 <td style={numTd}>{p.games_played}</td>
                 <td style={numTd}>{p.wins}</td>
                 <td style={{ ...numTd, color: p.win_rate >= 50 ? '#4a9e6b' : p.win_rate > 0 ? '#c9a030' : '#625c7c' }}>
-                  {p.win_rate.toFixed(1)}%
+                  {Math.round(p.win_rate)}%
                 </td>
                 <td style={numTd}>{Math.round(p.avg_score)}</td>
                 <td style={{ ...numTd, color: '#c9a030', fontWeight: 700 }}>{p.best_score}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 700, color: '#c9a030', marginLeft: '3px' }}>VP</span></td>
@@ -133,7 +133,7 @@ export default function Players() {
                 </div>
                 <div>
                   <div style={mobileLabel}>Win rate</div>
-                  <div style={{ ...mobileValue, color: p.win_rate >= 50 ? '#4a9e6b' : p.win_rate > 0 ? '#c9a030' : '#625c7c' }}>{p.win_rate.toFixed(1)}%</div>
+                  <div style={{ ...mobileValue, color: p.win_rate >= 50 ? '#4a9e6b' : p.win_rate > 0 ? '#c9a030' : '#625c7c' }}>{Math.round(p.win_rate)}%</div>
                 </div>
                 <div>
                   <div style={mobileLabel}>Avg score</div>
