@@ -213,7 +213,7 @@ export default function Cards() {
                       </div>
                     </td>
                     <td style={{ ...numTd, textAlign: 'center' }}>{card.times_played}</td>
-                    <td style={{ ...numTd, textAlign: 'center', color: card.win_rate >= 66 ? '#4a9e6b' : card.win_rate >= 33 ? '#c9a030' : '#625c7c' }}>
+                    <td style={{ ...numTd, textAlign: 'center', color: card.win_rate >= 50 ? '#4a9e6b' : card.win_rate > 33 ? '#c9a030' : '#e05535' }}>
                       {Math.round(card.win_rate)}%
                       <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: '#504270', marginLeft: '4px' }}>
                         ({card.win_count}/{card.times_played})
