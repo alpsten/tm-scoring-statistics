@@ -176,7 +176,7 @@ export default function Cards() {
             <thead>
               <tr style={{ borderBottom: '1px solid #282042' }}>
                 {['Card', 'Type', 'Tags', 'Played', 'Win rate', 'Avg VP'].map(h => (
-                  <th key={h} style={{ padding: '11px 16px', textAlign: h === 'Card' || h === 'Type' || h === 'Tags' ? 'left' : 'right', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
+                  <th key={h} style={{ padding: '11px 16px', textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
                     {h}
                   </th>
                 ))}
@@ -193,33 +193,33 @@ export default function Cards() {
                     onMouseEnter={e => (e.currentTarget.style.background = '#282042')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <td style={{ padding: '12px 16px' }}>
+                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                       <Link to={`/cards/${encodeURIComponent(card.card_name)}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: '0.85rem', color: '#ece6ff', textDecoration: 'none' }}>
                         {card.card_name}
                       </Link>
                     </td>
-                    <td style={{ padding: '12px 16px' }}>
+                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                       {type && typeStyle && (
                         <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', fontWeight: 500, padding: '2px 7px', borderRadius: '3px', background: typeStyle.bg, color: typeStyle.color, whiteSpace: 'nowrap' }}>
                           {type}
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'center' }}>
                         {parseTags(tagMap[card.card_name.toLowerCase()] ?? null).map(tag => (
                           <Tag key={tag} name={tag} />
                         ))}
                       </div>
                     </td>
-                    <td style={numTd}>{card.times_played}</td>
-                    <td style={{ ...numTd, color: card.win_rate >= 66 ? '#4a9e6b' : card.win_rate >= 33 ? '#c9a030' : '#625c7c' }}>
+                    <td style={{ ...numTd, textAlign: 'center' }}>{card.times_played}</td>
+                    <td style={{ ...numTd, textAlign: 'center', color: card.win_rate >= 66 ? '#4a9e6b' : card.win_rate >= 33 ? '#c9a030' : '#625c7c' }}>
                       {Math.round(card.win_rate)}%
                       <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: '#504270', marginLeft: '4px' }}>
                         ({card.win_count}/{card.times_played})
                       </span>
                     </td>
-                    <td style={{ ...numTd, color: '#c9a030' }}>{Math.round(card.avg_vp_contribution)}</td>
+                    <td style={{ ...numTd, textAlign: 'center', color: '#c9a030' }}>{Math.round(card.avg_vp_contribution)}</td>
                   </tr>
                 )
               })}
