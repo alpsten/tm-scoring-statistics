@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
@@ -8,6 +9,12 @@ export default function CorporationDetail() {
   const corpName = decodeURIComponent(name ?? '')
   const { data: games, isLoading: gamesLoading } = useGames()
   const { data: corpStats, isLoading: statsLoading } = useCorpStats()
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   if (gamesLoading || statsLoading) return <div style={loadingStyle}>Loading…</div>
 
@@ -28,7 +35,7 @@ export default function CorporationDetail() {
 
       <PageHeader title={corpName} subtitle={`${stats.games_played} game${stats.games_played !== 1 ? 's' : ''} on record`} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
         <StatCard label="Wins"       value={stats.wins}                      sub={`of ${stats.games_played}`} accent="mars"    />
         <StatCard label="Win rate"   value={`${Math.round(stats.win_rate)}%`}                                  accent="atmo"    />
         <StatCard label="Avg score"  value={Math.round(stats.avg_score)}      sub="VP"                        accent="score"   />
