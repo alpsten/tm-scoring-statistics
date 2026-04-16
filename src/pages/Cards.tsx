@@ -6,14 +6,15 @@ import { parseTags } from '../components/ui/tagUtils'
 import { useCardStats, useCardReference } from '../lib/hooks'
 
 const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
-  Automated:   { bg: 'rgba(59, 191, 191, 0.1)',  color: '#3bbfbf' },
-  Active:      { bg: 'rgba(155, 80, 240, 0.1)',  color: '#b87aff' },
-  Event:       { bg: 'rgba(224, 85, 53, 0.1)',   color: '#e05535' },
-  Corporation: { bg: 'rgba(212, 168, 32, 0.1)',  color: '#d4a820' },
-  Prelude:     { bg: 'rgba(74, 158, 107, 0.1)',  color: '#4a9e6b' },
+  Automated:   { bg: 'rgba(74, 158, 107, 0.1)',  color: '#4a9e6b' },
+  Active:      { bg: 'rgba(91, 141, 217, 0.1)',  color: '#5b8dd9' },
+  Event:       { bg: 'rgba(74, 158, 107, 0.1)',  color: '#4a9e6b' },
+  Corporation: { bg: 'rgba(201, 160, 48, 0.1)',  color: '#c9a030' },
+  Prelude:     { bg: 'rgba(220, 100, 150, 0.1)', color: '#d46496' },
+  CEO:         { bg: 'rgba(210, 120, 50, 0.1)',  color: '#d07832' },
 }
 
-const CARD_TYPES = ['Automated', 'Active', 'Event', 'Corporation', 'Prelude'] as const
+const CARD_TYPES = ['Automated', 'Active', 'Event', 'Corporation', 'Prelude', 'CEO'] as const
 type CardType = typeof CARD_TYPES[number]
 
 const TAG_COLORS: Record<string, { bg: string; color: string }> = {

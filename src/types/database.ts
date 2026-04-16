@@ -85,7 +85,7 @@ export interface CardReference {
   id: string
   card_name: string
   tags: string | null             // Comma-separated, alphabetical: "Animal, Microbe"
-  card_type: 'Automated' | 'Active' | 'Event' | 'Prelude' | 'Corporation'
+  card_type: 'Automated' | 'Active' | 'Event' | 'Prelude' | 'Corporation' | 'CEO'
   expansion: string | null
   base_vp: number | null
   resource_vp_type: string | null // Resource type that generates VP, e.g. "Floater", "Animal"
