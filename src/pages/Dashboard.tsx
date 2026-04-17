@@ -53,6 +53,15 @@ export default function Dashboard() {
     .filter(p => p.games_played >= 3)
     .sort((a, b) => b.win_rate - a.win_rate)[0]
 
+  const bestCorpWinRate = (() => {
+    const eligible = [...(corpStats ?? [])]
+      .filter(c => !c.corporation.includes(', ') && c.games_played >= 3)
+      .sort((a, b) => b.win_rate - a.win_rate || b.games_played - a.games_played)
+    if (eligible.length === 0) return []
+    const topRate = eligible[0].win_rate
+    return eligible.filter(c => c.win_rate === topRate)
+  })()
+
   const recentGames = (games ?? []).slice(0, 5)
 
   return (
@@ -134,6 +143,28 @@ export default function Dashboard() {
                   <span>{topCorp.games_played} games</span>
                   <span>·</span>
                   <span><span style={{ color: topCorp.win_rate < 40 ? '#e05535' : topCorp.win_rate < 60 ? '#c9a030' : '#4a9e6b' }}>{Math.round(topCorp.win_rate)}%</span> win rate</span>
+                </span>
+              </>
+            ) : <span style={recordValue}>—</span>}
+          </div>
+
+          {/* Best corporation by win rate */}
+          <div style={recordCard}>
+            <span style={recordLabel}>Best Corporation by Win Rate <span style={{ color: '#3e325e' }}>(min 3 games)</span></span>
+            {bestCorpWinRate.length > 0 ? (
+              <>
+                <span style={{ ...recordValue, color: '#4a9e6b' }}>
+                  {Math.round(bestCorpWinRate[0].win_rate)}
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 700, color: '#4a9e6b', marginLeft: '2px' }}>%</span>
+                </span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  {bestCorpWinRate.map((c, i) => (
+                    <span key={c.corporation} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      {i > 0 && <span style={{ color: '#3e325e' }}>·</span>}
+                      <Link to={`/corporations/${encodeURIComponent(c.corporation)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>{c.corporation}</Link>
+                      <span style={{ color: '#504270' }}>({c.games_played} games)</span>
+                    </span>
+                  ))}
                 </span>
               </>
             ) : <span style={recordValue}>—</span>}
