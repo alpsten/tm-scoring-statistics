@@ -163,3 +163,62 @@ Hover state (interactive panels): `background: '#282042'`
 All expansion icons live in `public/expansions/` and are mapped in `src/lib/expansions.ts`.
 Always import `EXPANSION_ICONS` from there — never hardcode paths inline.
 `MAP_PILL`, `ALL_MAPS`, and `ALL_EXPANSIONS` are also exported from that file.
+
+---
+
+## Tag Icons
+
+All tag icons live in `public/tags/` and are mapped as `TAG_ICONS` in `src/lib/expansions.ts`.
+Use the `<Tag />` component (`src/components/ui/Tag.tsx`) to render tags — it handles icon vs. text badge fallback automatically.
+
+---
+
+## Card Type Colors
+
+Used consistently across `/cards`, `/cards/:name`, `GameDetail`, and `CardReferenceAdmin`:
+
+| Type | Color | Background |
+|---|---|---|
+| Automated | `#4a9e6b` (green) | `rgba(74,158,107,0.1)` |
+| Active | `#5b8dd9` (blue) | `rgba(91,141,217,0.1)` |
+| Event | `#e05535` (red) | `rgba(224,85,53,0.1)` |
+| Corporation | `#c9a030` (gold) | `rgba(201,160,48,0.1)` |
+| Prelude | `#ad1457` (pink) | `rgba(173,20,87,0.1)` |
+| CEO | `#d07832` (orange) | `rgba(210,120,50,0.1)` |
+
+---
+
+## CEO Badge
+
+Used inline next to player names (e.g. `/games` list):
+
+```tsx
+<span style={{
+  fontFamily: 'var(--font-mono)',
+  fontSize: '0.65rem',
+  color: '#d07832',
+  background: 'rgba(210,120,50,0.1)',
+  border: '1px solid rgba(210,120,50,0.3)',
+  borderRadius: '4px',
+  padding: '1px 6px',
+}}>
+  Apollo
+</span>
+```
+
+---
+
+## Merger Corporation Formatting
+
+When a player used the Merger promo, corporations are stored as `"Corp1, Corp2"` in the DB.
+Always format for display using:
+
+```ts
+function formatCorp(corp: string) {
+  const parts = corp.split(', ')
+  if (parts.length === 1) return corp
+  return parts.join(' + ') + ' (Merger)'
+}
+```
+
+Example: `"Credicor, Inventrix"` → `"Credicor + Inventrix (Merger)"`
