@@ -21,6 +21,9 @@ interface RawGame {
     temperature_steps: number
     ocean_steps: number
     venus_steps: number
+    habitat_steps: number
+    mining_steps: number
+    logistics_steps: number
   }>
   player_results: Array<{
     id: string
