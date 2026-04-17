@@ -57,7 +57,7 @@ function RankTable({ rows, nameLabel }: { rows: RankRow[]; nameLabel: string }) 
       </thead>
       <tbody>
         {rows.map((row, i) => {
-          const pct = total => total > 0 ? Math.round((row.count / total) * 100) : 0
+          const pct = (total: number) => total > 0 ? Math.round((row.count / total) * 100) : 0
           return (
             <tr
               key={row.name}

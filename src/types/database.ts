@@ -55,6 +55,9 @@ export interface ParameterContribution {
   temperature_steps: number
   ocean_steps: number
   venus_steps: number
+  habitat_steps: number
+  mining_steps: number
+  logistics_steps: number
 }
 
 export interface CardPlayed {
