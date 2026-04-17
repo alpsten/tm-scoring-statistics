@@ -41,6 +41,7 @@ interface RawGame {
     total_vp: number
     position: number
     key_notes: string | null
+    ceo: string | null
   }>
   game_expansions: Array<{ expansion_name: string }>
   game_colonies: Array<{ colony_name: string }>
@@ -323,6 +324,55 @@ export async function fetchGameAwards(gameId: string): Promise<GameAwardEntry[]>
     }
   }
   return Array.from(map.entries()).map(([award_name, rest]) => ({ award_name, ...rest }))
+}
+
+export async function fetchAllMilestones(): Promise<{ milestone_name: string; player_name: string | null; game_id: string }[]> {
+  const { data, error } = await supabase
+    .from('game_milestones')
+    .select('milestone_name, player_name, game_id')
+  if (error) throw error
+  return data as { milestone_name: string; player_name: string | null; game_id: string }[]
+}
+
+export async function fetchAllAwards(): Promise<{ award_name: string; funder_name: string | null; game_id: string }[]> {
+  const { data, error } = await supabase
+    .from('game_awards')
+    .select('award_name, player_name, game_id')
+  if (error) throw error
+  return (data as { award_name: string; player_name: string | null; game_id: string }[])
+    .map(r => ({ award_name: r.award_name, funder_name: r.player_name, game_id: r.game_id }))
+}
+
+export interface CEOStat {
+  ceo_name: string
+  times_played: number
+  wins: number
+  win_rate: number
+}
+
+export async function fetchCEOStats(): Promise<CEOStat[]> {
+  const { data, error } = await supabase
+    .from('player_results')
+    .select('ceo, position')
+    .not('ceo', 'is', null)
+  if (error) throw error
+  if (!data || data.length === 0) return []
+
+  const map: Record<string, { count: number; wins: number }> = {}
+  for (const r of data as { ceo: string; position: number }[]) {
+    if (!map[r.ceo]) map[r.ceo] = { count: 0, wins: 0 }
+    map[r.ceo].count++
+    if (r.position === 1) map[r.ceo].wins++
+  }
+
+  return Object.entries(map)
+    .map(([ceo_name, { count, wins }]) => ({
+      ceo_name,
+      times_played: count,
+      wins,
+      win_rate: (wins / count) * 100,
+    }))
+    .sort((a, b) => b.times_played - a.times_played || a.ceo_name.localeCompare(b.ceo_name))
 }
 
 export async function fetchCardReference(): Promise<CardReference[]> {

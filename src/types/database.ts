@@ -32,6 +32,7 @@ export interface PlayerResult {
   total_vp: number
   position: number
   key_notes: string | null
+  ceo: string | null
 }
 
 export interface GameExpansion {

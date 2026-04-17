@@ -32,6 +32,12 @@ export default function Games() {
 
   const hasFilters = !!search || mapFilters.length > 0 || expansionFilters.length > 0
 
+  function formatCorp(corp: string) {
+    const parts = corp.split(', ')
+    if (parts.length === 1) return corp
+    return parts.join(' + ') + ' (Merger)'
+  }
+
   function expDisplayName(n: string) {
     if (n === 'Venus') return 'Venus Next'
     if (n === 'Moon') return 'The Moon'
@@ -210,16 +216,23 @@ export default function Games() {
                       )}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontFamily: 'var(--font-body)', fontWeight: result.position === 1 ? 600 : 400, fontSize: '0.87rem', color: result.position === 1 ? '#ece6ff' : '#bbb4d0' }}>
-                            {result.player_name}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
+                            <span style={{ fontFamily: 'var(--font-body)', fontWeight: result.position === 1 ? 600 : 400, fontSize: '0.87rem', color: result.position === 1 ? '#ece6ff' : '#bbb4d0' }}>
+                              {result.player_name}
+                            </span>
+                            {result.ceo && (
+                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#d07832', background: 'rgba(210,120,50,0.1)', border: '1px solid rgba(210,120,50,0.3)', borderRadius: '4px', padding: '1px 6px', flexShrink: 0 }}>
+                                {result.ceo}
+                              </span>
+                            )}
+                          </div>
                           <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: result.position === 1 ? '#c9a030' : '#8e87a8', flexShrink: 0 }}>
                             {result.total_vp}
                             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: result.position === 1 ? '#c9a030' : '#8e87a8', marginLeft: '3px', fontWeight: 700 }}>VP</span>
                           </span>
                         </div>
                         <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#625c7c', marginTop: '1px' }}>
-                          {result.corporation}
+                          {formatCorp(result.corporation)}
                         </div>
                         {result.key_notes && (
                           <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', fontStyle: 'italic', marginTop: '2px' }}>

@@ -62,6 +62,13 @@ export default function Dashboard() {
     return eligible.filter(c => c.win_rate === topRate)
   })()
 
+  const highCardVpResult = allResults.reduce<PlayerResult | null>(
+    (best, r) => (!best || r.card_vp > best.card_vp ? r : best), null
+  )
+  const highCardVpGame = highCardVpResult
+    ? (games ?? []).find(g => g.player_results.some(r => r === highCardVpResult))
+    : null
+
   const recentGames = (games ?? []).slice(0, 5)
 
   return (
@@ -165,6 +172,26 @@ export default function Dashboard() {
                       <span style={{ color: '#504270' }}>({c.games_played} games)</span>
                     </span>
                   ))}
+                </span>
+              </>
+            ) : <span style={recordValue}>—</span>}
+          </div>
+
+          {/* Highest card VP */}
+          <div style={recordCard}>
+            <span style={recordLabel}>Highest Card VP in a single game</span>
+            {highCardVpResult && highCardVpGame ? (
+              <>
+                <span style={{ ...recordValue, color: '#c9a030' }}>
+                  {highCardVpResult.card_vp}
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 700, color: '#c9a030', marginLeft: '4px' }}>VP</span>
+                </span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Link to={`/players/${encodeURIComponent(highCardVpResult.player_name)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>{highCardVpResult.player_name}</Link>
+                  <span>·</span>
+                  <Link to={`/corporations/${encodeURIComponent(highCardVpResult.corporation)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>{highCardVpResult.corporation}</Link>
+                  <span>·</span>
+                  <Link to={`/games/${highCardVpGame.game_number}`} style={{ color: '#504270', textDecoration: 'none' }}>{new Date(highCardVpGame.date).toLocaleDateString('sv-SE')}</Link>
                 </span>
               </>
             ) : <span style={recordValue}>—</span>}

@@ -12,6 +12,9 @@ import {
   fetchGameCards,
   fetchGameMilestones,
   fetchGameAwards,
+  fetchAllMilestones,
+  fetchAllAwards,
+  fetchCEOStats,
 } from './queries'
 
 export { deleteGame } from './queries'
@@ -86,4 +89,16 @@ export function usePlayerCardStats(playerName: string) {
     queryFn: () => fetchPlayerCardStats(playerName),
     enabled: !!playerName,
   })
+}
+
+export function useCEOStats() {
+  return useQuery({ queryKey: ['ceo-stats'], queryFn: fetchCEOStats })
+}
+
+export function useAllMilestones() {
+  return useQuery({ queryKey: ['all-milestones'], queryFn: fetchAllMilestones })
+}
+
+export function useAllAwards() {
+  return useQuery({ queryKey: ['all-awards'], queryFn: fetchAllAwards })
 }

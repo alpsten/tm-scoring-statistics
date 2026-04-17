@@ -12,6 +12,8 @@ const NAV_ITEMS = [
   { to: '/players',       label: 'Players'      },
   { to: '/corporations',  label: 'Corporations' },
   { to: '/cards',         label: 'Cards'        },
+  { to: '/ceos',          label: 'CEOs'         },
+  { to: '/ma',            label: 'M&A'          },
   { to: '/setup',         label: 'Setup'        },
 ]
 

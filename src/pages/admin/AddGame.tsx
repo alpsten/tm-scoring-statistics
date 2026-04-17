@@ -7,6 +7,7 @@ import { z } from 'zod'
 import PageHeader from '../../components/ui/PageHeader'
 import { supabase } from '../../lib/supabase'
 import { usePlayerStats, useCardReference, useGame, useGameMilestones, useGameAwards } from '../../lib/hooks'
+import { EXPANSION_ICONS } from '../../lib/expansions'
 
 // ─── Shared styles (defined before Combobox so it can reference them) ─────────
 
@@ -139,7 +140,7 @@ const MAPS = [
   'Amazonis Planitia', 'Terra Cimmeria', 'Vastitas Borealis', 'Utopia Planitia',
   'Vastitas Borealis Nova', 'Hollandia',
 ]
-const EXPANSIONS = ['Prelude', 'Prelude 2', 'Venus Next', 'Colonies', 'Turmoil', 'Moon', 'Pathfinders', 'Promos']
+const EXPANSIONS = ['Prelude', 'Prelude 2', 'Venus Next', 'Colonies', 'Turmoil', 'Ares', 'Moon', 'Pathfinders', 'CEO', 'Promos']
 const COLONY_TILES = [
   'Callisto', 'Ceres', 'Enceladus', 'Europa', 'Ganymede',
   'Io', 'Luna', 'Miranda', 'Pluto', 'Titan', 'Triton',
@@ -228,6 +229,7 @@ export default function AddGame() {
   const hasMoon        = expansions.includes('Moon')
   const hasPathfinders = expansions.includes('Pathfinders')
   const hasVenusNext   = expansions.includes('Venus Next')
+  const hasCEO         = expansions.includes('CEO')
   const maSlots   = hasVenusNext ? 6 : 5
 
   const [useRandomMA, setUseRandomMA]     = useState(false)
@@ -248,6 +250,7 @@ export default function AddGame() {
   const [mergerCounts, setMergerCounts] = useState<number[]>([1, 1])
   const [extraCorp2, setExtraCorp2]     = useState<string[]>(['', ''])
   const [extraCorp3, setExtraCorp3]     = useState<string[]>(['', ''])
+  const [ceos, setCeos]                 = useState<string[]>(Array(5).fill(''))
 
   const { data: playerStats } = usePlayerStats()
   const { data: cardRef }     = useCardReference()
@@ -258,6 +261,10 @@ export default function AddGame() {
   const existingPlayers = (playerStats ?? []).map(p => p.player_name).sort()
   const corporations = (cardRef ?? [])
     .filter(c => c.card_type === 'Corporation')
+    .map(c => c.card_name)
+    .sort()
+  const ceoOptions = (cardRef ?? [])
+    .filter(c => c.card_type === 'CEO')
     .map(c => c.card_name)
     .sort()
 
@@ -373,6 +380,7 @@ export default function AddGame() {
     setMergerCounts(sorted.map(r => r.corporation.split(', ').length))
     setExtraCorp2(sorted.map(r => r.corporation.split(', ')[1] ?? ''))
     setExtraCorp3(sorted.map(r => r.corporation.split(', ')[2] ?? ''))
+    setCeos(sorted.map(r => r.ceo ?? ''))
     setExpansions(existingGame.expansions)
     setColonies(existingGame.colonies)
     setHasParams(existingGame.parameter_contributions.length > 0)
@@ -450,6 +458,15 @@ export default function AddGame() {
     const removing = expansions.includes(name)
     setExpansions(prev => removing ? prev.filter(e => e !== name) : [...prev, name])
     if (name === 'Colonies' && removing) setColonies([])
+    if (name === 'Venus Next') {
+      if (!removing) {
+        setMilestones(prev => { const n = [...prev]; if (!n[5]) n[5] = 'Hoverlord'; return n })
+        setAwards(prev => { const n = [...prev]; if (!n[5]) n[5] = 'Venuphile'; return n })
+      } else {
+        setMilestones(prev => { const n = [...prev]; if (n[5] === 'Hoverlord') n[5] = ''; return n })
+        setAwards(prev => { const n = [...prev]; if (n[5] === 'Venuphile') n[5] = ''; return n })
+      }
+    }
   }
 
   function toggleColony(name: string) {
@@ -460,8 +477,12 @@ export default function AddGame() {
 
   async function onSubmit(data: GameFormValues) {
     // Validate milestones & awards against allowed lists
-    const validMs = (!useRandomMA && MAP_MILESTONES[data.map_name]) ? MAP_MILESTONES[data.map_name] : RANDOM_MILESTONES
-    const validAs = (!useRandomMA && MAP_AWARDS[data.map_name]) ? MAP_AWARDS[data.map_name] : RANDOM_AWARDS
+    const validMs = (!useRandomMA && MAP_MILESTONES[data.map_name])
+      ? [...MAP_MILESTONES[data.map_name], ...(hasVenusNext ? ['Hoverlord'] : [])]
+      : RANDOM_MILESTONES
+    const validAs = (!useRandomMA && MAP_AWARDS[data.map_name])
+      ? [...MAP_AWARDS[data.map_name], ...(hasVenusNext ? ['Venuphile'] : [])]
+      : RANDOM_AWARDS
     const invalidMs = milestones.slice(0, maSlots).filter(m => m && !validMs.includes(m))
     const invalidAs = awards.slice(0, maSlots).filter(a => a && !validAs.includes(a))
     if (invalidMs.length > 0 || invalidAs.length > 0) {
@@ -525,7 +546,7 @@ export default function AddGame() {
 
       const { error: resultsError } = await supabase
         .from('player_results')
-        .insert(playersWithCorps.map(p => ({
+        .insert(playersWithCorps.map((p, i) => ({
           game_id: gameId,
           player_name: p.player_name,
           corporation: p.corporation,
@@ -543,6 +564,7 @@ export default function AddGame() {
           total_vp: p.total_vp,
           position: p.position,
           key_notes: p.key_notes || null,
+          ceo: hasCEO ? (ceos[i] || null) : null,
         })))
       if (resultsError) throw resultsError
 
@@ -730,13 +752,14 @@ export default function AddGame() {
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {EXPANSIONS.map(e => {
                 const on = expansions.includes(e)
+                const icon = EXPANSION_ICONS[e]
                 return (
                   <button
                     key={e}
                     type="button"
                     onClick={() => toggleExpansion(e)}
                     style={{
-                      padding: '4px 12px',
+                      padding: '4px 10px',
                       background: on ? 'rgba(155, 80, 240, 0.12)' : 'transparent',
                       border: `1px solid ${on ? '#9b50f0' : '#3e325e'}`,
                       borderRadius: '12px',
@@ -745,8 +768,12 @@ export default function AddGame() {
                       fontSize: '0.78rem',
                       cursor: 'pointer',
                       transition: 'all 0.12s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
                     }}
                   >
+                    {icon && <img src={icon} alt={e} style={{ width: '14px', height: '14px', objectFit: 'contain', opacity: on ? 1 : 0.5 }} />}
                     {on ? '✓ ' : ''}{e}
                   </button>
                 )
@@ -849,7 +876,7 @@ export default function AddGame() {
                       key={i}
                       value={milestones[i] ?? ''}
                       onChange={v => setMilestones(prev => { const n = [...prev]; n[i] = v; return n })}
-                      options={(!useRandomMA && MAP_MILESTONES[watchedMap]) ? MAP_MILESTONES[watchedMap] : RANDOM_MILESTONES}
+                      options={(!useRandomMA && MAP_MILESTONES[watchedMap]) ? [...MAP_MILESTONES[watchedMap], ...(hasVenusNext ? ['Hoverlord'] : [])] : RANDOM_MILESTONES}
                       placeholder={`Milestone ${i + 1}${i === 5 ? ' (Venus Next)' : ''}`}
                       strict
                     />
@@ -869,7 +896,7 @@ export default function AddGame() {
                           <Combobox
                             value={awards[i] ?? ''}
                             onChange={v => setAwards(prev => { const n = [...prev]; n[i] = v; return n })}
-                            options={(!useRandomMA && MAP_AWARDS[watchedMap]) ? MAP_AWARDS[watchedMap] : RANDOM_AWARDS}
+                            options={(!useRandomMA && MAP_AWARDS[watchedMap]) ? [...MAP_AWARDS[watchedMap], ...(hasVenusNext ? ['Venuphile'] : [])] : RANDOM_AWARDS}
                             placeholder={`Award ${i + 1}${i === 5 ? ' (Venus Next)' : ''}`}
                             strict
                           />
@@ -1129,6 +1156,20 @@ export default function AddGame() {
                     )}
                   </div>
                 </div>
+
+                {/* CEO field — only when CEO expansion is active */}
+                {hasCEO && (
+                  <div style={{ marginBottom: '12px', maxWidth: '220px' }}>
+                    <label style={{ ...labelStyle, color: '#d07832' }}>CEO</label>
+                    <Combobox
+                      value={ceos[index] ?? ''}
+                      onChange={v => setCeos(prev => { const n = [...prev]; n[index] = v; return n })}
+                      options={ceoOptions}
+                      placeholder="Select CEO…"
+                      strict
+                    />
+                  </div>
+                )}
 
                 {/* Row 2: Score fields + Place */}
                 <div className="addgame-score-row" style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'flex-end' }}>

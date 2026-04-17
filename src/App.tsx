@@ -15,6 +15,8 @@ import CorporationDetail from './pages/CorporationDetail'
 import Cards from './pages/Cards'
 import CardDetail from './pages/CardDetail'
 import Setup from './pages/Setup'
+import MilestonesAwards from './pages/MilestonesAwards'
+import CEOs from './pages/CEOs'
 
 // Admin pages
 import AdminLogin from './pages/admin/AdminLogin'
@@ -54,6 +56,8 @@ export default function App() {
               <Route path="cards"             element={<Cards />}             />
               <Route path="cards/:name"       element={<CardDetail />}        />
               <Route path="setup"             element={<Setup />}             />
+              <Route path="ceos"             element={<CEOs />}             />
+              <Route path="ma"               element={<MilestonesAwards />} />
 
               {/* Protected admin routes */}
               <Route path="admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
