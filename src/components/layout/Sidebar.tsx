@@ -49,7 +49,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       }}
     >
       {/* Logo / title */}
-      <div style={{ padding: '28px 20px 20px', borderBottom: '1px solid #282042', position: 'relative' }}>
+      <div style={{ padding: '52px 20px 20px', borderBottom: '1px solid #282042', position: 'relative' }}>
         {/* Mobile close button */}
         <button
           className="sidebar-close-btn"
