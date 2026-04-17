@@ -263,7 +263,7 @@ export default function Corporations() {
                   </td>
                   <td style={numTd}>{c.games_played}</td>
                   <td style={numTd}>{c.wins}</td>
-                  <td style={{ ...numTd, color: c.win_rate === 100 ? '#4a9e6b' : c.win_rate > 0 ? '#c9a030' : '#625c7c' }}>
+                  <td style={{ ...numTd, color: c.win_rate >= 60 ? '#4a9e6b' : c.win_rate >= 40 ? '#c9a030' : '#e05535' }}>
                     {Math.round(c.win_rate)}%
                   </td>
                   <td style={numTd}>{Math.round(c.avg_score)}</td>
@@ -337,7 +337,7 @@ export default function Corporations() {
                       </td>
                       <td style={numTd}>{c.games_played}</td>
                       <td style={numTd}>{c.wins}</td>
-                      <td style={{ ...numTd, color: c.win_rate === 100 ? '#4a9e6b' : c.win_rate > 0 ? '#c9a030' : '#625c7c' }}>
+                      <td style={{ ...numTd, color: c.win_rate >= 60 ? '#4a9e6b' : c.win_rate >= 40 ? '#c9a030' : '#e05535' }}>
                         {Math.round(c.win_rate)}%
                       </td>
                       <td style={numTd}>{Math.round(c.avg_score)}</td>
