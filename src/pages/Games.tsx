@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
-import { useGames } from '../lib/hooks'
+import { useGames, usePlayerProfiles } from '../lib/hooks'
 import { EXPANSION_ICONS, MAP_PILL, ALL_MAPS, ALL_EXPANSIONS } from '../lib/expansions'
 
 export default function Games() {
   const { data, isLoading, error } = useGames()
+  const { data: profiles = [] } = usePlayerProfiles()
+  const profileColors = Object.fromEntries(profiles.map(p => [p.player_name, p.preferred_color]))
   const [search, setSearch]               = useState('')
   const [mapFilters, setMapFilters]       = useState<string[]>([])
   const [expansionFilters, setExpansionFilters] = useState<string[]>([])
@@ -203,6 +205,9 @@ export default function Games() {
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: result.position === 1 ? '#4a9e6b' : '#504270', width: '20px', flexShrink: 0, paddingTop: '3px' }}>
                         #{result.position}
                       </span>
+                      {profileColors[result.player_name] && (
+                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: profileColors[result.player_name]!, border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0, marginTop: '3px' }} />
+                      )}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontFamily: 'var(--font-body)', fontWeight: result.position === 1 ? 600 : 400, fontSize: '0.87rem', color: result.position === 1 ? '#ece6ff' : '#bbb4d0' }}>
