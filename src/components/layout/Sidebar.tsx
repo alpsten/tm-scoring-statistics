@@ -7,13 +7,15 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { to: '/',              label: 'Overview',     icon: '◈' },
-  { to: '/games',         label: 'Games',        icon: '◉' },
-  { to: '/players',       label: 'Players',      icon: '◎' },
-  { to: '/corporations',  label: 'Corporations', icon: '⬡' },
-  { to: '/cards',         label: 'Cards',        icon: '▣' },
-  { to: '/setup',         label: 'Setup',        icon: '◫' },
+  { to: '/',              label: 'Overview'     },
+  { to: '/games',         label: 'Games'        },
+  { to: '/players',       label: 'Players'      },
+  { to: '/corporations',  label: 'Corporations' },
+  { to: '/cards',         label: 'Cards'        },
+  { to: '/setup',         label: 'Setup'        },
 ]
+
+const NAV_ARROW = '/tm-scoring-statistics/misc/arrow.png'
 
 const PARAM_LABELS = [
   { label: 'OXYGEN',      color: '#4a9e6b' },
@@ -70,7 +72,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
       {/* Navigation */}
       <nav style={{ padding: '12px 0', flex: 1, overflowY: 'auto' }}>
-        {NAV_ITEMS.map(({ to, label, icon }) => (
+        {NAV_ITEMS.map(({ to, label }) => (
           <NavLink
             key={to}
             to={to}
@@ -92,7 +94,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               letterSpacing: '0.01em',
             })}
           >
-            <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>{icon}</span>
+            <img src={NAV_ARROW} alt="" style={{ width: '14px', height: '14px', objectFit: 'contain', opacity: 0.7, flexShrink: 0 }} />
             {label}
           </NavLink>
         ))}
