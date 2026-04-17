@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
-import { usePlayerProfiles } from '../../lib/hooks'
+import { usePlayerProfiles, useCardReference } from '../../lib/hooks'
 import PageHeader from '../../components/ui/PageHeader'
 import type { PlayerProfile } from '../../types/database'
 
@@ -48,6 +48,63 @@ function toEdit(p?: PlayerProfile): EditValues {
     playing_style: p.playing_style ?? '',
     rival: p.rival ?? '',
   }
+}
+
+function CardSearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const { data: cardRef = [] } = useCardReference()
+  const allCardNames = cardRef.map(c => c.card_name).sort()
+  const [query, setQuery] = useState(value)
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => { setQuery(value) }, [value])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const matches = query.length > 0
+    ? allCardNames.filter(n => n.toLowerCase().includes(query.toLowerCase())).slice(0, 8)
+    : []
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative' }}>
+      <input
+        style={inputStyle}
+        value={query}
+        placeholder={placeholder}
+        onChange={e => { setQuery(e.target.value); onChange(e.target.value); setOpen(true) }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && matches.length > 0 && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+          background: '#1e1835', border: '1px solid #3e325e', borderRadius: '4px',
+          marginTop: '2px', maxHeight: '220px', overflowY: 'auto',
+        }}>
+          {matches.map(name => (
+            <div
+              key={name}
+              onMouseDown={() => { onChange(name); setQuery(name); setOpen(false) }}
+              style={{
+                padding: '7px 10px', fontFamily: 'var(--font-body)', fontSize: '0.82rem',
+                color: name === value ? '#b87aff' : '#bbb4d0', cursor: 'pointer',
+                background: name === value ? 'rgba(155,80,240,0.08)' : 'transparent',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#282042')}
+              onMouseLeave={e => (e.currentTarget.style.background = name === value ? 'rgba(155,80,240,0.08)' : 'transparent')}
+            >
+              {name}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function ColorSwatch({ hex, selected, onClick }: { hex: string; selected: boolean; onClick: () => void }) {
@@ -251,20 +308,18 @@ export default function PlayerProfileAdmin() {
                             </div>
                             <div>
                               <label style={labelStyle}>Favorite Card</label>
-                              <input
-                                style={inputStyle}
+                              <CardSearchInput
                                 value={vals.favorite_card}
-                                onChange={e => setVals(v => ({ ...v, favorite_card: e.target.value }))}
-                                placeholder="Card name"
+                                onChange={v => setVals(vals => ({ ...vals, favorite_card: v }))}
+                                placeholder="Search cards…"
                               />
                             </div>
                             <div>
                               <label style={labelStyle}>Most Tilting Card</label>
-                              <input
-                                style={inputStyle}
+                              <CardSearchInput
                                 value={vals.most_tilting_card}
-                                onChange={e => setVals(v => ({ ...v, most_tilting_card: e.target.value }))}
-                                placeholder="Card name"
+                                onChange={v => setVals(vals => ({ ...vals, most_tilting_card: v }))}
+                                placeholder="Search cards…"
                               />
                             </div>
                             <div style={{ gridColumn: '1 / -1' }}>
