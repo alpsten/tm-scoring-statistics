@@ -381,8 +381,11 @@ export async function fetchCEOStats(): Promise<CEOStat[]> {
 export async function fetchCardReference(): Promise<CardReference[]> {
   const { data, error } = await supabase
     .from('card_reference')
-    .select('*')
+    .select('*, card_expansions(expansion)')
     .order('card_name')
   if (error) throw error
-  return data as CardReference[]
+  return (data as any[]).map(c => ({
+    ...c,
+    expansions: (c.card_expansions ?? []).map((e: { expansion: string }) => e.expansion),
+  })) as CardReference[]
 }

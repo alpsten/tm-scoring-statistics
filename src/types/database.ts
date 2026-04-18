@@ -90,7 +90,8 @@ export interface CardReference {
   card_name: string
   tags: string | null             // Comma-separated, alphabetical: "Animal, Microbe"
   card_type: 'Automated' | 'Active' | 'Event' | 'Prelude' | 'Corporation' | 'CEO'
-  expansion: string | null
+  expansions: string[]     // from card_expansions junction table
+  card_text: string | null
   base_vp: number | null
   resource_vp_type: string | null // Resource type that generates VP, e.g. "Floater", "Animal"
   resource_vp_per: number | null  // Resources needed per 1 VP, e.g. 2 = "1 VP per 2 resources"

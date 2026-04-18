@@ -59,7 +59,8 @@ type EditValues = {
   card_name: string
   card_type: CardReference['card_type']
   tags: string
-  expansion: string
+  expansions: string[]
+  card_text: string
   base_vp: string
   resource_vp_type: string
   resource_vp_per: string
@@ -77,7 +78,7 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
   isNew?: boolean
 }) {
   const set = (k: keyof EditValues) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       onChange({ ...values, [k]: e.target.value })
 
   return (
@@ -93,12 +94,23 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
             {CARD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
-        <div style={{ flex: '1 1 130px' }}>
-          <label style={labelStyle}>Expansion</label>
-          <select value={values.expansion} onChange={set('expansion')} style={inputStyle}>
-            <option value="">—</option>
-            {EXPANSIONS_LIST.map(e => <option key={e} value={e}>{e}</option>)}
-          </select>
+        <div style={{ flex: '2 1 260px' }}>
+          <label style={labelStyle}>Expansions</label>
+          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+            {EXPANSIONS_LIST.map(e => {
+              const active = values.expansions.includes(e)
+              return (
+                <button
+                  key={e}
+                  type="button"
+                  onClick={() => onChange({ ...values, expansions: active ? values.expansions.filter(x => x !== e) : [...values.expansions, e] })}
+                  style={{ padding: '3px 10px', background: active ? 'rgba(46,139,139,0.12)' : 'transparent', border: `1px solid ${active ? '#2e8b8b' : '#3e325e'}`, borderRadius: '12px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.73rem', color: active ? '#3bbfbf' : '#625c7c' }}
+                >
+                  {active ? '✓ ' : ''}{e}
+                </button>
+              )
+            })}
+          </div>
         </div>
         <div style={{ flex: '0 0 90px' }}>
           <label style={labelStyle}>Base VP</label>
@@ -154,6 +166,16 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
           })}
         </div>
       </div>
+      <div>
+        <label style={labelStyle}>Card text</label>
+        <textarea
+          value={values.card_text}
+          onChange={set('card_text')}
+          placeholder="Card effect or flavour text…"
+          rows={3}
+          style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties}
+        />
+      </div>
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <button
           onClick={onSave}
@@ -189,7 +211,7 @@ export default function CardReferenceAdmin() {
   const [tagFilters, setTagFilters]       = useState<string[]>([])
   const [expansionFilters, setExpansionFilters] = useState<string[]>([])
   const [editingId, setEditingId]         = useState<string | null>(null) // 'new' = add mode
-  const [editValues, setEditValues]       = useState<EditValues>({ card_name: '', card_type: 'Automated', tags: '', expansion: '', base_vp: '', resource_vp_type: '', resource_vp_per: '' })
+  const [editValues, setEditValues]       = useState<EditValues>({ card_name: '', card_type: 'Automated', tags: '', expansions: [], card_text: '', base_vp: '', resource_vp_type: '', resource_vp_per: '' })
   const [saving, setSaving]               = useState(false)
   const [saveError, setSaveError]         = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
@@ -197,13 +219,13 @@ export default function CardReferenceAdmin() {
   if (isLoading) return <div style={loadingStyle}>Loading…</div>
 
   const allTags = [...new Set((cards ?? []).flatMap(c => parseTags(c.tags)))].sort()
-  const allExpansions = [...new Set((cards ?? []).map(c => c.expansion).filter(Boolean) as string[])].sort()
+  const allExpansions = [...new Set((cards ?? []).flatMap(c => c.expansions))].sort()
 
   const filtered = (cards ?? []).filter(c => {
     if (search && !c.card_name.toLowerCase().includes(search.toLowerCase())) return false
     if (typeFilters.length > 0 && !typeFilters.includes(c.card_type)) return false
     if (tagFilters.length > 0 && !tagFilters.some(t => parseTags(c.tags).includes(t))) return false
-    if (expansionFilters.length > 0 && !expansionFilters.includes(c.expansion ?? '')) return false
+    if (expansionFilters.length > 0 && !expansionFilters.some(e => c.expansions.includes(e))) return false
     return true
   })
 
@@ -223,7 +245,8 @@ export default function CardReferenceAdmin() {
       card_name: card.card_name,
       card_type: card.card_type,
       tags: card.tags ?? '',
-      expansion: card.expansion ?? '',
+      expansions: card.expansions ?? [],
+      card_text: card.card_text ?? '',
       base_vp: card.base_vp != null ? String(card.base_vp) : '',
       resource_vp_type: card.resource_vp_type ?? '',
       resource_vp_per: card.resource_vp_per != null ? String(card.resource_vp_per) : '',
@@ -233,7 +256,7 @@ export default function CardReferenceAdmin() {
 
   function startAdd() {
     setEditingId('new')
-    setEditValues({ card_name: '', card_type: 'Automated', tags: '', expansion: 'Base', base_vp: '', resource_vp_type: '', resource_vp_per: '' })
+    setEditValues({ card_name: '', card_type: 'Automated', tags: '', expansions: [], card_text: '', base_vp: '', resource_vp_type: '', resource_vp_per: '' })
     setSaveError(null)
   }
 
@@ -250,7 +273,7 @@ export default function CardReferenceAdmin() {
         card_name: editValues.card_name.trim(),
         card_type: editValues.card_type,
         tags: editValues.tags.trim() || null,
-        expansion: editValues.expansion || null,
+        card_text: editValues.card_text.trim() || null,
         base_vp: editValues.base_vp !== '' ? Number(editValues.base_vp) : null,
         resource_vp_type: editValues.resource_vp_type || null,
         resource_vp_per: editValues.resource_vp_per !== '' ? Number(editValues.resource_vp_per) : null,
@@ -260,11 +283,22 @@ export default function CardReferenceAdmin() {
         setSaving(false)
         return
       }
+      let cardId: string
       if (editingId === 'new') {
-        const { error } = await supabase.from('card_reference').insert(payload)
+        const { data: inserted, error } = await supabase.from('card_reference').insert(payload).select('id').single()
         if (error) throw error
+        cardId = inserted.id
       } else {
         const { error } = await supabase.from('card_reference').update(payload).eq('id', editingId!)
+        if (error) throw error
+        cardId = editingId!
+      }
+      // Sync card_expansions junction table
+      await supabase.from('card_expansions').delete().eq('card_id', cardId)
+      if (editValues.expansions.length > 0) {
+        const { error } = await supabase.from('card_expansions').insert(
+          editValues.expansions.map(exp => ({ card_id: cardId, expansion: exp }))
+        )
         if (error) throw error
       }
       await queryClient.invalidateQueries({ queryKey: ['card-reference'] })
@@ -436,7 +470,7 @@ export default function CardReferenceAdmin() {
                       </div>
                     </td>
                     <td style={{ padding: '11px 16px', fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#8e87a8' }}>
-                      {card.expansion ?? '—'}
+                      {card.expansions.length > 0 ? card.expansions.join(', ') : '—'}
                     </td>
                     <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#c9a030' }}>
                       {card.base_vp != null ? `${card.base_vp} VP` : '—'}

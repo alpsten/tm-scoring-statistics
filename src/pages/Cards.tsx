@@ -36,10 +36,14 @@ const TAG_COLORS: Record<string, { bg: string; color: string }> = {
   'Planet':   { bg: 'rgba(92, 172, 110, 0.12)',  color: '#5cac6e' },
 }
 
+type SortKey = 'card_name' | 'times_played' | 'win_rate' | 'avg_vp_contribution'
+
 export default function Cards() {
   const [search, setSearch] = useState('')
   const [typeFilters, setTypeFilters] = useState<CardType[]>([])
   const [tagFilters, setTagFilters] = useState<string[]>([])
+  const [sortKey, setSortKey] = useState<SortKey>('times_played')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const { data: cardStats, isLoading, error } = useCardStats()
   const { data: cardRef } = useCardReference()
 
@@ -71,7 +75,18 @@ export default function Cards() {
     return true
   })
 
+  const sorted = [...cards].sort((a, b) => {
+    const mul = sortDir === 'asc' ? 1 : -1
+    if (sortKey === 'card_name') return mul * a.card_name.localeCompare(b.card_name)
+    return mul * ((a[sortKey] ?? 0) - (b[sortKey] ?? 0))
+  })
+
   const hasFilters = !!search || typeFilters.length > 0 || tagFilters.length > 0
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(key); setSortDir('desc') }
+  }
 
   function toggleType(type: CardType) {
     setTypeFilters(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])
@@ -175,15 +190,37 @@ export default function Cards() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #282042' }}>
-                {['Card', 'Type', 'Tags', 'Played', 'Win rate', 'Avg VP'].map(h => (
-                  <th key={h} style={{ padding: '11px 16px', textAlign: h === 'Card' ? 'left' : 'center', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
-                    {h}
-                  </th>
-                ))}
+                {([
+                  { label: 'Card',     key: 'card_name'           as SortKey, align: 'left'   },
+                  { label: 'Type',     key: null,                              align: 'center' },
+                  { label: 'Tags',     key: null,                              align: 'center' },
+                  { label: 'Played',   key: 'times_played'        as SortKey, align: 'center' },
+                  { label: 'Win Rate', key: 'win_rate'            as SortKey, align: 'center' },
+                  { label: 'Avg VP',   key: 'avg_vp_contribution' as SortKey, align: 'center' },
+                ] as { label: string; key: SortKey | null; align: string }[]).map(({ label, key, align }) => {
+                  const active = key && sortKey === key
+                  return (
+                    <th
+                      key={label}
+                      onClick={key ? () => handleSort(key) : undefined}
+                      style={{
+                        padding: '11px 16px', textAlign: align as 'left' | 'center',
+                        fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600,
+                        letterSpacing: '0.08em', textTransform: 'uppercase',
+                        color: active ? '#b87aff' : '#504270',
+                        cursor: key ? 'pointer' : 'default',
+                        userSelect: 'none',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {label}{active ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
+                    </th>
+                  )
+                })}
               </tr>
             </thead>
             <tbody>
-              {cards.map((card, i) => {
+              {sorted.map((card, i) => {
                 const type = typeMap[card.card_name.toLowerCase()]
                 const typeStyle = type ? TYPE_COLORS[type] : null
                 return (
