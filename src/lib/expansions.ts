@@ -9,7 +9,8 @@ export const ALL_EXPANSIONS = [
 ]
 
 export const EXPANSION_ICONS: Record<string, string> = {
-  'Ares':        '/tm-scoring-statistics/expansions/expansion_icon_ares.png',
+  'Ares':           '/tm-scoring-statistics/expansions/expansion_icon_ares.png',
+  'Corporate Era':  '/tm-scoring-statistics/expansions/expansion_icon_corporateEra.png',
   'CEO':         '/tm-scoring-statistics/expansions/expansion_icon_ceo.png',
   'Colonies':    '/tm-scoring-statistics/expansions/expansion_icon_colonies.png',
   'Pathfinders': '/tm-scoring-statistics/expansions/expansion_icon_pathfinders.png',

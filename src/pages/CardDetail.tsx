@@ -4,6 +4,7 @@ import StatCard from '../components/ui/StatCard'
 import Tag from '../components/ui/Tag'
 import { parseTags } from '../components/ui/tagUtils'
 import { useCardStats, useCardReference } from '../lib/hooks'
+import { EXPANSION_ICONS } from '../lib/expansions'
 
 const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
   Automated:   { bg: 'rgba(74,158,107,0.1)',  color: '#4a9e6b' },
@@ -37,9 +38,19 @@ export default function CardDetail() {
 
   const tags = parseTags(ref?.tags ?? null)
   const typeColors = ref ? TYPE_COLORS[ref.card_type] : null
+  const isLandscape = ref?.card_type === 'Prelude' || ref?.card_type === 'Corporation'
 
   return (
-    <div className="page-enter" style={{ padding: '32px 36px' }}>
+    <div className="page-enter card-detail-page">
+      <style>{`
+        .card-detail-page { padding: 32px 36px; }
+        .card-detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 32px; }
+        @media (max-width: 480px) {
+          .card-detail-page { padding: 20px 16px; }
+          .card-detail-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
+
       <div style={{ marginBottom: '24px' }}>
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: '#625c7c', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.78rem', padding: 0 }}>← Back</button>
       </div>
@@ -49,36 +60,115 @@ export default function CardDetail() {
         subtitle={stats ? `Played ${stats.times_played} time${stats.times_played !== 1 ? 's' : ''}` : 'No play history yet'}
       />
 
-      {/* Card reference metadata */}
+      {/* Card frame */}
       {ref && (
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '28px' }}>
-          {typeColors && (
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', fontWeight: 500, padding: '3px 9px', borderRadius: '3px', background: typeColors.bg, color: typeColors.color }}>
-              {ref.card_type}
-            </span>
-          )}
-          {ref.expansion && (
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#625c7c' }}>{ref.expansion}</span>
-          )}
-          {tags.map(tag => <Tag key={tag} name={tag} />)}
-          {ref.base_vp != null && (
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#c9a030' }}>{ref.base_vp} VP</span>
-          )}
-          {ref.resource_vp_type && (
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#c9a030' }}>
-              {ref.resource_vp_per && ref.resource_vp_per > 1 ? `1/${ref.resource_vp_per}` : '1'} VP / {ref.resource_vp_type}
-            </span>
-          )}
+        <div style={{
+          width: isLandscape ? '336px' : '240px',
+          aspectRatio: isLandscape ? '7 / 5' : '5 / 7',
+          marginBottom: '28px',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          border: `3px solid ${typeColors?.color ?? '#3e325e'}`,
+          background: '#0e0c1e',
+          boxShadow: `0 6px 32px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.03)`,
+          display: 'flex',
+          flexDirection: 'column',
+        }}>
+          {/* Header */}
+          <div style={{
+            background: typeColors ? `${typeColors.color}28` : '#1a1630',
+            borderBottom: `1px solid ${typeColors?.color ?? '#3e325e'}55`,
+            padding: '8px 10px 7px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '5px',
+          }}>
+            {/* Row 1: cost badge + tags */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {!isLandscape && (
+                <div style={{
+                  width: '28px', height: '28px', flexShrink: 0,
+                  background: ref.mc_cost != null ? 'linear-gradient(135deg, #f0d040, #c9a030)' : 'rgba(201,160,48,0.15)',
+                  border: '1px solid #c9a03066',
+                  borderRadius: '4px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '0.88rem',
+                  color: ref.mc_cost != null ? '#1a1428' : 'transparent',
+                }}>
+                  {ref.mc_cost ?? ''}
+                </div>
+              )}
+              {tags.length > 0 && (
+                <div style={{ display: 'flex', gap: '3px' }}>
+                  {tags.map(tag => <Tag key={tag} name={tag} />)}
+                </div>
+              )}
+            </div>
+            {/* Row 2: card name */}
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#ece6ff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {cardName}
+            </div>
+          </div>
+
+          {/* Body — card text */}
+          <div style={{ padding: '16px 14px', flex: 1, overflow: 'auto' }}>
+            {ref.card_text ? (
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.76rem', color: '#bbb4d0', margin: 0, lineHeight: 1.55 }}>
+                {ref.card_text}
+              </p>
+            ) : (
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.73rem', color: '#3e325e', margin: 0, fontStyle: 'italic' }}>
+                No card text recorded.
+              </p>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div style={{
+            borderTop: '1px solid #1e1835',
+            padding: '7px 10px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              {ref.expansions.map(exp => EXPANSION_ICONS[exp]
+                ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} style={{ width: '16px', height: '16px', objectFit: 'contain', opacity: 0.65 }} />
+                : <span key={exp} style={{ fontFamily: 'var(--font-body)', fontSize: '0.62rem', color: '#504270' }}>{exp}</span>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              {ref.resource_vp_type && (
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: '#c9a030' }}>
+                  {ref.resource_vp_per && ref.resource_vp_per > 1 ? `1/${ref.resource_vp_per}` : '1'}VP/{ref.resource_vp_type}
+                </span>
+              )}
+              {ref.base_vp != null && (
+                <div style={{
+                  width: '28px', height: '28px', borderRadius: '50%',
+                  background: 'radial-gradient(circle at 40% 35%, #e8b840, #b8860b)',
+                  border: '1px solid #c9a030',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '0.85rem', color: '#1a1428',
+                  flexShrink: 0,
+                }}>
+                  {ref.base_vp}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
       {/* Play stats */}
       {stats && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
+          <div className="card-detail-grid">
             <StatCard label="Times played"        value={stats.times_played}                          accent="neutral" />
             <StatCard label="Win rate"            value={`${Math.round(stats.win_rate)}%`} sub={`${stats.win_count} wins`} accent={stats.win_rate >= 50 ? 'win' : stats.win_rate > 33 ? 'score' : 'mars'} />
-            <StatCard label="Avg VP contribution" value={Math.round(stats.avg_vp_contribution)}        accent="score"   />
+            {stats.avg_vp_contribution > 0 && (
+              <StatCard label="Avg VP contribution" value={Math.round(stats.avg_vp_contribution)} accent="score" />
+            )}
             <StatCard label="Avg player score"    value={Math.round(stats.avg_player_score)} valueSuffix="VP" accent="score" badge />
           </div>
 

@@ -42,8 +42,8 @@ export default function Cards() {
   const [search, setSearch] = useState('')
   const [typeFilters, setTypeFilters] = useState<CardType[]>([])
   const [tagFilters, setTagFilters] = useState<string[]>([])
-  const [sortKey, setSortKey] = useState<SortKey>('times_played')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [sortKey, setSortKey] = useState<SortKey>('card_name')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const { data: cardStats, isLoading, error } = useCardStats()
   const { data: cardRef } = useCardReference()
 

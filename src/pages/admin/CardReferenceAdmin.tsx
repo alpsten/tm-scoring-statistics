@@ -6,6 +6,7 @@ import Tag from '../../components/ui/Tag'
 import { parseTags } from '../../components/ui/tagUtils'
 import { useCardReference } from '../../lib/hooks'
 import { supabase } from '../../lib/supabase'
+import { EXPANSION_ICONS } from '../../lib/expansions'
 import type { CardReference } from '../../types/database'
 
 const CARD_TYPES: CardReference['card_type'][] = ['Automated', 'Active', 'Event', 'Corporation', 'Prelude', 'CEO']
@@ -61,6 +62,7 @@ type EditValues = {
   tags: string
   expansions: string[]
   card_text: string
+  mc_cost: string
   base_vp: string
   resource_vp_type: string
   resource_vp_per: string
@@ -111,6 +113,10 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
               )
             })}
           </div>
+        </div>
+        <div style={{ flex: '0 0 80px' }}>
+          <label style={labelStyle}>MC Cost</label>
+          <input type="number" min={0} max={50} value={values.mc_cost} onChange={set('mc_cost')} placeholder="—" style={inputStyle} />
         </div>
         <div style={{ flex: '0 0 90px' }}>
           <label style={labelStyle}>Base VP</label>
@@ -211,7 +217,7 @@ export default function CardReferenceAdmin() {
   const [tagFilters, setTagFilters]       = useState<string[]>([])
   const [expansionFilters, setExpansionFilters] = useState<string[]>([])
   const [editingId, setEditingId]         = useState<string | null>(null) // 'new' = add mode
-  const [editValues, setEditValues]       = useState<EditValues>({ card_name: '', card_type: 'Automated', tags: '', expansions: [], card_text: '', base_vp: '', resource_vp_type: '', resource_vp_per: '' })
+  const [editValues, setEditValues]       = useState<EditValues>({ card_name: '', card_type: 'Automated', tags: '', expansions: [], card_text: '', mc_cost: '', base_vp: '', resource_vp_type: '', resource_vp_per: '' })
   const [saving, setSaving]               = useState(false)
   const [saveError, setSaveError]         = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
@@ -247,6 +253,7 @@ export default function CardReferenceAdmin() {
       tags: card.tags ?? '',
       expansions: card.expansions ?? [],
       card_text: card.card_text ?? '',
+      mc_cost: card.mc_cost != null ? String(card.mc_cost) : '',
       base_vp: card.base_vp != null ? String(card.base_vp) : '',
       resource_vp_type: card.resource_vp_type ?? '',
       resource_vp_per: card.resource_vp_per != null ? String(card.resource_vp_per) : '',
@@ -256,7 +263,7 @@ export default function CardReferenceAdmin() {
 
   function startAdd() {
     setEditingId('new')
-    setEditValues({ card_name: '', card_type: 'Automated', tags: '', expansions: [], card_text: '', base_vp: '', resource_vp_type: '', resource_vp_per: '' })
+    setEditValues({ card_name: '', card_type: 'Automated', tags: '', expansions: [], card_text: '', mc_cost: '', base_vp: '', resource_vp_type: '', resource_vp_per: '' })
     setSaveError(null)
   }
 
@@ -274,6 +281,7 @@ export default function CardReferenceAdmin() {
         card_type: editValues.card_type,
         tags: editValues.tags.trim() || null,
         card_text: editValues.card_text.trim() || null,
+        mc_cost: editValues.mc_cost !== '' ? Number(editValues.mc_cost) : null,
         base_vp: editValues.base_vp !== '' ? Number(editValues.base_vp) : null,
         resource_vp_type: editValues.resource_vp_type || null,
         resource_vp_per: editValues.resource_vp_per !== '' ? Number(editValues.resource_vp_per) : null,
@@ -304,7 +312,8 @@ export default function CardReferenceAdmin() {
       await queryClient.invalidateQueries({ queryKey: ['card-reference'] })
       setEditingId(null)
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Unknown error')
+      const msg = err instanceof Error ? err.message : (err as any)?.message ?? JSON.stringify(err)
+      setSaveError(msg)
     } finally {
       setSaving(false)
     }
@@ -470,7 +479,15 @@ export default function CardReferenceAdmin() {
                       </div>
                     </td>
                     <td style={{ padding: '11px 16px', fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#8e87a8' }}>
-                      {card.expansions.length > 0 ? card.expansions.join(', ') : '—'}
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                        {card.expansions.length > 0
+                          ? card.expansions.map(exp => EXPANSION_ICONS[exp]
+                              ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                              : <span key={exp} style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#8e87a8' }}>{exp}</span>
+                            )
+                          : <span style={{ color: '#504270' }}>—</span>
+                        }
+                      </div>
                     </td>
                     <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#c9a030' }}>
                       {card.base_vp != null ? `${card.base_vp} VP` : '—'}
