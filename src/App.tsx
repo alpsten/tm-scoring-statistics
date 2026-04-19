@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext'
 import Layout from './components/layout/Layout'
@@ -11,12 +11,21 @@ import GameDetail from './pages/GameDetail'
 import Players from './pages/Players'
 import PlayerDetail from './pages/PlayerDetail'
 import Corporations from './pages/Corporations'
-import CorporationDetail from './pages/CorporationDetail'
 import Cards from './pages/Cards'
 import CardDetail from './pages/CardDetail'
 import Setup from './pages/Setup'
 import MilestonesAwards from './pages/MilestonesAwards'
 import CEOs from './pages/CEOs'
+
+function CorpDetailRedirect() {
+  const { name } = useParams<{ name: string }>()
+  return <Navigate to={`/cards/${name}`} replace />
+}
+
+function CEODetailRedirect() {
+  const { name } = useParams<{ name: string }>()
+  return <Navigate to={`/cards/${name}`} replace />
+}
 
 // Admin pages
 import AdminLogin from './pages/admin/AdminLogin'
@@ -52,11 +61,12 @@ export default function App() {
               <Route path="players"           element={<Players />}           />
               <Route path="players/:name"     element={<PlayerDetail />}      />
               <Route path="corporations"      element={<Corporations />}      />
-              <Route path="corporations/:name" element={<CorporationDetail />} />
+              <Route path="corporations/:name" element={<CorpDetailRedirect />} />
               <Route path="cards"             element={<Cards />}             />
               <Route path="cards/:name"       element={<CardDetail />}        />
               <Route path="setup"             element={<Setup />}             />
               <Route path="ceos"             element={<CEOs />}             />
+              <Route path="ceos/:name"       element={<CEODetailRedirect />} />
               <Route path="ma"               element={<MilestonesAwards />} />
 
               {/* Protected admin routes */}

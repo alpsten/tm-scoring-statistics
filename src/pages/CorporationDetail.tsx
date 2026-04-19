@@ -2,7 +2,65 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
+import PositionBadge from '../components/ui/PositionBadge'
+import SectionHeading from '../components/ui/SectionHeading'
+import DataTable from '../components/ui/DataTable'
+import type { DataTableColumn } from '../components/ui/DataTable'
 import { useGames, useCorpStats } from '../lib/hooks'
+
+type CorpGameRow = {
+  id: string
+  game_number: number | null
+  date: string
+  map_name: string | null
+  player_name: string
+  position: number
+  total_vp: number
+}
+
+const columns: DataTableColumn<CorpGameRow>[] = [
+  {
+    key: 'date',
+    label: 'Date',
+    tdStyle: { fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--text-3)' },
+    render: r => r.game_number != null ? (
+      <Link to={`/games/${r.game_number}`} style={{ color: 'var(--text-3)', textDecoration: 'none' }}>
+        {new Date(r.date).toLocaleDateString('sv-SE')}
+      </Link>
+    ) : <>{new Date(r.date).toLocaleDateString('sv-SE')}</>,
+  },
+  {
+    key: 'map_name',
+    label: 'Map',
+    tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)' },
+    render: r => <>{r.map_name ?? '—'}</>,
+  },
+  {
+    key: 'player_name',
+    label: 'Player',
+    tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.83rem' },
+    render: r => (
+      <Link to={`/players/${encodeURIComponent(r.player_name)}`} style={{ color: 'var(--text-3)', textDecoration: 'none' }}>
+        {r.player_name}
+      </Link>
+    ),
+  },
+  {
+    key: 'position',
+    label: 'Position',
+    render: r => <PositionBadge position={r.position} />,
+  },
+  {
+    key: 'total_vp',
+    label: 'Score',
+    tdStyle: { fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem' },
+    render: r => (
+      <span style={{ color: r.position === 1 ? '#c9a030' : 'var(--text-3)' }}>
+        {r.total_vp}<span style={{ marginLeft: '3px' }}>VP</span>
+      </span>
+    ),
+  },
+]
 
 export default function CorporationDetail() {
   const { name } = useParams<{ name: string }>()
@@ -27,10 +85,23 @@ export default function CorporationDetail() {
     return <div style={loadingStyle}>Corporation not found. <Link to="/corporations" style={{ color: '#e05535' }}>Back</Link></div>
   }
 
+  const tableRows: CorpGameRow[] = corpGames.map(game => {
+    const result = game.player_results.find(r => r.corporation === corpName)!
+    return {
+      id: game.id,
+      game_number: game.game_number,
+      date: game.date,
+      map_name: game.map_name,
+      player_name: result.player_name,
+      position: result.position,
+      total_vp: result.total_vp,
+    }
+  })
+
   return (
     <div className="page-enter" style={{ padding: '32px 36px' }}>
       <div style={{ marginBottom: '24px' }}>
-        <Link to="/corporations" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', textDecoration: 'none' }}>← Corporations</Link>
+        <Link to="/corporations" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-4)', textDecoration: 'none' }}>← Corporations</Link>
       </div>
 
       <PageHeader title={corpName} subtitle={`${stats.games_played} game${stats.games_played !== 1 ? 's' : ''} on record`} />
@@ -42,62 +113,14 @@ export default function CorporationDetail() {
         <StatCard label="Best score" value={stats.best_score}                valueSuffix="VP"                 accent="score" badge />
       </div>
 
-      <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }}>
-        Game history
-      </h2>
-      <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid #282042' }}>
-              {['Date', 'Map', 'Player', 'Position', 'Score'].map(h => (
-                <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {corpGames.map((game, i) => {
-              const result = game.player_results.find(r => r.corporation === corpName)!
-              return (
-                <tr key={game.id} style={{ borderBottom: i < corpGames.length - 1 ? '1px solid #282042' : 'none' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#282042')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: '#8e87a8' }}>
-                    <Link to={`/games/${game.id}`} style={{ color: '#8e87a8', textDecoration: 'none' }}>
-                      {new Date(game.date).toLocaleDateString('sv-SE')}
-                    </Link>
-                  </td>
-                  <td style={{ padding: '11px 16px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>{game.map_name ?? '—'}</td>
-                  <td style={{ padding: '11px 16px' }}>
-                    <Link to={`/players/${encodeURIComponent(result.player_name)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#8e87a8', textDecoration: 'none' }}>
-                      {result.player_name}
-                    </Link>
-                  </td>
-                  <td style={{ padding: '11px 16px' }}>
-                    {result.position === 1
-                      ? <span style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', fontWeight: 700, color: '#4a9e6b', letterSpacing: '0.05em', background: 'rgba(74,158,107,0.12)', border: '1px solid rgba(74,158,107,0.35)', borderRadius: '4px', padding: '2px 7px' }}>WINNER</span>
-                      : <span style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', fontWeight: 600, color: '#e05535', letterSpacing: '0.04em', background: 'rgba(224,85,53,0.1)', border: '1px solid rgba(224,85,53,0.3)', borderRadius: '4px', padding: '2px 7px' }}>
-                          {['', '', '2ND', '3RD', '4TH', '5TH'][result.position] ?? `${result.position}TH`} PLACE
-                        </span>
-                    }
-                  </td>
-                  <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: result.position === 1 ? '#c9a030' : '#8e87a8' }}>
-                    {result.total_vp}<span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: result.position === 1 ? '#c9a030' : '#8e87a8', marginLeft: '3px' }}>VP</span>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
+      <SectionHeading>Game history</SectionHeading>
+      <DataTable columns={columns} rows={tableRows} rowKey={r => r.id} compact />
     </div>
   )
 }
 
 const loadingStyle: React.CSSProperties = {
   padding: '32px 36px',
-  color: '#625c7c',
+  color: 'var(--text-4)',
   fontFamily: 'var(--font-body)',
 }

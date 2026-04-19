@@ -46,7 +46,7 @@ export default function Setup() {
             <div style={tableWrap}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #282042' }}>
+                  <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
                     <th style={th}>Map</th>
                     <th style={{ ...th, textAlign: 'center' }}>Games</th>
                     <th style={{ ...th, textAlign: 'center' }}>Avg score</th>
@@ -54,8 +54,8 @@ export default function Setup() {
                 </thead>
                 <tbody>
                   {mapScores.sort((a, b) => b.count - a.count).map((m, i) => (
-                    <tr key={m.map} style={{ borderBottom: i < mapScores.length - 1 ? '1px solid #282042' : 'none' }}>
-                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>{m.map}</td>
+                    <tr key={m.map} style={{ borderBottom: i < mapScores.length - 1 ? '1px solid var(--bd-panel)' : 'none' }}>
+                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)' }}>{m.map}</td>
                       <td style={{ ...numTd, textAlign: 'center' }}>{m.count}</td>
                       <td style={{ ...numTd, textAlign: 'center', color: '#c9a030' }}>{Math.round(m.avgScore)}</td>
                     </tr>
@@ -75,15 +75,15 @@ export default function Setup() {
             <div style={tableWrap}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #282042' }}>
+                  <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
                     <th style={th}>Expansion</th>
                     <th style={{ ...th, textAlign: 'center' }}>Games used</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Object.entries(expansionCounts).sort((a, b) => b[1] - a[1]).map(([exp, count], i, arr) => (
-                    <tr key={exp} style={{ borderBottom: i < arr.length - 1 ? '1px solid #282042' : 'none' }}>
-                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>
+                    <tr key={exp} style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--bd-panel)' : 'none' }}>
+                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)' }}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                           {EXPANSION_ICONS[exp] && <img src={EXPANSION_ICONS[exp]} alt={exp} style={{ width: '16px', height: '16px', objectFit: 'contain' }} />}
                           {exp}
@@ -107,15 +107,15 @@ export default function Setup() {
             <div style={tableWrap}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #282042' }}>
+                  <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
                     <th style={th}>Colony</th>
                     <th style={{ ...th, textAlign: 'center' }}>Appearances</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Object.entries(colonyCounts).sort((a, b) => b[1] - a[1]).map(([col, count], i, arr) => (
-                    <tr key={col} style={{ borderBottom: i < arr.length - 1 ? '1px solid #282042' : 'none' }}>
-                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>{col}</td>
+                    <tr key={col} style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--bd-panel)' : 'none' }}>
+                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)' }}>{col}</td>
                       <td style={{ ...numTd, textAlign: 'center' }}>{count}</td>
                     </tr>
                   ))}
@@ -131,24 +131,24 @@ export default function Setup() {
 
 const loadingStyle: React.CSSProperties = {
   padding: '32px 36px',
-  color: '#625c7c',
+  color: 'var(--text-4)',
   fontFamily: 'var(--font-body)',
 }
 
 const emptyCard: React.CSSProperties = {
-  background: '#1e1835',
-  border: '1px solid #282042',
+  background: 'var(--bg-panel)',
+  border: '1px solid var(--bd-panel)',
   borderRadius: '6px',
   padding: '20px 14px',
   fontFamily: 'var(--font-body)',
   fontSize: '0.8rem',
-  color: '#504270',
+  color: 'var(--text-4)',
   textAlign: 'center',
 }
 
 const tableWrap: React.CSSProperties = {
-  background: '#1e1835',
-  border: '1px solid #282042',
+  background: 'var(--bg-panel)',
+  border: '1px solid var(--bd-panel)',
   borderRadius: '6px',
   overflow: 'hidden',
 }
@@ -159,7 +159,7 @@ const sectionTitle: React.CSSProperties = {
   fontSize: '0.82rem',
   letterSpacing: '0.1em',
   textTransform: 'uppercase',
-  color: '#625c7c',
+  color: 'var(--text-4)',
   marginBottom: '12px',
   marginTop: 0,
 }
@@ -172,7 +172,7 @@ const th: React.CSSProperties = {
   fontWeight: 600,
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
-  color: '#504270',
+  color: 'var(--text-4)',
 }
 
 const numTd: React.CSSProperties = {
@@ -180,5 +180,5 @@ const numTd: React.CSSProperties = {
   textAlign: 'right',
   fontFamily: 'var(--font-mono)',
   fontSize: '0.82rem',
-  color: '#bbb4d0',
+  color: 'var(--text-2)',
 }

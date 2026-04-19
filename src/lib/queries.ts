@@ -351,29 +351,34 @@ export interface CEOStat {
   times_played: number
   wins: number
   win_rate: number
+  avg_score: number
+  best_score: number
 }
 
 export async function fetchCEOStats(): Promise<CEOStat[]> {
   const { data, error } = await supabase
     .from('player_results')
-    .select('ceo, position')
+    .select('ceo, position, total_vp')
     .not('ceo', 'is', null)
   if (error) throw error
   if (!data || data.length === 0) return []
 
-  const map: Record<string, { count: number; wins: number }> = {}
-  for (const r of data as { ceo: string; position: number }[]) {
-    if (!map[r.ceo]) map[r.ceo] = { count: 0, wins: 0 }
+  const map: Record<string, { count: number; wins: number; vps: number[] }> = {}
+  for (const r of data as { ceo: string; position: number; total_vp: number }[]) {
+    if (!map[r.ceo]) map[r.ceo] = { count: 0, wins: 0, vps: [] }
     map[r.ceo].count++
+    map[r.ceo].vps.push(r.total_vp)
     if (r.position === 1) map[r.ceo].wins++
   }
 
   return Object.entries(map)
-    .map(([ceo_name, { count, wins }]) => ({
+    .map(([ceo_name, { count, wins, vps }]) => ({
       ceo_name,
       times_played: count,
       wins,
       win_rate: (wins / count) * 100,
+      avg_score: vps.reduce((s, v) => s + v, 0) / vps.length,
+      best_score: Math.max(...vps),
     }))
     .sort((a, b) => b.times_played - a.times_played || a.ceo_name.localeCompare(b.ceo_name))
 }

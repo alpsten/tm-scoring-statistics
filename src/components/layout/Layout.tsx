@@ -32,7 +32,7 @@ export default function Layout() {
         style={{
           flex: 1,
           overflowY: 'auto',
-          background: '#0a0b0d',
+          background: 'var(--bg-main)',
         }}
       >
         <Outlet />

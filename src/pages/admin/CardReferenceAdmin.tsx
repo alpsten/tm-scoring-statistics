@@ -6,7 +6,7 @@ import Tag from '../../components/ui/Tag'
 import { parseTags } from '../../components/ui/tagUtils'
 import { useCardReference } from '../../lib/hooks'
 import { supabase } from '../../lib/supabase'
-import { EXPANSION_ICONS } from '../../lib/expansions'
+import { EXPANSION_ICONS, TAG_ICONS } from '../../lib/expansions'
 import type { CardReference } from '../../types/database'
 
 const CARD_TYPES: CardReference['card_type'][] = ['Automated', 'Active', 'Event', 'Corporation', 'Prelude', 'CEO']
@@ -153,20 +153,24 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
         <label style={labelStyle}>Tags</label>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {ALL_TAGS.map(tag => {
-            const active = parseTags(values.tags).includes(tag)
+            const current = parseTags(values.tags)
+            const count = current.filter(t => t === tag).length
             const colors = TAG_COLORS[tag] ?? { bg: 'rgba(100,100,100,0.12)', color: '#8e87a8' }
             return (
               <button
                 key={tag}
                 type="button"
                 onClick={() => {
-                  const current = parseTags(values.tags)
-                  const next = active ? current.filter(t => t !== tag) : [...current, tag]
+                  const next = count === 0
+                    ? [...current, tag]
+                    : count === 1
+                    ? [...current, tag]   // add second instance
+                    : current.filter(t => t !== tag) // remove all
                   onChange({ ...values, tags: next.join(', ') })
                 }}
-                style={{ padding: '3px 11px', background: active ? colors.bg : 'transparent', border: `1px solid ${active ? colors.color : '#3e325e'}`, borderRadius: '12px', cursor: 'pointer', transition: 'all 0.12s', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: active ? colors.color : '#625c7c' }}
+                style={{ padding: '3px 11px', background: count > 0 ? colors.bg : 'transparent', border: `1px solid ${count > 0 ? colors.color : '#3e325e'}`, borderRadius: '12px', cursor: 'pointer', transition: 'all 0.12s', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: count > 0 ? colors.color : '#625c7c', position: 'relative' }}
               >
-                {active ? '✓ ' : ''}{tag}
+                {count === 2 ? '×2 ' : count === 1 ? '✓ ' : ''}{tag}
               </button>
             )
           })}
@@ -390,10 +394,14 @@ export default function CardReferenceAdmin() {
             <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginRight: '2px' }}>Tag</span>
             {allTags.map(tag => {
               const active = tagFilters.includes(tag)
+              const icon = TAG_ICONS[tag]
               const colors = TAG_COLORS[tag] ?? { bg: 'rgba(100,100,100,0.12)', color: '#8e87a8' }
               return (
-                <button key={tag} onClick={() => toggleTag(tag)} style={{ padding: '3px 11px', background: active ? colors.bg : 'transparent', border: `1px solid ${active ? colors.color : '#3e325e'}`, borderRadius: '12px', cursor: 'pointer', transition: 'all 0.12s', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: active ? colors.color : '#625c7c' }}>
-                  {active ? '✓ ' : ''}{tag}
+                <button key={tag} onClick={() => toggleTag(tag)} title={tag} style={{ padding: '4px', background: active ? colors.bg : 'transparent', border: `1px solid ${active ? colors.color : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: active ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {icon
+                    ? <img src={icon} alt={tag} style={{ width: '20px', height: '20px', objectFit: 'contain', display: 'block' }} />
+                    : <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: active ? colors.color : '#625c7c', padding: '0 7px' }}>{tag}</span>
+                  }
                 </button>
               )
             })}
@@ -406,9 +414,13 @@ export default function CardReferenceAdmin() {
             <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginRight: '2px' }}>Expansion</span>
             {allExpansions.map(exp => {
               const active = expansionFilters.includes(exp)
+              const icon = EXPANSION_ICONS[exp]
               return (
-                <button key={exp} onClick={() => toggleExpansion(exp)} style={{ padding: '3px 11px', background: active ? 'rgba(46,139,139,0.12)' : 'transparent', border: `1px solid ${active ? '#2e8b8b' : '#3e325e'}`, borderRadius: '12px', cursor: 'pointer', transition: 'all 0.12s', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: active ? '#3bbfbf' : '#625c7c' }}>
-                  {active ? '✓ ' : ''}{exp}
+                <button key={exp} onClick={() => toggleExpansion(exp)} title={exp} style={{ padding: '4px', background: active ? 'rgba(46,139,139,0.12)' : 'transparent', border: `1px solid ${active ? '#2e8b8b' : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: active ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {icon
+                    ? <img src={icon} alt={exp} style={{ width: '20px', height: '20px', objectFit: 'contain', display: 'block' }} />
+                    : <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: active ? '#3bbfbf' : '#625c7c', padding: '0 7px' }}>{exp}</span>
+                  }
                 </button>
               )
             })}
@@ -475,7 +487,7 @@ export default function CardReferenceAdmin() {
                     </td>
                     <td style={{ padding: '11px 16px' }}>
                       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                        {[...new Set(parseTags(card.tags))].map(tag => <Tag key={tag} name={tag} />)}
+                        {parseTags(card.tags).map((tag, i) => <Tag key={`${tag}-${i}`} name={tag} />)}
                       </div>
                     </td>
                     <td style={{ padding: '11px 16px', fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#8e87a8' }}>

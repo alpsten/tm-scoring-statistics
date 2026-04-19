@@ -26,7 +26,7 @@ interface RankRow {
 function RankTable({ rows, nameLabel }: { rows: RankRow[]; nameLabel: string }) {
   if (rows.length === 0) {
     return (
-      <div style={{ padding: '20px', color: '#504270', fontFamily: 'var(--font-body)', fontSize: '0.83rem' }}>
+      <div style={{ padding: '20px', color: 'var(--text-4)', fontFamily: 'var(--font-body)', fontSize: '0.83rem' }}>
         No data yet.
       </div>
     )
@@ -39,9 +39,9 @@ function RankTable({ rows, nameLabel }: { rows: RankRow[]; nameLabel: string }) 
     fontSize: '0.62rem',
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
-    color: '#504270',
+    color: 'var(--text-4)',
     fontWeight: 400,
-    borderBottom: '1px solid #282042',
+    borderBottom: '1px solid var(--bd-panel)',
   }
   const thRight: React.CSSProperties = { ...thStyle, textAlign: 'right' }
 
@@ -61,20 +61,20 @@ function RankTable({ rows, nameLabel }: { rows: RankRow[]; nameLabel: string }) 
           return (
             <tr
               key={row.name}
-              style={{ borderBottom: '1px solid #1e1835' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#171228')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              style={{ borderBottom: '1px solid var(--bd-panel)', background: 'var(--bg-row)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-row-hover)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-row)')}
             >
-              <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#504270' }}>
+              <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-4)' }}>
                 {i + 1}
               </td>
-              <td style={{ padding: '9px 14px', fontFamily: 'var(--font-body)', fontSize: '0.87rem', color: '#ece6ff' }}>
+              <td style={{ padding: '9px 14px', fontFamily: 'var(--font-body)', fontSize: '0.87rem', color: 'var(--text-1)' }}>
                 {row.name}
               </td>
               <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#b87aff', textAlign: 'right' }}>
                 {row.count}
               </td>
-              <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: '#625c7c', textAlign: 'right' }}>
+              <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-4)', textAlign: 'right' }}>
                 {pct(row.total)}%
               </td>
             </tr>
@@ -147,14 +147,14 @@ export default function MilestonesAwards() {
   )
 
   const panel = (children: React.ReactNode) => (
-    <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden' }}>
       {children}
     </div>
   )
 
   if (loading) {
     return (
-      <div style={{ padding: '32px 36px', color: '#625c7c', fontFamily: 'var(--font-body)' }}>Loading…</div>
+      <div style={{ padding: '32px 36px', color: 'var(--text-4)', fontFamily: 'var(--font-body)' }}>Loading…</div>
     )
   }
 
@@ -208,9 +208,9 @@ export default function MilestonesAwards() {
                     fontSize: '0.62rem',
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
-                    color: '#504270',
+                    color: 'var(--text-4)',
                     fontWeight: 400,
-                    borderBottom: '1px solid #282042',
+                    borderBottom: '1px solid var(--bd-panel)',
                   }}>{h}</th>
                 ))}
               </tr>
@@ -219,11 +219,11 @@ export default function MilestonesAwards() {
               {playerEntries.map(p => (
                 <tr
                   key={p.name}
-                  style={{ borderBottom: '1px solid #1e1835' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#171228')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  style={{ borderBottom: '1px solid var(--bd-panel)', background: 'var(--bg-row)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-row-hover)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-row)')}
                 >
-                  <td style={{ padding: '9px 14px', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.87rem', color: '#ece6ff' }}>{p.name}</td>
+                  <td style={{ padding: '9px 14px', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.87rem', color: 'var(--text-1)' }}>{p.name}</td>
                   <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#4a9e6b', textAlign: 'right' }}>{p.milestones}</td>
                   <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#c9a030', textAlign: 'right' }}>{p.awards}</td>
                   <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#b87aff', textAlign: 'right' }}>{p.milestones + p.awards}</td>

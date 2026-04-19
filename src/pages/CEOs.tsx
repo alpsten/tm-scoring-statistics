@@ -1,19 +1,63 @@
+import { Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
+import EmptyState from '../components/ui/EmptyState'
+import DataTable from '../components/ui/DataTable'
+import type { DataTableColumn } from '../components/ui/DataTable'
 import { useCEOStats } from '../lib/hooks'
+
+type CEORow = { rank: number; ceo_name: string; times_played: number; wins: number; win_rate: number }
+
+const columns: DataTableColumn<CEORow>[] = [
+  {
+    key: 'rank',
+    label: '#',
+    align: 'center',
+    tdStyle: { width: '36px', fontSize: '0.7rem', color: 'var(--text-4)' },
+  },
+  {
+    key: 'ceo_name',
+    label: 'CEO',
+    align: 'left',
+    tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.87rem', color: 'var(--text-1)' },
+    render: c => (
+      <>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: '#d07832', background: 'rgba(210,120,50,0.1)', border: '1px solid rgba(210,120,50,0.3)', borderRadius: '4px', padding: '1px 7px', marginRight: '8px' }}>
+          CEO
+        </span>
+        <Link to={`/cards/${encodeURIComponent(c.ceo_name)}`} style={{ color: 'var(--text-1)', textDecoration: 'none' }}>
+          {c.ceo_name}
+        </Link>
+      </>
+    ),
+  },
+  {
+    key: 'times_played',
+    label: 'Played',
+    align: 'center',
+    tdStyle: { fontSize: '0.87rem' },
+  },
+  {
+    key: 'wins',
+    label: 'Wins',
+    align: 'center',
+    tdStyle: { fontSize: '0.87rem', color: '#4a9e6b' },
+  },
+  {
+    key: 'win_rate',
+    label: 'Win Rate',
+    align: 'center',
+    tdStyle: { fontSize: '0.87rem' },
+    render: c => (
+      <span style={{ color: c.win_rate >= 50 ? '#4a9e6b' : c.win_rate > 0 ? '#c9a030' : '#707070' }}>
+        {c.win_rate.toFixed(0)}%
+      </span>
+    ),
+  },
+]
 
 export default function CEOs() {
   const { data: ceos = [], isLoading } = useCEOStats()
-
-  const thStyle: React.CSSProperties = {
-    padding: '8px 14px',
-    fontFamily: 'var(--font-mono)',
-    fontSize: '0.62rem',
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-    color: '#504270',
-    fontWeight: 400,
-    borderBottom: '1px solid #282042',
-  }
+  const rows: CEORow[] = ceos.map((c, i) => ({ rank: i + 1, ...c }))
 
   return (
     <div className="page-enter" style={{ padding: '32px 36px' }}>
@@ -34,55 +78,16 @@ export default function CEOs() {
       </div>
 
       {isLoading ? (
-        <div style={{ color: '#625c7c', fontFamily: 'var(--font-body)' }}>Loading…</div>
+        <div style={{ color: 'var(--text-4)', fontFamily: 'var(--font-body)' }}>Loading…</div>
       ) : ceos.length === 0 ? (
-        <div style={{ color: '#504270', fontFamily: 'var(--font-body)', fontSize: '0.83rem' }}>No CEO data logged yet.</div>
+        <EmptyState message="No CEO data logged yet." />
       ) : (
-        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={{ ...thStyle, textAlign: 'center', width: '36px' }}>#</th>
-                <th style={{ ...thStyle, textAlign: 'left' }}>CEO</th>
-                <th style={{ ...thStyle, textAlign: 'center' }}>Played</th>
-                <th style={{ ...thStyle, textAlign: 'center' }}>Wins</th>
-                <th style={{ ...thStyle, textAlign: 'center' }}>Win Rate</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ceos.map((c, i) => {
-                const winColor = c.win_rate >= 50 ? '#4a9e6b' : c.win_rate > 0 ? '#c9a030' : '#625c7c'
-                return (
-                  <tr
-                    key={c.ceo_name}
-                    style={{ borderBottom: '1px solid #1e1835' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#171228')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#504270', textAlign: 'center' }}>
-                      {i + 1}
-                    </td>
-                    <td style={{ padding: '9px 14px', fontFamily: 'var(--font-body)', fontSize: '0.87rem', color: '#ece6ff' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: '#d07832', background: 'rgba(210,120,50,0.1)', border: '1px solid rgba(210,120,50,0.3)', borderRadius: '4px', padding: '1px 7px', marginRight: '8px' }}>
-                        CEO
-                      </span>
-                      {c.ceo_name}
-                    </td>
-                    <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#bbb4d0', textAlign: 'center' }}>
-                      {c.times_played}
-                    </td>
-                    <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#4a9e6b', textAlign: 'center' }}>
-                      {c.wins}
-                    </td>
-                    <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: winColor, textAlign: 'center' }}>
-                      {c.win_rate.toFixed(0)}%
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={columns}
+          rows={rows}
+          rowKey={c => c.ceo_name}
+          compact
+        />
       )}
     </div>
   )

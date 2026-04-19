@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import { useGames, usePlayerProfiles } from '../lib/hooks'
 import { EXPANSION_ICONS, MAP_PILL, ALL_MAPS, ALL_EXPANSIONS } from '../lib/expansions'
 
@@ -69,8 +70,8 @@ export default function Games() {
             onChange={e => setSearch(e.target.value)}
             style={{
               width: '220px', height: '34px', padding: '0 12px',
-              background: '#1e1835', border: '1px solid #3e325e', borderRadius: '4px',
-              color: '#ece6ff', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none',
+              background: 'var(--bg-input)', border: '1px solid var(--bd-input)', borderRadius: '4px',
+              color: 'var(--text-1)', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none',
             }}
           />
           {hasFilters && (
@@ -78,8 +79,8 @@ export default function Games() {
               onClick={() => { setSearch(''); setMapFilters([]); setExpansionFilters([]) }}
               style={{
                 height: '34px', padding: '0 12px',
-                background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px',
-                color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.78rem', cursor: 'pointer',
+                background: 'transparent', border: '1px solid var(--bd-input)', borderRadius: '4px',
+                color: 'var(--text-4)', fontFamily: 'var(--font-body)', fontSize: '0.78rem', cursor: 'pointer',
               }}
             >
               Clear all
@@ -103,10 +104,10 @@ export default function Games() {
                 <button key={map} onClick={() => toggleMap(map)} style={{
                   padding: '4px 12px',
                   background: active ? 'rgba(91,141,217,0.15)' : 'transparent',
-                  border: `1px solid ${active ? '#5b8dd9' : '#3e325e'}`,
+                  border: `1px solid ${active ? '#5b8dd9' : 'var(--bd-input)'}`,
                   borderRadius: '4px', cursor: 'pointer', transition: 'all 0.12s',
                   fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.75rem',
-                  color: active ? '#5b8dd9' : '#625c7c',
+                  color: active ? '#5b8dd9' : 'var(--text-4)',
                 }}>
                   {active ? '✓ ' : ''}{map}
                 </button>
@@ -131,10 +132,10 @@ export default function Games() {
                 <button key={exp} onClick={() => toggleExpansion(exp)} style={{
                   padding: '4px 10px',
                   background: active ? 'rgba(91,141,217,0.12)' : 'transparent',
-                  border: `1px solid ${active ? '#5b8dd9' : '#3e325e'}`,
+                  border: `1px solid ${active ? '#5b8dd9' : 'var(--bd-input)'}`,
                   borderRadius: '4px', cursor: 'pointer', transition: 'all 0.12s',
                   fontFamily: 'var(--font-body)', fontSize: '0.75rem',
-                  color: active ? '#5b8dd9' : '#625c7c',
+                  color: active ? '#5b8dd9' : 'var(--text-4)',
                   display: 'flex', alignItems: 'center', gap: '5px',
                 }}>
                   {EXPANSION_ICONS[exp] && <img src={EXPANSION_ICONS[exp]} alt={exp} style={{ width: '14px', height: '14px', objectFit: 'contain' }} />}
@@ -147,9 +148,7 @@ export default function Games() {
       </div>
 
       {filtered.length === 0 ? (
-        <div style={{ padding: '32px', textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#504270' }}>
-          No games match the current filters.
-        </div>
+        <EmptyState message="No games match the current filters." />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {filtered.map(game => {
@@ -163,8 +162,8 @@ export default function Games() {
                 className="panel-hover"
                 style={{
                   display: 'block',
-                  background: '#1e1835',
-                  border: '1px solid #282042',
+                  background: 'var(--bg-panel)',
+                  border: '1px solid var(--bd-panel)',
                   borderRadius: '6px',
                   padding: '16px 20px',
                   textDecoration: 'none',
@@ -176,14 +175,14 @@ export default function Games() {
                     <span style={MAP_PILL}>{game.map_name ?? 'Digital'}</span>
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#5b8dd9', letterSpacing: '0.05em' }}>#{gameNum}</span>
                   </div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#625c7c' }}>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-4)' }}>
                     {new Date(game.date).toLocaleDateString('sv-SE')} · {game.player_count} players{game.generations ? ` · ${game.generations} gen` : ''}
                   </div>
                 </div>
 
                 {/* Expansions */}
                 {game.expansions.length > 0 && (
-                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid #282042', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid var(--bd-panel)', alignItems: 'center' }}>
                     {game.expansions.map(exp => {
                       const icon = EXPANSION_ICONS[exp] ?? EXPANSION_ICONS[normalizeExp(exp)]
                       return icon ? (
@@ -208,7 +207,7 @@ export default function Games() {
                         background: result.position === 1 ? 'rgba(74, 158, 107, 0.06)' : 'transparent',
                       }}
                     >
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: result.position === 1 ? '#4a9e6b' : '#504270', width: '20px', flexShrink: 0, paddingTop: '3px' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: result.position === 1 ? '#4a9e6b' : '#888888', width: '20px', flexShrink: 0, paddingTop: '3px' }}>
                         #{result.position}
                       </span>
                       {profileColors[result.player_name] && (
@@ -217,7 +216,7 @@ export default function Games() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0 }}>
-                            <span style={{ fontFamily: 'var(--font-body)', fontWeight: result.position === 1 ? 600 : 400, fontSize: '0.87rem', color: result.position === 1 ? '#ece6ff' : '#bbb4d0' }}>
+                            <span style={{ fontFamily: 'var(--font-body)', fontWeight: result.position === 1 ? 600 : 400, fontSize: '0.87rem', color: result.position === 1 ? 'var(--text-1)' : 'var(--text-2)' }}>
                               {result.player_name}
                             </span>
                             {result.ceo && (
@@ -226,16 +225,16 @@ export default function Games() {
                               </span>
                             )}
                           </div>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: result.position === 1 ? '#c9a030' : '#8e87a8', flexShrink: 0 }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: result.position === 1 ? '#c9a030' : 'var(--text-3)', flexShrink: 0 }}>
                             {result.total_vp}
-                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: result.position === 1 ? '#c9a030' : '#8e87a8', marginLeft: '3px', fontWeight: 700 }}>VP</span>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: result.position === 1 ? '#c9a030' : 'var(--text-3)', marginLeft: '3px', fontWeight: 700 }}>VP</span>
                           </span>
                         </div>
-                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#625c7c', marginTop: '1px' }}>
+                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-4)', marginTop: '1px' }}>
                           {formatCorp(result.corporation)}
                         </div>
                         {result.key_notes && (
-                          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', fontStyle: 'italic', marginTop: '2px' }}>
+                          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', fontStyle: 'italic', marginTop: '2px' }}>
                             {result.key_notes}
                           </div>
                         )}
@@ -245,7 +244,7 @@ export default function Games() {
                 </div>
 
                 {game.notes && (
-                  <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #282042', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#504270', fontStyle: 'italic' }}>
+                  <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--bd-panel)', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-4)', fontStyle: 'italic' }}>
                     {game.notes}
                   </div>
                 )}
@@ -260,6 +259,6 @@ export default function Games() {
 
 const loadingStyle: React.CSSProperties = {
   padding: '32px 36px',
-  color: '#625c7c',
+  color: 'var(--text-4)',
   fontFamily: 'var(--font-body)',
 }

@@ -101,12 +101,12 @@ export default function Dashboard() {
                 <span style={{ ...recordValue, color: '#c9a030' }}>
                   {highScoreResult.total_vp}
                   <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 700, color: '#c9a030', marginLeft: '4px' }}>VP</span>
-                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 400, color: '#625c7c', marginLeft: '6px' }}>with <Link to={`/corporations/${encodeURIComponent(highScoreResult.corporation)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>{highScoreResult.corporation}</Link></span>
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 400, color: 'var(--text-4)', marginLeft: '6px' }}>with <Link to={`/corporations/${encodeURIComponent(highScoreResult.corporation)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>{highScoreResult.corporation}</Link></span>
                 </span>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Link to={`/players/${encodeURIComponent(highScoreResult.player_name)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>{highScoreResult.player_name}</Link>
                   <span>·</span>
-                  <Link to={`/games/${highScoreGame.game_number}`} style={{ color: '#504270', textDecoration: 'none' }}>{new Date(highScoreGame.date).toLocaleDateString('sv-SE')}</Link>
+                  <Link to={`/games/${highScoreGame.game_number}`} style={{ color: 'var(--text-4)', textDecoration: 'none' }}>{new Date(highScoreGame.date).toLocaleDateString('sv-SE')}</Link>
                 </span>
               </>
             ) : <span style={recordValue}>—</span>}
@@ -114,14 +114,14 @@ export default function Dashboard() {
 
           {/* Best win rate */}
           <div style={recordCard}>
-            <span style={recordLabel}>Best Player Win Rate <span style={{ color: '#3e325e' }}>(min 3 games)</span></span>
+            <span style={recordLabel}>Best Player Win Rate <span style={{ color: 'var(--bd-secondary)' }}>(min 3 games)</span></span>
             {bestWinRate ? (
               <>
                 <span style={{ ...recordValue, color: '#4a9e6b' }}>
                   {Math.round(bestWinRate.win_rate)}
                   <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 700, color: '#4a9e6b', marginLeft: '2px' }}>%</span>
                 </span>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Link to={`/players/${encodeURIComponent(bestWinRate.player_name)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>{bestWinRate.player_name}</Link>
                   <span>·</span>
                   <span>
@@ -144,7 +144,7 @@ export default function Dashboard() {
                   {Math.round(topCorp.avg_score)}
                   <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 700, color: '#c9a030', marginLeft: '4px' }}>VP</span>
                 </span>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Link to={`/corporations/${encodeURIComponent(topCorp.corporation)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>{topCorp.corporation}</Link>
                   <span>·</span>
                   <span>{topCorp.games_played} games</span>
@@ -157,19 +157,19 @@ export default function Dashboard() {
 
           {/* Best corporation by win rate */}
           <div style={recordCard}>
-            <span style={recordLabel}>Best Corporation by Win Rate <span style={{ color: '#3e325e' }}>(min 3 games)</span></span>
+            <span style={recordLabel}>Best Corporation by Win Rate <span style={{ color: 'var(--bd-secondary)' }}>(min 3 games)</span></span>
             {bestCorpWinRate.length > 0 ? (
               <>
                 <span style={{ ...recordValue, color: '#4a9e6b' }}>
                   {Math.round(bestCorpWinRate[0].win_rate)}
                   <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 700, color: '#4a9e6b', marginLeft: '2px' }}>%</span>
                 </span>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                   {bestCorpWinRate.map((c, i) => (
                     <span key={c.corporation} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                      {i > 0 && <span style={{ color: '#3e325e' }}>·</span>}
+                      {i > 0 && <span style={{ color: 'var(--bd-secondary)' }}>·</span>}
                       <Link to={`/corporations/${encodeURIComponent(c.corporation)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>{c.corporation}</Link>
-                      <span style={{ color: '#504270' }}>({c.games_played} games)</span>
+                      <span style={{ color: 'var(--text-4)' }}>({c.games_played} games)</span>
                     </span>
                   ))}
                 </span>
@@ -186,12 +186,12 @@ export default function Dashboard() {
                   {highCardVpResult.card_vp}
                   <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 700, color: '#c9a030', marginLeft: '4px' }}>VP</span>
                 </span>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Link to={`/players/${encodeURIComponent(highCardVpResult.player_name)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>{highCardVpResult.player_name}</Link>
                   <span>·</span>
                   <Link to={`/corporations/${encodeURIComponent(highCardVpResult.corporation)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>{highCardVpResult.corporation}</Link>
                   <span>·</span>
-                  <Link to={`/games/${highCardVpGame.game_number}`} style={{ color: '#504270', textDecoration: 'none' }}>{new Date(highCardVpGame.date).toLocaleDateString('sv-SE')}</Link>
+                  <Link to={`/games/${highCardVpGame.game_number}`} style={{ color: 'var(--text-4)', textDecoration: 'none' }}>{new Date(highCardVpGame.date).toLocaleDateString('sv-SE')}</Link>
                 </span>
               </>
             ) : <span style={recordValue}>—</span>}
@@ -206,7 +206,7 @@ export default function Dashboard() {
                   {longestGame.generations}
                   <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 700, color: '#5b8dd9', marginLeft: '4px' }}>GENERATIONS</span>
                 </span>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Link to={`/games/${longestGame.game_number}`} style={{ color: '#b87aff', textDecoration: 'none' }}>{longestGame.map_name ?? 'Digital'}</Link>
                   <span>·</span>
                   <span>{new Date(longestGame.date).toLocaleDateString('sv-SE')}</span>
@@ -227,12 +227,12 @@ export default function Dashboard() {
             Full stats →
           </Link>
         </div>
-        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #282042' }}>
+              <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
                 {['#', 'Player', 'Games', 'Wins', 'Win rate', 'Avg score', 'Best Score'].map((h, i) => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: i <= 1 ? 'left' : 'center', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
+                  <th key={h} style={{ padding: '10px 16px', textAlign: i <= 1 ? 'left' : 'center', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>
                     {h}
                   </th>
                 ))}
@@ -242,21 +242,21 @@ export default function Dashboard() {
               {[...(playerStats ?? [])].sort((a, b) => b.wins - a.wins).map((p, i) => (
                 <tr
                   key={p.player_name}
-                  style={{ borderBottom: i < (playerStats?.length ?? 0) - 1 ? '1px solid #282042' : 'none', transition: 'background 0.1s' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#282042')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  style={{ borderBottom: i < (playerStats?.length ?? 0) - 1 ? '1px solid var(--bd-panel)' : 'none', transition: 'background 0.1s', background: 'var(--bg-row)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-row-hover)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-row)')}
                 >
-                  <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: i === 0 ? '#e05535' : '#504270' }}>
+                  <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: i === 0 ? '#e05535' : 'var(--text-4)' }}>
                     {i + 1}
                   </td>
                   <td style={{ padding: '11px 16px' }}>
-                    <Link to={`/players/${encodeURIComponent(p.player_name)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.87rem', color: '#ece6ff', textDecoration: 'none', fontWeight: i === 0 ? 600 : 400 }}>
+                    <Link to={`/players/${encodeURIComponent(p.player_name)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.87rem', color: 'var(--text-1)', textDecoration: 'none', fontWeight: i === 0 ? 600 : 400 }}>
                       {p.player_name}
                     </Link>
                   </td>
                   <td style={numTd}>{p.games_played}</td>
                   <td style={{ ...numTd, color: '#e05535' }}>{p.wins}</td>
-                  <td style={{ ...numTd, color: p.win_rate > 50 ? '#4a9e6b' : p.win_rate > 25 ? '#c9a030' : '#625c7c' }}>
+                  <td style={{ ...numTd, color: p.win_rate > 50 ? '#4a9e6b' : p.win_rate > 25 ? '#c9a030' : '#707070' }}>
                     {Math.round(p.win_rate)}%
                   </td>
                   <td style={numTd}>{Math.round(p.avg_score)}</td>
@@ -277,12 +277,12 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #282042' }}>
+              <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
                 {['Date', 'Map', 'Players', 'Expansions', 'Winner', 'Score'].map(h => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
+                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>
                     {h}
                   </th>
                 ))}
@@ -294,30 +294,30 @@ export default function Dashboard() {
                 return (
                   <tr
                     key={game.id}
-                    style={{ borderBottom: i < recentGames.length - 1 ? '1px solid #282042' : 'none', transition: 'background 0.1s' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#282042')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    style={{ borderBottom: i < recentGames.length - 1 ? '1px solid var(--bd-panel)' : 'none', transition: 'background 0.1s', background: 'var(--bg-row)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-row-hover)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-row)')}
                   >
-                    <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: '#8e87a8' }}>
-                      <Link to={`/games/${game.id}`} style={{ color: '#8e87a8', textDecoration: 'none' }}>
+                    <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--text-3)' }}>
+                      <Link to={`/games/${game.id}`} style={{ color: 'var(--text-3)', textDecoration: 'none' }}>
                         {new Date(game.date).toLocaleDateString('sv-SE')}
                       </Link>
                     </td>
-                    <td style={{ padding: '12px 16px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff' }}>
+                    <td style={{ padding: '12px 16px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)' }}>
                       {game.map_name ?? '—'}
                     </td>
-                    <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: '#8e87a8', textAlign: 'center' }}>
+                    <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--text-3)', textAlign: 'center' }}>
                       {game.player_count}
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       {game.expansions.length === 0 ? (
-                        <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#625c7c' }}>—</span>
+                        <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-4)' }}>—</span>
                       ) : (
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
                           {game.expansions.map(exp => EXPANSION_ICONS[exp] ? (
                             <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
                           ) : (
-                            <span key={exp} style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#625c7c' }}>{exp}</span>
+                            <span key={exp} style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)' }}>{exp}</span>
                           ))}
                         </div>
                       )}
@@ -325,10 +325,10 @@ export default function Dashboard() {
                     <td style={{ padding: '12px 16px' }}>
                       {winner && (
                         <Link to={`/players/${encodeURIComponent(winner.player_name)}`} style={{ textDecoration: 'none' }}>
-                          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff', fontWeight: 500 }}>
+                          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)', fontWeight: 500 }}>
                             {winner.player_name}
                           </div>
-                          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: '#625c7c', marginTop: '2px' }}>
+                          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--text-4)', marginTop: '2px' }}>
                             {winner.corporation}
                           </div>
                         </Link>
@@ -360,16 +360,16 @@ export default function Dashboard() {
             style={{
               display: 'block',
               padding: '20px 22px',
-              background: '#1e1835',
-              border: '1px solid #282042',
+              background: 'var(--bg-panel)',
+              border: '1px solid var(--bd-panel)',
               borderRadius: '6px',
               textDecoration: 'none',
             }}
           >
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.9rem', color: '#ece6ff', marginBottom: '6px' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-1)', marginBottom: '6px' }}>
               {label} →
             </div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c' }}>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-4)' }}>
               {sub}
             </div>
           </Link>
@@ -379,9 +379,9 @@ export default function Dashboard() {
   )
 }
 
-const loadingStyle: React.CSSProperties = { padding: '32px 36px', color: '#625c7c', fontFamily: 'var(--font-body)' }
-const sectionHeader: React.CSSProperties = { fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '14px' }
-const numTd: React.CSSProperties = { padding: '11px 16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.83rem', color: '#bbb4d0' }
-const recordCard: React.CSSProperties = { background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '6px' }
-const recordLabel: React.CSSProperties = { fontFamily: 'var(--font-body)', fontSize: '0.72rem', fontWeight: 500, color: '#504270', letterSpacing: '0.06em', textTransform: 'uppercase' }
-const recordValue: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#ece6ff', lineHeight: 1 }
+const loadingStyle: React.CSSProperties = { padding: '32px 36px', color: 'var(--text-4)', fontFamily: 'var(--font-body)' }
+const sectionHeader: React.CSSProperties = { fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '14px' }
+const numTd: React.CSSProperties = { padding: '11px 16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.83rem', color: 'var(--text-2)' }
+const recordCard: React.CSSProperties = { background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '6px' }
+const recordLabel: React.CSSProperties = { fontFamily: 'var(--font-body)', fontSize: '0.72rem', fontWeight: 500, color: 'var(--text-4)', letterSpacing: '0.06em', textTransform: 'uppercase' }
+const recordValue: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-1)', lineHeight: 1 }

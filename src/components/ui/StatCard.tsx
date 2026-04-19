@@ -12,7 +12,7 @@ const ACCENT_COLORS = {
   mars:    '#e05535',
   atmo:    '#2e8b8b',
   score:   '#c9a030',
-  neutral: '#8e87a8',
+  neutral: '#888888',
   win:     '#4a9e6b',
 }
 
@@ -23,8 +23,8 @@ export default function StatCard({ label, value, sub, accent = 'neutral', valueS
     <div
       className="panel-hover"
       style={{
-        background: '#1e1835',
-        border: '1px solid #282042',
+        background: 'var(--bg-panel)',
+        border: '1px solid var(--bd-panel)',
         borderRadius: '6px',
         padding: '14px 20px',
         display: 'flex',
@@ -33,7 +33,7 @@ export default function StatCard({ label, value, sub, accent = 'neutral', valueS
         gap: '12px',
       }}
     >
-      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', fontWeight: 500, color: '#504270', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', fontWeight: 500, color: 'var(--text-4)', letterSpacing: '0.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
         {label}
       </span>
       <span style={{ display: 'flex', flexDirection: 'row', alignItems: 'baseline', gap: '6px', flexShrink: 0 }}>
@@ -49,7 +49,7 @@ export default function StatCard({ label, value, sub, accent = 'neutral', valueS
           )}
         </span>
         {sub && (
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270' }}>
+          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)' }}>
             {sub}
           </span>
         )}

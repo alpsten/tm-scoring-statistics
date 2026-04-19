@@ -8,7 +8,7 @@ import type { CorporationStats } from '../types/database'
 type SortKey = keyof Pick<CorporationStats, 'corporation' | 'games_played' | 'wins' | 'win_rate' | 'avg_score' | 'best_score'>
 
 const CORP_COLORS = ['#9b50f0', '#e05535', '#2e8b8b', '#d4a820', '#4a9e6b', '#b87aff']
-const PIE_COLORS = ['#9b50f0','#e05535','#2e8b8b','#c9a030','#4a9e6b','#b87aff','#3bbfbf','#5b8dd9','#d4a820','#8e87a8','#504270']
+const PIE_COLORS = ['#9b50f0','#e05535','#2e8b8b','#c9a030','#4a9e6b','#b87aff','#3bbfbf','#5b8dd9','#d4a820','#aaaaaa','#888888']
 
 export default function Corporations() {
   const { data, isLoading, error } = useCorpStats()
@@ -63,12 +63,12 @@ export default function Corporations() {
 
       {/* Comparison panel */}
       {selectedCorps.length >= 2 && (
-        <div style={{ background: '#1e1835', border: '1px solid #9b50f0', borderRadius: '6px', padding: '20px 24px', marginBottom: '24px' }}>
+        <div style={{ background: 'var(--bg-panel)', border: '1px solid #9b50f0', borderRadius: '6px', padding: '20px 24px', marginBottom: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.8rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#b87aff' }}>
               Comparing {selectedCorps.length} corporations
             </span>
-            <button onClick={() => setSelected([])} style={{ background: 'transparent', border: 'none', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.75rem', cursor: 'pointer', padding: '2px 8px' }}>
+            <button onClick={() => setSelected([])} style={{ background: 'transparent', border: 'none', color: 'var(--text-4)', fontFamily: 'var(--font-body)', fontSize: '0.75rem', cursor: 'pointer', padding: '2px 8px' }}>
               Clear ✕
             </button>
           </div>
@@ -76,8 +76,8 @@ export default function Corporations() {
           {/* Stat cards */}
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${selectedCorps.length}, 1fr)`, gap: '12px', marginBottom: '20px' }}>
             {selectedCorps.map((c, i) => (
-              <div key={c.corporation} style={{ background: '#282042', borderRadius: '5px', padding: '14px 16px', borderLeft: `3px solid ${CORP_COLORS[i % CORP_COLORS.length]}` }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.88rem', color: '#ece6ff', marginBottom: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div key={c.corporation} style={{ background: 'var(--bg-row)', borderRadius: '5px', padding: '14px 16px', borderLeft: `3px solid ${CORP_COLORS[i % CORP_COLORS.length]}` }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-1)', marginBottom: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {c.corporation}
                 </div>
                 {[
@@ -88,8 +88,8 @@ export default function Corporations() {
                   { label: 'Best',      value: c.best_score.toString() },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#625c7c' }}>{label}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: '#bbb4d0' }}>{value}</span>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)' }}>{label}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--text-2)' }}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -97,15 +97,15 @@ export default function Corporations() {
           </div>
 
           {/* Avg score bar chart */}
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginBottom: '8px' }}>
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '8px' }}>
             Avg score comparison
           </div>
           <ResponsiveContainer width="100%" height={80}>
             <BarChart data={selectedCorps} layout="vertical" barSize={16}>
-              <XAxis type="number" tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#504270' }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="corporation" width={130} tick={{ fontFamily: 'var(--font-body)', fontSize: 11, fill: '#8e87a8' }} axisLine={false} tickLine={false} />
+              <XAxis type="number" tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: 'var(--text-4)' }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="corporation" width={130} tick={{ fontFamily: 'var(--font-body)', fontSize: 11, fill: 'var(--text-4)' }} axisLine={false} tickLine={false} />
               <Tooltip
-                contentStyle={{ background: '#282042', border: '1px solid #3e325e', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#ece6ff' }}
+                contentStyle={{ background: 'var(--bg-input)', border: '1px solid var(--bd-secondary)', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-1)' }}
                 cursor={{ fill: 'rgba(155,80,240,0.05)' }}
               />
               <Bar dataKey="avg_score" radius={[0, 3, 3, 0]}>
@@ -128,8 +128,8 @@ export default function Corporations() {
           ...(rest.length > 0 ? [{ name: 'Other', value: rest.reduce((s, c) => s + c.games_played, 0) }] : []),
         ]
         return (
-          <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '20px 24px', marginBottom: '28px' }}>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginBottom: '16px' }}>
+          <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '20px 24px', marginBottom: '28px' }}>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '16px' }}>
               Play count distribution
             </div>
             <div className="corp-pie-layout">
@@ -138,8 +138,8 @@ export default function Corporations() {
                 {pieData.map((item, i) => (
                   <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: PIE_COLORS[i % PIE_COLORS.length], flexShrink: 0 }} />
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#bbb4d0', flex: 1 }}>{item.name}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#504270' }}>{item.value}</span>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-2)', flex: 1 }}>{item.name}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-4)' }}>{item.value}</span>
                   </div>
                 ))}
               </div>
@@ -175,7 +175,7 @@ export default function Corporations() {
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{ background: '#282042', border: '1px solid #3e325e', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#ece6ff' }}
+                      contentStyle={{ background: 'var(--bg-input)', border: '1px solid var(--bd-secondary)', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-1)' }}
                       formatter={(value, name) => [`${value} games`, name]}
                     />
                   </PieChart>
@@ -193,24 +193,24 @@ export default function Corporations() {
           placeholder="Search corporations…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          style={{ width: '240px', padding: '7px 12px', background: '#1e1835', border: '1px solid #3e325e', borderRadius: '4px', color: '#ece6ff', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none' }}
+          style={{ width: '240px', padding: '7px 12px', background: 'var(--bg-input)', border: '1px solid var(--bd-input)', borderRadius: '4px', color: 'var(--text-1)', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none' }}
         />
         {selected.length > 0 && selected.length < 2 && (
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#625c7c' }}>
+          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-4)' }}>
             Select one more to compare
           </span>
         )}
         {selected.length === 0 && (
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#504270' }}>
+          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-4)' }}>
             Check boxes to compare corporations
           </span>
         )}
       </div>
 
-      <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #282042' }}>
+            <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
               <th style={{ padding: '11px 14px', width: '36px' }} />
               {COLS.map(col => (
                 <th
@@ -224,7 +224,7 @@ export default function Corporations() {
                     fontWeight: 600,
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
-                    color: sortKey === col.key ? '#b87aff' : '#504270',
+                    color: sortKey === col.key ? 'var(--sort-active)' : 'var(--text-4)',
                     cursor: 'pointer',
                     userSelect: 'none',
                     whiteSpace: 'nowrap',
@@ -244,9 +244,9 @@ export default function Corporations() {
               return (
                 <tr
                   key={c.corporation}
-                  style={{ borderBottom: i < filtered.length - 1 ? '1px solid #282042' : 'none', transition: 'background 0.1s', background: isSelected ? 'rgba(155, 80, 240, 0.06)' : 'transparent' }}
-                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#282042' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = isSelected ? 'rgba(155, 80, 240, 0.06)' : 'transparent' }}
+                  style={{ borderBottom: i < filtered.length - 1 ? '1px solid var(--bd-panel)' : 'none', transition: 'background 0.1s', background: isSelected ? 'rgba(155, 80, 240, 0.06)' : 'var(--bg-row)' }}
+                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-row-hover)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = isSelected ? 'rgba(155, 80, 240, 0.06)' : 'var(--bg-row)' }}
                 >
                   <td style={{ padding: '11px 14px', textAlign: 'center' }}>
                     <input
@@ -257,7 +257,7 @@ export default function Corporations() {
                     />
                   </td>
                   <td style={{ padding: '13px 18px' }}>
-                    <Link to={`/corporations/${encodeURIComponent(c.corporation)}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: '0.87rem', color: '#ece6ff', textDecoration: 'none' }}>
+                    <Link to={`/corporations/${encodeURIComponent(c.corporation)}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: '0.87rem', color: 'var(--text-1)', textDecoration: 'none' }}>
                       {c.corporation}
                     </Link>
                   </td>
@@ -275,7 +275,7 @@ export default function Corporations() {
         </table>
       </div>
 
-      <p style={{ marginTop: '16px', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#504270', fontStyle: 'italic' }}>
+      <p style={{ marginTop: '16px', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-4)', fontStyle: 'italic' }}>
         Win rate with fewer than 5 games is statistically noisy. Sample size shown for context.
       </p>
 
@@ -283,20 +283,20 @@ export default function Corporations() {
       {filteredMergers.length > 0 && (
         <div style={{ marginTop: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', margin: 0 }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-4)', margin: 0 }}>
               Merger plays
             </h2>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#504270', background: '#1e1835', border: '1px solid #282042', borderRadius: '10px', padding: '1px 8px' }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '10px', padding: '1px 8px' }}>
               Merger Prelude card
             </span>
           </div>
-          <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
+          <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #282042' }}>
+                <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
                   <th style={{ padding: '11px 14px', width: '36px' }} />
                   {COLS.map(col => (
-                    <th key={col.key} style={{ padding: '11px 18px', textAlign: col.align, fontFamily: 'var(--font-body)', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', whiteSpace: 'nowrap' }}>
+                    <th key={col.key} style={{ padding: '11px 18px', textAlign: col.align, fontFamily: 'var(--font-body)', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', whiteSpace: 'nowrap' }}>
                       {col.label}
                     </th>
                   ))}
@@ -309,9 +309,9 @@ export default function Corporations() {
                   return (
                     <tr
                       key={c.corporation}
-                      style={{ borderBottom: i < filteredMergers.length - 1 ? '1px solid #282042' : 'none', transition: 'background 0.1s', background: isSelected ? 'rgba(155, 80, 240, 0.06)' : 'transparent' }}
-                      onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#282042' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = isSelected ? 'rgba(155, 80, 240, 0.06)' : 'transparent' }}
+                      style={{ borderBottom: i < filteredMergers.length - 1 ? '1px solid var(--bd-panel)' : 'none', transition: 'background 0.1s', background: isSelected ? 'rgba(155, 80, 240, 0.06)' : 'var(--bg-row)' }}
+                      onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-row-hover)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = isSelected ? 'rgba(155, 80, 240, 0.06)' : 'var(--bg-row)' }}
                     >
                       <td style={{ padding: '11px 14px', textAlign: 'center' }}>
                         <input
@@ -325,7 +325,7 @@ export default function Corporations() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                           {parts.map((p, pi) => (
                             <span key={p} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <Link to={`/corporations/${encodeURIComponent(p.trim())}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: '0.87rem', color: '#ece6ff', textDecoration: 'none' }}>
+                              <Link to={`/corporations/${encodeURIComponent(p.trim())}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: '0.87rem', color: 'var(--text-1)', textDecoration: 'none' }}>
                                 {p.trim()}
                               </Link>
                               {pi < parts.length - 1 && (
@@ -348,7 +348,7 @@ export default function Corporations() {
               </tbody>
             </table>
           </div>
-          <p style={{ marginTop: '10px', fontFamily: 'var(--font-body)', fontSize: '0.73rem', color: '#504270', fontStyle: 'italic' }}>
+          <p style={{ marginTop: '10px', fontFamily: 'var(--font-body)', fontSize: '0.73rem', color: 'var(--text-4)', fontStyle: 'italic' }}>
             Merger plays are tracked as a combined entry. Individual corporation links show their solo stats.
           </p>
         </div>
@@ -357,5 +357,5 @@ export default function Corporations() {
   )
 }
 
-const loadingStyle: React.CSSProperties = { padding: '32px 36px', color: '#625c7c', fontFamily: 'var(--font-body)' }
-const numTd: React.CSSProperties = { padding: '13px 18px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: '#bbb4d0' }
+const loadingStyle: React.CSSProperties = { padding: '32px 36px', color: 'var(--text-4)', fontFamily: 'var(--font-body)' }
+const numTd: React.CSSProperties = { padding: '13px 18px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--text-2)' }
