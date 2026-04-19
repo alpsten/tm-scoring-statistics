@@ -1,3 +1,24 @@
+/* ── Theme tokens ───────────────────────────────────────────── */
+:root {
+  --bg-body:     #111111;
+  --bg-main:     #141414;
+  --bg-sidebar:  #1a1a1a;
+  --bd-sidebar:  #2a2a2a;
+  --bg-panel:    #1e1e1e;
+  --bd-panel:    #2a2a2a;
+  --bg-row:      #1c1c1c;
+  --bg-row-hover:#252525;
+  --bg-input:    #1c1c1c;
+  --bd-input:    #2e2e2e;
+  --text-1:      #e8e6e3;
+  --text-2:      #b0aeaa;
+  --text-3:      #888888;
+  --text-4:      #606060;
+  --text-5:      #484848;
+  --bd-secondary:#3a3a3a;
+  --sort-active: #e8e6e3;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap');
 @import "tailwindcss";
 
@@ -26,20 +47,20 @@
   --color-score-400: #e8c058;
   --color-score-500: #d4a820;
 
-  /* Surface: dark purple-tinted backgrounds */
-  --color-surface-900: #110d1e;
-  --color-surface-800: #171228;
-  --color-surface-700: #1e1835;
-  --color-surface-600: #282042;
-  --color-surface-500: #322850;
-  --color-surface-400: #3e325e;
-  --color-surface-300: #504270;
+  /* Surface: dark neutral backgrounds */
+  --color-surface-900: #111111;
+  --color-surface-800: #1a1a1a;
+  --color-surface-700: #1e1e1e;
+  --color-surface-600: #2a2a2a;
+  --color-surface-500: #3a3a3a;
+  --color-surface-400: #484848;
+  --color-surface-300: #606060;
 
-  /* Ink: lavender-tinted text */
-  --color-ink-100: #ece6ff;
-  --color-ink-200: #bbb4d0;
-  --color-ink-300: #8e87a8;
-  --color-ink-400: #625c7c;
+  /* Ink: warm-neutral text */
+  --color-ink-100: #e8e6e3;
+  --color-ink-200: #b0aeaa;
+  --color-ink-300: #888888;
+  --color-ink-400: #606060;
 
   --font-display: 'Exo 2', sans-serif;
   --font-mono: 'Space Mono', monospace;
@@ -58,25 +79,25 @@ html, body, #root {
 
 body {
   font-family: var(--font-body);
-  background-color: #110d1e;
-  color: #ece6ff;
+  background-color: var(--bg-body);
+  color: var(--text-1);
   -webkit-font-smoothing: antialiased;
 }
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: #171228; }
-::-webkit-scrollbar-thumb { background: #3e325e; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #504270; }
+::-webkit-scrollbar-track { background: var(--bg-sidebar); }
+::-webkit-scrollbar-thumb { background: var(--bd-sidebar); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-5); }
 
 .font-display { font-family: var(--font-display); }
 .font-mono    { font-family: var(--font-mono); }
 .font-body    { font-family: var(--font-body); }
 
-/* Subtle terraforming-grid background texture */
+/* Subtle grid background texture */
 .grid-bg {
   background-image:
-    linear-gradient(rgba(155, 80, 240, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(155, 80, 240, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(200, 200, 200, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(200, 200, 200, 0.025) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 
@@ -85,8 +106,8 @@ body {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .panel-hover:hover {
-  border-color: rgba(155, 80, 240, 0.35) !important;
-  box-shadow: 0 0 0 1px rgba(155, 80, 240, 0.12), 0 8px 32px rgba(0, 0, 0, 0.5);
+  border-color: rgba(200, 200, 200, 0.2) !important;
+  box-shadow: 0 0 0 1px rgba(200, 200, 200, 0.07), 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 /* Page enter animation */
@@ -123,8 +144,8 @@ body {
   justify-content: center;
   gap: 5px;
   padding: 0;
-  background: #1e1835;
-  border: 1px solid #3e325e;
+  background: var(--bg-panel);
+  border: 1px solid var(--bd-sidebar);
   border-radius: 6px;
   cursor: pointer;
 }
@@ -132,7 +153,7 @@ body {
   display: block;
   width: 16px;
   height: 2px;
-  background: #8e87a8;
+  background: var(--text-3);
   border-radius: 1px;
 }
 
@@ -147,9 +168,9 @@ body {
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid #3e325e;
+  border: 1px solid var(--bd-sidebar);
   border-radius: 4px;
-  color: #625c7c;
+  color: var(--text-4);
   font-size: 0.7rem;
   cursor: pointer;
   line-height: 1;
