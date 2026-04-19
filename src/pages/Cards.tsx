@@ -1,8 +1,10 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useMemo, useRef } from 'react'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
 import Tag from '../components/ui/Tag'
 import { parseTags } from '../components/ui/tagUtils'
+import EmptyState from '../components/ui/EmptyState'
+import FilterPill from '../components/ui/FilterPill'
 import { useCardStats, useCardReference } from '../lib/hooks'
 import { TAG_ICONS } from '../lib/expansions'
 
@@ -18,34 +20,51 @@ const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
 const CARD_TYPES = ['Automated', 'Active', 'Event', 'Corporation', 'Prelude', 'CEO'] as const
 type CardType = typeof CARD_TYPES[number]
 
-const TAG_COLORS: Record<string, { bg: string; color: string }> = {
-  'Animal':   { bg: 'rgba(74, 158, 107, 0.12)',  color: '#4a9e6b' },
-  'Building': { bg: 'rgba(180, 120, 60, 0.12)',  color: '#c97b3a' },
-  'City':     { bg: 'rgba(100, 140, 200, 0.12)', color: '#7aa0d0' },
-  'Earth':    { bg: 'rgba(100, 140, 200, 0.12)', color: '#7aa0d0' },
-  'Event':    { bg: 'rgba(200, 80, 60, 0.12)',   color: '#d06050' },
-  'Jovian':   { bg: 'rgba(180, 100, 40, 0.12)',  color: '#c07030' },
-  'Microbe':  { bg: 'rgba(90, 160, 80, 0.12)',   color: '#5aa050' },
-  'Plant':    { bg: 'rgba(60, 160, 80, 0.12)',   color: '#40a060' },
-  'Power':    { bg: 'rgba(180, 90, 200, 0.12)',  color: '#c070d0' },
-  'Science':  { bg: 'rgba(200, 200, 60, 0.12)',  color: '#d0c030' },
-  'Space':    { bg: 'rgba(60, 100, 200, 0.12)',  color: '#5080c0' },
-  'Venus':    { bg: 'rgba(220, 160, 60, 0.12)',  color: '#d0a040' },
-  'Moon':     { bg: 'rgba(140, 148, 176, 0.12)', color: '#8c94b0' },
-  'Mars':     { bg: 'rgba(196, 88, 52, 0.12)',   color: '#c45834' },
-  'Planet':   { bg: 'rgba(92, 172, 110, 0.12)',  color: '#5cac6e' },
+type SortKey = 'card_name' | 'times_played' | 'win_rate' | 'avg_vp_contribution'
+const SORT_KEYS: SortKey[] = ['card_name', 'times_played', 'win_rate', 'avg_vp_contribution']
+const CARDS_SCROLL_PREFIX = 'tm-cards-scroll:'
+
+function parseListParam(value: string | null) {
+  return value?.split(',').map(v => v.trim()).filter(Boolean) ?? []
 }
 
-type SortKey = 'card_name' | 'times_played' | 'win_rate' | 'avg_vp_contribution'
+function parseCardTypes(value: string | null): CardType[] {
+  return parseListParam(value).filter((type): type is CardType => CARD_TYPES.includes(type as CardType))
+}
+
+function parseSortKey(value: string | null): SortKey {
+  return SORT_KEYS.includes(value as SortKey) ? value as SortKey : 'card_name'
+}
+
+function writeListParam(params: URLSearchParams, key: string, values: string[]) {
+  if (values.length > 0) params.set(key, values.join(','))
+  else params.delete(key)
+}
 
 export default function Cards() {
-  const [search, setSearch] = useState('')
-  const [typeFilters, setTypeFilters] = useState<CardType[]>([])
-  const [tagFilters, setTagFilters] = useState<string[]>([])
-  const [sortKey, setSortKey] = useState<SortKey>('card_name')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const search = searchParams.get('q') ?? ''
+  const typeFilters = useMemo(() => parseCardTypes(searchParams.get('type')), [searchParams])
+  const tagFilters = useMemo(() => parseListParam(searchParams.get('tag')), [searchParams])
+  const sortKey = parseSortKey(searchParams.get('sort'))
+  const sortDir: 'asc' | 'desc' = searchParams.get('dir') === 'desc' ? 'desc' : 'asc'
+  const scrollRestoredRef = useRef(false)
   const { data: cardStats, isLoading, error } = useCardStats()
   const { data: cardRef } = useCardReference()
+
+  const scrollKey = `${CARDS_SCROLL_PREFIX}${location.pathname}${location.search}`
+
+  useEffect(() => {
+    if (isLoading || scrollRestoredRef.current) return
+
+    const saved = sessionStorage.getItem(scrollKey)
+    if (saved) {
+      window.requestAnimationFrame(() => window.scrollTo(0, Number(saved)))
+    }
+
+    scrollRestoredRef.current = true
+  }, [isLoading, scrollKey])
 
   if (isLoading) return <div style={loadingStyle}>Loading…</div>
   if (error) return <div style={loadingStyle}>Failed to load card stats: {String((error as Error)?.message ?? error)}</div>
@@ -84,15 +103,55 @@ export default function Cards() {
   const hasFilters = !!search || typeFilters.length > 0 || tagFilters.length > 0
 
   function handleSort(key: SortKey) {
-    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    else { setSortKey(key); setSortDir('desc') }
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      if (sortKey === key) next.set('dir', sortDir === 'asc' ? 'desc' : 'asc')
+      else {
+        next.set('sort', key)
+        next.set('dir', 'desc')
+      }
+      return next
+    }, { replace: true })
+  }
+
+  function updateSearch(value: string) {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      if (value) next.set('q', value)
+      else next.delete('q')
+      return next
+    }, { replace: true })
   }
 
   function toggleType(type: CardType) {
-    setTypeFilters(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      const values = parseCardTypes(next.get('type'))
+      writeListParam(next, 'type', values.includes(type) ? values.filter(t => t !== type) : [...values, type])
+      return next
+    }, { replace: true })
   }
   function toggleTag(tag: string) {
-    setTagFilters(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      const values = parseListParam(next.get('tag'))
+      writeListParam(next, 'tag', values.includes(tag) ? values.filter(t => t !== tag) : [...values, tag])
+      return next
+    }, { replace: true })
+  }
+
+  function clearFilters() {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      next.delete('q')
+      next.delete('type')
+      next.delete('tag')
+      return next
+    }, { replace: true })
+  }
+
+  function rememberScroll() {
+    sessionStorage.setItem(scrollKey, String(window.scrollY))
   }
 
   return (
@@ -109,20 +168,20 @@ export default function Cards() {
             type="text"
             placeholder="Search cards…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => updateSearch(e.target.value)}
             style={{
               width: '240px', height: '34px', padding: '0 12px',
-              background: '#1e1835', border: '1px solid #3e325e', borderRadius: '4px',
-              color: '#ece6ff', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none',
+              background: 'var(--bg-input)', border: '1px solid var(--bd-input)', borderRadius: '4px',
+              color: 'var(--text-1)', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none',
             }}
           />
           {hasFilters && (
             <button
-              onClick={() => { setSearch(''); setTypeFilters([]); setTagFilters([]) }}
+              onClick={clearFilters}
               style={{
                 height: '34px', padding: '0 12px',
-                background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px',
-                color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.78rem', cursor: 'pointer',
+                background: 'transparent', border: '1px solid var(--bd-input)', borderRadius: '4px',
+                color: 'var(--text-4)', fontFamily: 'var(--font-body)', fontSize: '0.78rem', cursor: 'pointer',
               }}
             >
               Clear all
@@ -132,64 +191,42 @@ export default function Cards() {
 
         {/* Type pills */}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginRight: '2px' }}>Type</span>
-          {CARD_TYPES.map(type => {
-            const active = typeFilters.includes(type)
-            const colors = TYPE_COLORS[type]
-            return (
-              <button key={type} onClick={() => toggleType(type)} style={{
-                padding: '3px 11px',
-                background: active ? colors.bg : 'transparent',
-                border: `1px solid ${active ? colors.color : '#3e325e'}`,
-                borderRadius: '12px', cursor: 'pointer', transition: 'all 0.12s',
-                fontFamily: 'var(--font-body)', fontSize: '0.75rem',
-                color: active ? colors.color : '#625c7c',
-              }}>
-                {active ? '✓ ' : ''}{type}
-              </button>
-            )
-          })}
+          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginRight: '2px' }}>Type</span>
+          {CARD_TYPES.map(type => (
+            <FilterPill
+              key={type}
+              label={type}
+              active={typeFilters.includes(type)}
+              color={TYPE_COLORS[type].color}
+              onClick={() => toggleType(type)}
+            />
+          ))}
         </div>
 
         {/* Tag pills */}
         {allTags.length > 0 && (
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginRight: '2px' }}>Tag</span>
-            {allTags.map(tag => {
-              const active = tagFilters.includes(tag)
-              const icon = TAG_ICONS[tag]
-              const colors = TAG_COLORS[tag] ?? { bg: 'rgba(100,100,100,0.12)', color: '#8e87a8' }
-              return (
-                <button key={tag} onClick={() => toggleTag(tag)} title={tag} style={{
-                  padding: icon ? '4px' : '3px 11px',
-                  background: active ? colors.bg : 'transparent',
-                  border: `1px solid ${active ? colors.color : '#3e325e'}`,
-                  borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s',
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  opacity: active ? 1 : 0.45,
-                  fontFamily: 'var(--font-body)', fontSize: '0.75rem',
-                  color: active ? colors.color : '#625c7c',
-                }}>
-                  {icon
-                    ? <img src={icon} alt={tag} style={{ width: '20px', height: '20px', objectFit: 'contain', display: 'block' }} />
-                    : <>{active ? '✓ ' : ''}{tag}</>
-                  }
-                </button>
-              )
-            })}
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginRight: '2px' }}>Tag</span>
+            {allTags.map(tag => (
+              <FilterPill
+                key={tag}
+                label={tag}
+                icon={TAG_ICONS[tag]}
+                active={tagFilters.includes(tag)}
+                onClick={() => toggleTag(tag)}
+              />
+            ))}
           </div>
         )}
       </div>
 
       {cards.length === 0 ? (
-        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '32px', textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#504270' }}>
-          No card play data yet. Cards are tracked when logged in a game session.
-        </div>
+        <EmptyState message="No card play data yet. Cards are tracked when logged in a game session." />
       ) : (
-        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #282042' }}>
+              <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
                 {([
                   { label: 'Card',     key: 'card_name'           as SortKey, align: 'left'   },
                   { label: 'Type',     key: null,                              align: 'center' },
@@ -207,7 +244,7 @@ export default function Cards() {
                         padding: '11px 16px', textAlign: align as 'left' | 'center',
                         fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600,
                         letterSpacing: '0.08em', textTransform: 'uppercase',
-                        color: active ? '#b87aff' : '#504270',
+                        color: active ? 'var(--sort-active)' : 'var(--text-4)',
                         cursor: key ? 'pointer' : 'default',
                         userSelect: 'none',
                         whiteSpace: 'nowrap',
@@ -226,12 +263,12 @@ export default function Cards() {
                 return (
                   <tr
                     key={card.card_name}
-                    style={{ borderBottom: i < cards.length - 1 ? '1px solid #282042' : 'none', transition: 'background 0.1s' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#282042')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    style={{ borderBottom: i < cards.length - 1 ? '1px solid var(--bd-panel)' : 'none', transition: 'background 0.1s', background: 'var(--bg-row)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-row-hover)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-row)')}
                   >
                     <td style={{ padding: '12px 16px', textAlign: 'left' }}>
-                      <Link to={`/cards/${encodeURIComponent(card.card_name)}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: '0.85rem', color: '#ece6ff', textDecoration: 'none' }}>
+                      <Link to={`/cards/${encodeURIComponent(card.card_name)}`} onClick={rememberScroll} style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: '0.85rem', color: 'var(--text-1)', textDecoration: 'none' }}>
                         {card.card_name}
                       </Link>
                     </td>
@@ -244,15 +281,15 @@ export default function Cards() {
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                        {parseTags(tagMap[card.card_name.toLowerCase()] ?? null).map(tag => (
-                          <Tag key={tag} name={tag} />
+                        {parseTags(tagMap[card.card_name.toLowerCase()] ?? null).map((tag, i) => (
+                          <Tag key={`${tag}-${i}`} name={tag} />
                         ))}
                       </div>
                     </td>
                     <td style={{ ...numTd, textAlign: 'center' }}>{card.times_played}</td>
                     <td style={{ ...numTd, textAlign: 'center', color: card.win_rate >= 50 ? '#4a9e6b' : card.win_rate > 33 ? '#c9a030' : '#e05535' }}>
                       {Math.round(card.win_rate)}%
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: '#504270', marginLeft: '4px' }}>
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: 'var(--text-4)', marginLeft: '4px' }}>
                         ({card.win_count}/{card.times_played})
                       </span>
                     </td>
@@ -265,12 +302,12 @@ export default function Cards() {
         </div>
       )}
 
-      <p style={{ marginTop: '14px', fontFamily: 'var(--font-body)', fontSize: '0.73rem', color: '#504270', fontStyle: 'italic' }}>
+      <p style={{ marginTop: '14px', fontFamily: 'var(--font-body)', fontSize: '0.73rem', color: 'var(--text-4)', fontStyle: 'italic' }}>
         Win rate reflects the player's game result when this card was played, not the card's direct contribution to winning.
       </p>
     </div>
   )
 }
 
-const loadingStyle: React.CSSProperties = { padding: '32px 36px', color: '#625c7c', fontFamily: 'var(--font-body)' }
-const numTd: React.CSSProperties = { padding: '12px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.83rem', color: '#bbb4d0' }
+const loadingStyle: React.CSSProperties = { padding: '32px 36px', color: 'var(--text-4)', fontFamily: 'var(--font-body)' }
+const numTd: React.CSSProperties = { padding: '12px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.83rem', color: 'var(--text-2)' }

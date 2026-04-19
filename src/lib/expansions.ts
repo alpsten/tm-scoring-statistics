@@ -34,6 +34,7 @@ export const TAG_ICONS: Record<string, string> = {
   'Mars':     '/tm-scoring-statistics/tags/mars.png',
   'Microbe':  '/tm-scoring-statistics/tags/microbe.png',
   'Moon':     '/tm-scoring-statistics/tags/moon.png',
+  'Planet':   '/tm-scoring-statistics/tags/planet.png',
   'Plant':    '/tm-scoring-statistics/tags/plant.png',
   'Power':    '/tm-scoring-statistics/tags/power.png',
   'Science':  '/tm-scoring-statistics/tags/science.png',
