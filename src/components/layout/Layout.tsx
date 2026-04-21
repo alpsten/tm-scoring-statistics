@@ -36,6 +36,33 @@ export default function Layout() {
         }}
       >
         <Outlet />
+
+        <footer style={{
+          borderTop: '1px solid var(--bd-panel)',
+          padding: '24px 36px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '12px 32px',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 24px', alignItems: 'center' }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)' }}>
+              A fan-made statistics tracker for Terraforming Mars.
+            </span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)' }}>
+              Not affiliated with or endorsed by FryxGames.
+            </span>
+          </div>
+          <a
+            href="https://github.com/alpsten/tm-scoring-statistics"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-3)', textDecoration: 'none', whiteSpace: 'nowrap' }}
+          >
+            GitHub ↗
+          </a>
+        </footer>
       </main>
     </div>
   )

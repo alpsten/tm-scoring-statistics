@@ -95,6 +95,7 @@ export default function CardDetail() {
         @media (max-width: 480px) {
           .card-detail-page { padding: 20px 16px; }
           .card-detail-grid { grid-template-columns: 1fr; }
+          .card-frame-wrapper { display: flex; justify-content: center; }
         }
       `}</style>
 
@@ -108,7 +109,11 @@ export default function CardDetail() {
       />
 
       {/* Card frame */}
-      {ref && <CardFrame card={ref} />}
+      {ref && (
+        <div className="card-frame-wrapper">
+          <CardFrame card={ref} />
+        </div>
+      )}
 
       {/* Corporation stats */}
       {isCorporation && corpStat && (

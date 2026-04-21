@@ -15,9 +15,10 @@ const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
   Corporation: { bg: 'rgba(201, 160, 48, 0.1)',  color: '#c9a030' },
   Prelude:     { bg: 'rgba(220, 100, 150, 0.1)', color: '#d46496' },
   CEO:         { bg: 'rgba(210, 120, 50, 0.1)',  color: '#d07832' },
+  'Global Event': { bg: 'rgba(160, 110, 190, 0.1)', color: '#a870c8' },
 }
 
-const CARD_TYPES = ['Automated', 'Active', 'Event', 'Corporation', 'Prelude', 'CEO'] as const
+const CARD_TYPES = ['Automated', 'Active', 'Event', 'Corporation', 'Prelude', 'CEO', 'Global Event'] as const
 type CardType = typeof CARD_TYPES[number]
 
 type SortKey = 'card_name' | 'times_played' | 'win_rate' | 'avg_vp_contribution'

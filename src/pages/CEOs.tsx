@@ -63,19 +63,6 @@ export default function CEOs() {
     <div className="page-enter" style={{ padding: '32px 36px' }}>
       <PageHeader title="CEOs" subtitle={ceos.length > 0 ? `${ceos.length} CEOs played` : 'CEO expansion statistics'} />
 
-      {/* TODO notice */}
-      <div style={{
-        marginBottom: '28px',
-        padding: '10px 14px',
-        background: 'rgba(201,160,48,0.06)',
-        border: '1px solid rgba(201,160,48,0.2)',
-        borderRadius: '4px',
-        fontFamily: 'var(--font-body)',
-        fontSize: '0.78rem',
-        color: '#c9a030',
-      }}>
-        TODO — More CEO stats planned: win rate per CEO, pick rate by expansion.
-      </div>
 
       {isLoading ? (
         <div style={{ color: 'var(--text-4)', fontFamily: 'var(--font-body)' }}>Loading…</div>

@@ -74,6 +74,7 @@ export default function GameDetail() {
     Corporation: { bg: 'rgba(201,160,48,0.1)',  color: '#c9a030' },
     Prelude:     { bg: 'rgba(220,100,150,0.1)', color: '#d46496' },
     CEO:         { bg: 'rgba(210,120,50,0.1)',  color: '#d07832' },
+    'Global Event': { bg: 'rgba(160,110,190,0.1)', color: '#a870c8' },
   }
 
   const GEN_COLORS = ['#707070', '#3bbfbf', '#b87aff', '#c9a030', '#e05535', '#4a9e6b', '#9b50f0', '#2e8b8b']

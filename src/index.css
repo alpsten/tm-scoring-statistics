@@ -218,6 +218,12 @@ body {
     transform: translateX(0) !important;
   }
 
+  /* Allow sidebar to scroll: collapse the nav so content can overflow */
+  .sidebar nav {
+    flex: 0 0 auto !important;
+    overflow-y: visible !important;
+  }
+
   /* Show backdrop when sidebar is open */
   .sidebar-backdrop--open {
     display: block !important;

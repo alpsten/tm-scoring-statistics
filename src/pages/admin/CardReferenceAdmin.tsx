@@ -9,7 +9,10 @@ import { supabase } from '../../lib/supabase'
 import { EXPANSION_ICONS, TAG_ICONS } from '../../lib/expansions'
 import type { CardReference } from '../../types/database'
 
-const CARD_TYPES: CardReference['card_type'][] = ['Automated', 'Active', 'Event', 'Corporation', 'Prelude', 'CEO']
+type CardType = CardReference['card_type']
+type EditableCardType = CardType | ''
+
+const CARD_TYPES: CardType[] = ['Automated', 'Active', 'Event', 'Corporation', 'Prelude', 'CEO', 'Global Event']
 
 const EXPANSIONS_LIST = [
   'Base', 'Corporate Era', 'Prelude', 'Prelude 2',
@@ -23,6 +26,7 @@ const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
   Corporation: { bg: 'rgba(201, 160, 48, 0.1)',  color: '#c9a030' },
   Prelude:     { bg: 'rgba(220, 100, 150, 0.1)', color: '#d46496' },
   CEO:         { bg: 'rgba(210, 120, 50, 0.1)',  color: '#d07832' },
+  'Global Event': { bg: 'rgba(160, 110, 190, 0.1)', color: '#a870c8' },
 }
 
 const TAG_COLORS: Record<string, { bg: string; color: string }> = {
@@ -45,7 +49,7 @@ const TAG_COLORS: Record<string, { bg: string; color: string }> = {
 
 const ALL_TAGS = [
   'Animal', 'Building', 'City', 'Earth', 'Event',
-  'Jovian', 'Mars', 'Microbe', 'Moon', 'Plant', 'Planet', 'Power', 'Science', 'Space', 'Venus',
+  'Jovian', 'Mars', 'Microbe', 'Moon', 'Plant', 'Planet', 'Power', 'Science', 'Space', 'Venus', 'Wild',
 ]
 
 const RESOURCE_TYPES = [
@@ -58,14 +62,73 @@ const BASE_VP_OPTIONS = [-2, -1, 0, 1, 2, 3, 4]
 
 type EditValues = {
   card_name: string
-  card_type: CardReference['card_type']
+  card_type: EditableCardType
   tags: string
   expansions: string[]
   card_text: string
+  resources: string
+  effect_text: string
+  action_text: string
+  action_text_2: string
+  flavour_text: string
   mc_cost: string
   base_vp: string
   resource_vp_type: string
   resource_vp_per: string
+}
+
+function emptyEditValues(): EditValues {
+  return {
+    card_name: '',
+    card_type: '',
+    tags: '',
+    expansions: [],
+    card_text: '',
+    resources: '',
+    effect_text: '',
+    action_text: '',
+    action_text_2: '',
+    flavour_text: '',
+    mc_cost: '',
+    base_vp: '',
+    resource_vp_type: '',
+    resource_vp_per: '',
+  }
+}
+
+function extractSection(text: string, label: 'Effect' | 'Action' | 'Flavour') {
+  const pattern = new RegExp(`(?:^|\\n)${label}:\\s*([\\s\\S]*?)(?=\\n(?:Effect|Action|Flavour):|$)`, 'i')
+  return text.match(pattern)?.[1]?.trim() ?? ''
+}
+
+function cardTextToEditSections(card: CardReference) {
+  const text = card.card_text ?? ''
+
+  if (card.card_type === 'Active') {
+    return {
+      card_text: text,
+      resources: card.resources ?? '',
+      effect_text: card.effect_text ?? '',
+      action_text: card.action_text ?? '',
+      action_text_2: card.action_text_2 ?? '',
+      flavour_text: card.flavour_text ?? '',
+    }
+  }
+
+  const flavour = extractSection(text, 'Flavour')
+  if (flavour) {
+    const cardText = text.replace(/\n?Flavour:\s*[\s\S]*$/i, '').trim()
+    return { card_text: cardText, resources: card.resources ?? '', effect_text: card.effect_text ?? '', action_text: card.action_text ?? '', action_text_2: card.action_text_2 ?? '', flavour_text: card.flavour_text ?? flavour }
+  }
+
+  return {
+    card_text: text,
+    resources: card.resources ?? '',
+    effect_text: card.effect_text ?? '',
+    action_text: card.action_text ?? '',
+    action_text_2: card.action_text_2 ?? '',
+    flavour_text: card.flavour_text ?? '',
+  }
 }
 
 // ─── Inline edit form ─────────────────────────────────────────────────────────
@@ -82,6 +145,28 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
   const set = (k: keyof EditValues) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       onChange({ ...values, [k]: e.target.value })
+  const isSimple = values.card_type === 'Automated' || values.card_type === 'Event' || values.card_type === 'CEO'
+  const isActive = values.card_type === 'Active'
+  const isComplexOptional = values.card_type === 'Corporation' || values.card_type === 'Prelude'
+  const isGlobalEvent = values.card_type === 'Global Event'
+  const [showExtended, setShowExtended] = useState(() => !!(values.effect_text || values.action_text || values.action_text_2))
+  const textArea = (
+    key: keyof Pick<EditValues, 'card_text' | 'resources' | 'effect_text' | 'action_text' | 'action_text_2' | 'flavour_text'>,
+    label: string,
+    placeholder: string,
+    rows = 3,
+  ) => (
+    <div style={{ flex: '1 1 260px' }}>
+      <label style={labelStyle}>{label}</label>
+      <textarea
+        value={values[key]}
+        onChange={set(key)}
+        placeholder={placeholder}
+        rows={rows}
+        style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties}
+      />
+    </div>
+  )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -93,6 +178,7 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
         <div style={{ flex: '1 1 130px' }}>
           <label style={labelStyle}>Type</label>
           <select value={values.card_type} onChange={set('card_type')} style={inputStyle}>
+            <option value="">—</option>
             {CARD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
@@ -106,9 +192,14 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
                   key={e}
                   type="button"
                   onClick={() => onChange({ ...values, expansions: active ? values.expansions.filter(x => x !== e) : [...values.expansions, e] })}
-                  style={{ padding: '3px 10px', background: active ? 'rgba(46,139,139,0.12)' : 'transparent', border: `1px solid ${active ? '#2e8b8b' : '#3e325e'}`, borderRadius: '12px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.73rem', color: active ? '#3bbfbf' : '#625c7c' }}
+                  title={e}
+                  style={{ width: '31px', height: '31px', padding: '4px', background: active ? 'rgba(46,139,139,0.12)' : 'transparent', border: `1px solid ${active ? '#2e8b8b' : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: active ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
                 >
-                  {active ? '✓ ' : ''}{e}
+                  {EXPANSION_ICONS[e]
+                    ? <img src={EXPANSION_ICONS[e]} alt={e} style={{ width: '21px', height: '21px', objectFit: 'contain', display: 'block' }} />
+                    : <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: active ? '#3bbfbf' : '#625c7c', lineHeight: 1 }}>{e.slice(0, 2).toUpperCase()}</span>
+                  }
+                  {active && <span style={selectedDotStyle} />}
                 </button>
               )
             })}
@@ -168,23 +259,64 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
                     : current.filter(t => t !== tag) // remove all
                   onChange({ ...values, tags: next.join(', ') })
                 }}
-                style={{ padding: '3px 11px', background: count > 0 ? colors.bg : 'transparent', border: `1px solid ${count > 0 ? colors.color : '#3e325e'}`, borderRadius: '12px', cursor: 'pointer', transition: 'all 0.12s', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: count > 0 ? colors.color : '#625c7c', position: 'relative' }}
+                title={tag}
+                style={{ width: '31px', height: '31px', padding: '4px', background: count > 0 ? colors.bg : 'transparent', border: `1px solid ${count > 0 ? colors.color : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: count > 0 ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
               >
-                {count === 2 ? '×2 ' : count === 1 ? '✓ ' : ''}{tag}
+                {TAG_ICONS[tag]
+                  ? <img src={TAG_ICONS[tag]} alt={tag} style={{ width: '21px', height: '21px', objectFit: 'contain', display: 'block' }} />
+                  : <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: count > 0 ? colors.color : '#625c7c', lineHeight: 1 }}>{tag.slice(0, 2).toUpperCase()}</span>
+                }
+                {count === 1 && <span style={selectedDotStyle} />}
+                {count === 2 && <span style={countBadgeStyle}>2</span>}
               </button>
             )
           })}
         </div>
       </div>
-      <div>
-        <label style={labelStyle}>Card text</label>
-        <textarea
-          value={values.card_text}
-          onChange={set('card_text')}
-          placeholder="Card effect or flavour text…"
-          rows={3}
-          style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties}
-        />
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        {isSimple && (
+          <>
+            {textArea('card_text', 'Gain resources', 'Resources gained…')}
+            {textArea('resources', 'Resource icons', '5:steel, 3:plant…', 1)}
+            {textArea('flavour_text', 'Flavour text', 'Flavour text…')}
+          </>
+        )}
+        {isActive && (
+          <>
+            {textArea('card_text', 'Gain resources', 'Resources gained…')}
+            {textArea('resources', 'Resource icons', '5:steel, 3:plant…', 1)}
+            {textArea('effect_text', 'Effect', 'Effect text…')}
+            {textArea('action_text', 'Action 1', 'Action text…')}
+            {textArea('action_text_2', 'Action 2', 'Second action text (shown with OR)…')}
+            {textArea('flavour_text', 'Flavour text', 'Flavour text…')}
+          </>
+        )}
+        {isComplexOptional && (
+          <>
+            {textArea('card_text', 'Gain resources', 'Resources gained…')}
+            {textArea('resources', 'Resource icons', '5:steel, 3:plant…', 1)}
+            {textArea('flavour_text', 'Flavour text', 'Flavour text…')}
+            <div style={{ flex: '1 1 100%' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-3)' }}>
+                <input type="checkbox" checked={showExtended} onChange={e => setShowExtended(e.target.checked)} />
+                Has Effect / Action text
+              </label>
+            </div>
+            {showExtended && (
+              <>
+                {textArea('effect_text', 'Effect', 'Effect text…')}
+                {textArea('action_text', 'Action 1', 'Action text…')}
+                {textArea('action_text_2', 'Action 2', 'Second action text (shown with OR)…')}
+              </>
+            )}
+          </>
+        )}
+        {isGlobalEvent && (
+          <>
+            {textArea('card_text', 'Text', 'Card text…')}
+            {textArea('flavour_text', 'Flavour text', 'Flavour text…')}
+          </>
+        )}
       </div>
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <button
@@ -217,11 +349,11 @@ export default function CardReferenceAdmin() {
   const { data: cards, isLoading } = useCardReference()
 
   const [search, setSearch]               = useState('')
-  const [typeFilters, setTypeFilters]     = useState<CardReference['card_type'][]>([])
+  const [typeFilters, setTypeFilters]     = useState<CardType[]>([])
   const [tagFilters, setTagFilters]       = useState<string[]>([])
   const [expansionFilters, setExpansionFilters] = useState<string[]>([])
   const [editingId, setEditingId]         = useState<string | null>(null) // 'new' = add mode
-  const [editValues, setEditValues]       = useState<EditValues>({ card_name: '', card_type: 'Automated', tags: '', expansions: [], card_text: '', mc_cost: '', base_vp: '', resource_vp_type: '', resource_vp_per: '' })
+  const [editValues, setEditValues]       = useState<EditValues>(emptyEditValues())
   const [saving, setSaving]               = useState(false)
   const [saveError, setSaveError]         = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
@@ -239,7 +371,7 @@ export default function CardReferenceAdmin() {
     return true
   })
 
-  function toggleType(t: CardReference['card_type']) {
+  function toggleType(t: CardType) {
     setTypeFilters(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
   }
   function toggleTag(t: string) {
@@ -250,13 +382,14 @@ export default function CardReferenceAdmin() {
   }
 
   function startEdit(card: CardReference) {
+    const textSections = cardTextToEditSections(card)
     setEditingId(card.id)
     setEditValues({
       card_name: card.card_name,
       card_type: card.card_type,
       tags: card.tags ?? '',
       expansions: card.expansions ?? [],
-      card_text: card.card_text ?? '',
+      ...textSections,
       mc_cost: card.mc_cost != null ? String(card.mc_cost) : '',
       base_vp: card.base_vp != null ? String(card.base_vp) : '',
       resource_vp_type: card.resource_vp_type ?? '',
@@ -267,7 +400,7 @@ export default function CardReferenceAdmin() {
 
   function startAdd() {
     setEditingId('new')
-    setEditValues({ card_name: '', card_type: 'Automated', tags: '', expansions: [], card_text: '', mc_cost: '', base_vp: '', resource_vp_type: '', resource_vp_per: '' })
+    setEditValues(emptyEditValues())
     setSaveError(null)
   }
 
@@ -285,6 +418,11 @@ export default function CardReferenceAdmin() {
         card_type: editValues.card_type,
         tags: editValues.tags.trim() || null,
         card_text: editValues.card_text.trim() || null,
+        resources: editValues.resources.trim() || null,
+        effect_text: editValues.effect_text.trim() || null,
+        action_text: editValues.action_text.trim() || null,
+        action_text_2: editValues.action_text_2.trim() || null,
+        flavour_text: editValues.flavour_text.trim() || null,
         mc_cost: editValues.mc_cost !== '' ? Number(editValues.mc_cost) : null,
         base_vp: editValues.base_vp !== '' ? Number(editValues.base_vp) : null,
         resource_vp_type: editValues.resource_vp_type || null,
@@ -292,6 +430,11 @@ export default function CardReferenceAdmin() {
       }
       if (!payload.card_name) {
         setSaveError('Card name is required')
+        setSaving(false)
+        return
+      }
+      if (!payload.card_type) {
+        setSaveError('Card type is required')
         setSaving(false)
         return
       }
@@ -543,5 +686,7 @@ export default function CardReferenceAdmin() {
 const loadingStyle: React.CSSProperties = { padding: '32px 36px', color: '#625c7c', fontFamily: 'var(--font-body)' }
 const labelStyle: React.CSSProperties = { display: 'block', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '5px' }
 const inputStyle: React.CSSProperties = { width: '100%', height: '34px', padding: '0 10px', background: '#171228', border: '1px solid #3e325e', borderRadius: '4px', color: '#ece6ff', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none', boxSizing: 'border-box' }
+const selectedDotStyle: React.CSSProperties = { position: 'absolute', right: '3px', bottom: '3px', width: '6px', height: '6px', borderRadius: '50%', background: '#3bbfbf', boxShadow: '0 0 0 1px #171228' }
+const countBadgeStyle: React.CSSProperties = { position: 'absolute', right: '2px', bottom: '2px', minWidth: '12px', height: '12px', padding: '0 2px', borderRadius: '6px', background: '#3bbfbf', color: '#111', fontFamily: 'var(--font-mono)', fontSize: '0.52rem', fontWeight: 700, lineHeight: '12px', textAlign: 'center' }
 const editBtnStyle: React.CSSProperties = { padding: '4px 12px', background: 'rgba(155,80,240,0.08)', border: '1px solid rgba(155,80,240,0.3)', borderRadius: '4px', color: '#b87aff', fontFamily: 'var(--font-body)', fontSize: '0.75rem', cursor: 'pointer' }
 const deleteBtnStyle: React.CSSProperties = { padding: '4px 10px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.75rem', cursor: 'pointer' }

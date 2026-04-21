@@ -1,73 +1,49 @@
-# React + TypeScript + Vite
+# Terraforming Mars — Scoring Statistics
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A fan-made statistics tracker for the board game **Terraforming Mars**. Built to record game sessions, track scores, and surface insights about players, corporations, cards, milestones, and awards over time.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## What it does
 
-## React Compiler
+- **Game log** — Record every session with players, scores, expansions, map, and colonies used
+- **Player statistics** — Win rates, average scores, best scores, and game history per player
+- **Corporation statistics** — Track how each corporation performs across games
+- **Card reference** — A browsable library of project cards, corporations, preludes, events, and CEOs with full stats on play rate, win rate, and VP contribution
+- **CEO tracking** — Dedicated stats for the CEO expansion
+- **Milestones & Awards** — See which milestones and awards are claimed most often
+- **Parameter contributions** — Track who drove oxygen, temperature, ocean, and Venus progress
+- **Admin panel** — Password-protected data entry for adding games and maintaining the card reference library
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Tech stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) + [Vite](https://vitejs.dev/)
+- [Supabase](https://supabase.com/) — PostgreSQL database and auth
+- [TanStack Query](https://tanstack.com/query) — data fetching and caching
+- [React Router v6](https://reactrouter.com/)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Acknowledgements
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### FryxGames
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+A heartfelt thank you to **FryxGames** for creating Terraforming Mars — one of the greatest board games ever made. This project exists entirely because of the joy and depth that game has brought to our table. If you haven't played it, [go get a copy](https://fryxgames.se/).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+> This application is a fan project and is **not affiliated with, endorsed by, or sponsored by FryxGames** in any way. All Terraforming Mars intellectual property belongs to FryxGames.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### terraforming-mars community
+
+The card icons, tag icons, expansion icons, and resource icons used throughout this application were sourced from and inspired by the incredible open-source community project:
+
+**[terraforming-mars/terraforming-mars](https://github.com/terraforming-mars/terraforming-mars)**
+
+This project would simply not look the way it does without the work of every contributor there. Thank you for building and maintaining such a comprehensive digital implementation of the game, and for making your assets available to the community. This application would not have been possible without you.
+
+---
+
+## Disclaimer
+
+This is a personal, non-commercial fan project. All game content, card names, corporation names, and related intellectual property belong to their respective owners.

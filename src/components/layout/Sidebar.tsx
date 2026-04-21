@@ -17,7 +17,7 @@ const NAV_ITEMS = [
   { to: '/setup',         label: 'Setup'        },
 ]
 
-const NAV_ARROW = '/tm-scoring-statistics/misc/arrow.png'
+const NAV_PILL = '/tm-scoring-statistics/misc/standard-project-blank.png'
 
 const PARAM_LABELS = [
   { label: 'OXYGEN',      color: '#4a9e6b' },
@@ -47,7 +47,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         height: '100vh',
         position: 'sticky',
         top: 0,
-        overflow: 'hidden',
+        overflowX: 'hidden',
+        overflowY: 'auto',
       }}
     >
       {/* Logo / title */}
@@ -81,23 +82,31 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             end={to === '/'}
             onClick={onClose}
             style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '9px 20px',
-              fontSize: '0.85rem',
-              fontFamily: 'var(--font-body)',
-              fontWeight: isActive ? 600 : 400,
-              color: isActive ? 'var(--text-1)' : 'var(--text-3)',
-              background: isActive ? 'rgba(0,0,0,0.08)' : 'transparent',
-              borderRight: isActive ? '2px solid var(--text-3)' : '2px solid transparent',
+              display: 'block',
+              position: 'relative',
+              margin: '3px 24px',
               textDecoration: 'none',
-              transition: 'color 0.15s, background 0.15s',
-              letterSpacing: '0.01em',
+              borderRight: 'none',
+              opacity: isActive ? 1 : 0.55,
+              transition: 'opacity 0.15s',
             })}
           >
-            <img src={NAV_ARROW} alt="" style={{ width: '14px', height: '14px', objectFit: 'contain', opacity: 0.7, flexShrink: 0 }} />
-            {label}
+            <img src={NAV_PILL} alt="" aria-hidden style={{ width: '100%', height: '36px', objectFit: 'fill', display: 'block' }} />
+            <span style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: '0.78rem',
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: '#1a0a00',
+            }}>
+              {label}
+            </span>
           </NavLink>
         ))}
       </nav>
