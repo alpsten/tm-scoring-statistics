@@ -121,9 +121,6 @@ function getCardTextSections(card: CardReference): CardTextSection[] {
   ].filter(Boolean) as CardTextSection[]
 }
 
-function getCardTextLength(card: CardReference) {
-  return getCardTextSections(card).reduce((sum, section) => sum + section.text.length + (section.label?.length ?? 0), 0)
-}
 
 function getGreenCardTagSize(tagCount: number) {
   if (tagCount <= 1) return 24
