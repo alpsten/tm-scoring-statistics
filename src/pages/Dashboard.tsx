@@ -382,7 +382,6 @@ export default function Dashboard() {
 }
 
 const loadingStyle: React.CSSProperties = { padding: '32px 36px', color: 'var(--text-4)', fontFamily: 'var(--font-body)' }
-const sectionHeader: React.CSSProperties = { fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '14px' }
 const numTd: React.CSSProperties = { padding: '11px 16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.83rem', color: 'var(--text-2)' }
 const recordCard: React.CSSProperties = { background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '6px' }
 const recordLabel: React.CSSProperties = { fontFamily: 'var(--font-body)', fontSize: '0.72rem', fontWeight: 500, color: 'var(--text-4)', letterSpacing: '0.06em', textTransform: 'uppercase' }

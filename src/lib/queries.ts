@@ -45,6 +45,9 @@ interface RawGame {
     position: number
     key_notes: string | null
     ceo: string | null
+    corporations: string[] | null
+    is_merger: boolean | null
+    second_corporation: string | null
   }>
   game_expansions: Array<{ expansion_name: string }>
   game_colonies: Array<{ colony_name: string }>
