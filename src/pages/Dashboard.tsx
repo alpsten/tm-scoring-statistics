@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
 import StatCard from '../components/ui/StatCard'
 import PageHeader from '../components/ui/PageHeader'
+import SectionHeading from '../components/ui/SectionHeading'
 import { useGames, usePlayerStats, useCorpStats } from '../lib/hooks'
 import type { GameWithResults, PlayerResult } from '../types/database'
+import { isMergerResult } from '../types/database'
 
 import { EXPANSION_ICONS } from '../lib/expansions'
 
@@ -29,7 +31,7 @@ export default function Dashboard() {
 
   const corpCounts: Record<string, number> = {}
   for (const r of allResults) {
-    if (!r.corporation.includes(', ')) corpCounts[r.corporation] = (corpCounts[r.corporation] ?? 0) + 1
+    if (!isMergerResult(r)) corpCounts[r.corporation] = (corpCounts[r.corporation] ?? 0) + 1
   }
   const topCorpPlayed = Object.entries(corpCounts).sort((a, b) => b[1] - a[1])[0]
 
@@ -42,7 +44,7 @@ export default function Dashboard() {
     : null
 
   const topCorp = [...(corpStats ?? [])]
-    .filter(c => !c.corporation.includes(', ') && c.games_played >= 2)
+    .filter(c => c.games_played >= 2)
     .sort((a, b) => b.avg_score - a.avg_score)[0]
 
   const longestGame = (games ?? []).reduce<GameWithResults | null>(
@@ -55,7 +57,7 @@ export default function Dashboard() {
 
   const bestCorpWinRate = (() => {
     const eligible = [...(corpStats ?? [])]
-      .filter(c => !c.corporation.includes(', ') && c.games_played >= 3)
+      .filter(c => c.games_played >= 3)
       .sort((a, b) => b.win_rate - a.win_rate || b.games_played - a.games_played)
     if (eligible.length === 0) return []
     const topRate = eligible[0].win_rate
@@ -80,7 +82,7 @@ export default function Dashboard() {
 
       {/* Stat strip */}
       <div style={{ marginBottom: '36px' }}>
-        <h2 style={sectionHeader}>General Stats</h2>
+        <SectionHeading banner>General Stats</SectionHeading>
         <div className="stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
         <StatCard label="Games logged"       value={totalGames}                                   accent="mars"    />
         <StatCard label="Average final score" value={avgScore} valueSuffix="VP" suffixColor="#c9a030" accent="score" />
@@ -91,7 +93,7 @@ export default function Dashboard() {
 
       {/* Records */}
       <div style={{ marginBottom: '32px' }}>
-        <h2 style={sectionHeader}>Records &amp; highlights</h2>
+        <SectionHeading banner>Records &amp; highlights</SectionHeading>
         <div className="records-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
           {/* All-time high score */}
           <div style={recordCard}>
@@ -221,8 +223,8 @@ export default function Dashboard() {
 
       {/* Player leaderboard */}
       <div style={{ marginBottom: '32px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-          <h2 style={{ ...sectionHeader, margin: 0 }}>Player leaderboard</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <SectionHeading banner>Player leaderboard</SectionHeading>
           <Link to="/players" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#9b50f0', textDecoration: 'none' }}>
             Full stats →
           </Link>
@@ -270,8 +272,8 @@ export default function Dashboard() {
 
       {/* Recent games */}
       <div style={{ marginBottom: '32px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-          <h2 style={{ ...sectionHeader, margin: 0 }}>Recent games</h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <SectionHeading banner>Recent games</SectionHeading>
           <Link to="/games" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#9b50f0', textDecoration: 'none' }}>
             View all →
           </Link>
@@ -349,7 +351,7 @@ export default function Dashboard() {
       {/* Quick links */}
       <div className="quick-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
         {[
-          { to: '/corporations', label: 'Corporation stats',  sub: `${[...(corpStats ?? [])].filter(c => !c.corporation.includes(', ')).length} corporations played` },
+          { to: '/corporations', label: 'Corporation stats',  sub: `${(corpStats ?? []).length} corporations played` },
           { to: '/cards',        label: 'Card analysis',      sub: 'Performance by card' },
           { to: '/players',      label: 'Player profiles',    sub: `${playerStats?.length ?? 0} players tracked` },
         ].map(({ to, label, sub }) => (

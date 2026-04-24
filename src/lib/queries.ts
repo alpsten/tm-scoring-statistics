@@ -123,12 +123,14 @@ export async function fetchPlayerStats(): Promise<PlayerStats[]> {
 export async function fetchCorporationStats(): Promise<CorporationStats[]> {
   const { data, error } = await supabase
     .from('player_results')
-    .select('corporation, total_vp, position')
+    .select('corporation, corporations, total_vp, position')
   if (error) throw error
 
   const map: Record<string, { vp: number; pos: number }[]> = {}
   for (const r of data!) {
-    ;(map[r.corporation] ??= []).push({ vp: r.total_vp, pos: r.position })
+    const corps: string[] = r.corporations?.length ? r.corporations : [r.corporation]
+    if (corps.length > 1) continue  // skip merger rows
+    ;(map[corps[0]] ??= []).push({ vp: r.total_vp, pos: r.position })
   }
 
   return Object.entries(map).map(([corporation, rows]) => {
@@ -149,6 +151,7 @@ export async function fetchCardStats(): Promise<CardStats[]> {
   const { data: cards, error: ce } = await supabase
     .from('cards_played')
     .select('card_name, vp_from_card, card_order, game_id, player_name')
+    .limit(10000)
   if (ce) throw ce
   if (!cards || cards.length === 0) return []
 
@@ -381,6 +384,51 @@ export async function fetchCEOStats(): Promise<CEOStat[]> {
       best_score: Math.max(...vps),
     }))
     .sort((a, b) => b.times_played - a.times_played || a.ceo_name.localeCompare(b.ceo_name))
+}
+
+export interface MergerStat {
+  combo: string       // e.g. "Arklight + Inventrix" (sorted alphabetically)
+  corp1: string
+  corp2: string
+  corps: string[]     // all corps sorted (supports 3+)
+  games_played: number
+  wins: number
+  win_rate: number
+  avg_score: number
+  best_score: number
+}
+
+export async function fetchMergerStats(): Promise<MergerStat[]> {
+  const { data, error } = await supabase
+    .from('player_results')
+    .select('corporation, second_corporation, corporations, total_vp, position')
+  if (error) throw error
+  if (!data || data.length === 0) return []
+
+  const map: Record<string, { vp: number; pos: number; corps: string[] }[]> = {}
+  for (const r of data as { corporation: string; second_corporation: string | null; corporations: string[] | null; total_vp: number; position: number }[]) {
+    const corps: string[] = r.corporations?.length ? r.corporations : [r.corporation, r.second_corporation].filter(Boolean) as string[]
+    if (corps.length < 2) continue  // skip non-merger rows
+    const key = [...corps].sort().join(' + ')
+    ;(map[key] ??= []).push({ vp: r.total_vp, pos: r.position, corps })
+  }
+
+  return Object.entries(map).map(([combo, rows]) => {
+    const corps = [...rows[0].corps].sort()
+    const wins = rows.filter(r => r.pos === 1).length
+    const vps = rows.map(r => r.vp)
+    return {
+      combo,
+      corp1: corps[0],
+      corp2: corps[1],
+      corps,
+      games_played: rows.length,
+      wins,
+      win_rate: (wins / rows.length) * 100,
+      avg_score: vps.reduce((s, v) => s + v, 0) / vps.length,
+      best_score: Math.max(...vps),
+    }
+  }).sort((a, b) => b.games_played - a.games_played || a.combo.localeCompare(b.combo))
 }
 
 export async function fetchCardReference(): Promise<CardReference[]> {

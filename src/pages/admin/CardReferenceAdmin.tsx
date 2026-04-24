@@ -6,7 +6,7 @@ import Tag from '../../components/ui/Tag'
 import { parseTags } from '../../components/ui/tagUtils'
 import { useCardReference } from '../../lib/hooks'
 import { supabase } from '../../lib/supabase'
-import { EXPANSION_ICONS, TAG_ICONS } from '../../lib/expansions'
+import { EXPANSION_ICONS, TAG_ICONS, NO_TAG_ICON, NO_TAG } from '../../lib/expansions'
 import type { CardReference } from '../../types/database'
 
 type CardType = CardReference['card_type']
@@ -16,7 +16,7 @@ const CARD_TYPES: CardType[] = ['Automated', 'Active', 'Event', 'Corporation', '
 
 const EXPANSIONS_LIST = [
   'Base', 'Corporate Era', 'Prelude', 'Prelude 2',
-  'Venus Next', 'Colonies', 'Turmoil', 'Moon', 'Pathfinders', 'Promos',
+  'Venus Next', 'Colonies', 'Turmoil', 'Ares', 'CEO', 'Moon', 'Pathfinders', 'Promos',
 ]
 
 const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
@@ -64,6 +64,7 @@ type EditValues = {
   card_name: string
   card_type: EditableCardType
   tags: string
+  noTagExplicit: boolean
   expansions: string[]
   card_text: string
   resources: string
@@ -82,6 +83,7 @@ function emptyEditValues(): EditValues {
     card_name: '',
     card_type: '',
     tags: '',
+    noTagExplicit: false,
     expansions: [],
     card_text: '',
     resources: '',
@@ -257,7 +259,7 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
                     : count === 1
                     ? [...current, tag]   // add second instance
                     : current.filter(t => t !== tag) // remove all
-                  onChange({ ...values, tags: next.join(', ') })
+                  onChange({ ...values, tags: next.join(', '), noTagExplicit: false })
                 }}
                 title={tag}
                 style={{ width: '31px', height: '31px', padding: '4px', background: count > 0 ? colors.bg : 'transparent', border: `1px solid ${count > 0 ? colors.color : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: count > 0 ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
@@ -271,6 +273,14 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
               </button>
             )
           })}
+          <button
+            type="button"
+            title="No tag"
+            onClick={() => onChange({ ...values, tags: '', noTagExplicit: true })}
+            style={{ width: '31px', height: '31px', padding: '4px', background: values.noTagExplicit ? 'rgba(100,100,100,0.12)' : 'transparent', border: `1px solid ${values.noTagExplicit ? '#8e87a8' : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: values.noTagExplicit ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <img src={NO_TAG_ICON} alt="No tag" style={{ width: '21px', height: '21px', objectFit: 'contain', display: 'block' }} />
+          </button>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -366,7 +376,14 @@ export default function CardReferenceAdmin() {
   const filtered = (cards ?? []).filter(c => {
     if (search && !c.card_name.toLowerCase().includes(search.toLowerCase())) return false
     if (typeFilters.length > 0 && !typeFilters.includes(c.card_type)) return false
-    if (tagFilters.length > 0 && !tagFilters.some(t => parseTags(c.tags).includes(t))) return false
+    if (tagFilters.length > 0) {
+      const cardTags = parseTags(c.tags)
+      const wantsNoTag = tagFilters.includes(NO_TAG)
+      const otherFilters = tagFilters.filter(t => t !== NO_TAG)
+      const matchesNoTag = wantsNoTag && cardTags.length === 0
+      const matchesTag = otherFilters.length > 0 && otherFilters.some(t => cardTags.includes(t))
+      if (!matchesNoTag && !matchesTag) return false
+    }
     if (expansionFilters.length > 0 && !expansionFilters.some(e => c.expansions.includes(e))) return false
     return true
   })
@@ -388,6 +405,7 @@ export default function CardReferenceAdmin() {
       card_name: card.card_name,
       card_type: card.card_type,
       tags: card.tags ?? '',
+      noTagExplicit: !card.tags || parseTags(card.tags).length === 0,
       expansions: card.expansions ?? [],
       ...textSections,
       mc_cost: card.mc_cost != null ? String(card.mc_cost) : '',
@@ -548,6 +566,9 @@ export default function CardReferenceAdmin() {
                 </button>
               )
             })}
+            <button onClick={() => toggleTag(NO_TAG)} title="No tag" style={{ padding: '4px', background: tagFilters.includes(NO_TAG) ? 'rgba(100,100,100,0.12)' : 'transparent', border: `1px solid ${tagFilters.includes(NO_TAG) ? '#8e87a8' : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: tagFilters.includes(NO_TAG) ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src={NO_TAG_ICON} alt="No tag" style={{ width: '20px', height: '20px', objectFit: 'contain', display: 'block' }} />
+            </button>
           </div>
         )}
 
@@ -559,7 +580,7 @@ export default function CardReferenceAdmin() {
               const active = expansionFilters.includes(exp)
               const icon = EXPANSION_ICONS[exp]
               return (
-                <button key={exp} onClick={() => toggleExpansion(exp)} title={exp} style={{ padding: '4px', background: active ? 'rgba(46,139,139,0.12)' : 'transparent', border: `1px solid ${active ? '#2e8b8b' : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: active ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <button key={exp} onClick={() => toggleExpansion(exp)} title={exp} style={{ width: '31px', height: '31px', padding: '4px', background: active ? 'rgba(46,139,139,0.12)' : 'transparent', border: `1px solid ${active ? '#2e8b8b' : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: active ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
                   {icon
                     ? <img src={icon} alt={exp} style={{ width: '20px', height: '20px', objectFit: 'contain', display: 'block' }} />
                     : <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: active ? '#3bbfbf' : '#625c7c', padding: '0 7px' }}>{exp}</span>

@@ -8,7 +8,11 @@ export const ALL_EXPANSIONS = [
   'Prelude', 'Prelude 2', 'Promos', 'Turmoil', 'Venus Next',
 ]
 
+export const NO_TAG_ICON = '/tm-scoring-statistics/tags/no-tag.png'
+export const NO_TAG = '__no_tag__'
+
 export const EXPANSION_ICONS: Record<string, string> = {
+  'Base':           '/tm-scoring-statistics/expansions/expansion_icon_base_game.png',
   'Ares':           '/tm-scoring-statistics/expansions/expansion_icon_ares.png',
   'Corporate Era':  '/tm-scoring-statistics/expansions/expansion_icon_corporateEra.png',
   'CEO':         '/tm-scoring-statistics/expansions/expansion_icon_ceo.png',

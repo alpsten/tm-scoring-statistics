@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
-import { useGames, usePlayerStats } from '../../lib/hooks'
+import { useGames, usePlayerStats, useCardReference } from '../../lib/hooks'
 import { parseGameLog } from '../../lib/logParser'
 import type { ParsedLog } from '../../lib/logParser'
 import PageHeader from '../../components/ui/PageHeader'
@@ -58,6 +58,7 @@ export default function ParseLog() {
 
   const { data: games = [] } = useGames()
   const { data: playerStats = [] } = usePlayerStats()
+  const { data: cardRef = [] } = useCardReference()
   const allDbPlayers = [...new Set(playerStats.map(p => p.player_name))].sort()
 
   function handleParse() {
@@ -198,6 +199,11 @@ export default function ParseLog() {
     const ambiguousUnresolved = milestoneAmbiguities.some(a => !milestoneResolutions[a.logName])
     const canImport = selectedGameId && parsed.players.every(p => playerMap[p]) && !ambiguousUnresolved
 
+    const knownNames = new Set(cardRef.map(c => c.card_name.toLowerCase()))
+    const unknownCards = [...new Set(parsed.cards.map(c => c.card_name))]
+      .filter(name => !knownNames.has(name.toLowerCase()))
+      .sort()
+
     return (
       <div className="page-enter" style={{ padding: '32px 36px' }}>
         <div style={{ marginBottom: '24px' }}>
@@ -208,6 +214,22 @@ export default function ParseLog() {
           title="Log preview"
           subtitle={`${parsed.cards.length} cards · ${parsed.milestones.length} milestones · ${parsed.total_generations} generations`}
         />
+
+        {/* Unknown card names warning */}
+        {unknownCards.length > 0 && (
+          <div style={{ background: 'rgba(224,85,53,0.07)', border: '1px solid rgba(224,85,53,0.35)', borderRadius: '6px', padding: '14px 18px', marginBottom: '24px' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#e05535', marginBottom: '10px' }}>
+              {unknownCards.length} card{unknownCards.length !== 1 ? 's' : ''} not found in card reference — possible spelling errors
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {unknownCards.map(name => (
+                <span key={name} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '3px', background: 'rgba(224,85,53,0.1)', color: '#e05535', border: '1px solid rgba(224,85,53,0.25)' }}>
+                  {name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Summary row */}
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '28px' }}>

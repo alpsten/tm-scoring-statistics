@@ -169,7 +169,7 @@ const RANDOM_MILESTONES = [
   'Briber', 'Builder7', 'Builder8', 'Coastguard', 'Diversifier', 'Ecologist', 'Economizer',
   'Energizer', 'Engineer', 'Farmer', 'Forester3', 'Forester4', 'Fundraiser', 'Gardener',
   'Generalist', 'Hoverlord', 'Hydrologist', 'Land Specialist', 'Landshaper', 'Legend4', 'Legend5',
-  'Lobbyist', 'Manager', 'Martian', 'Mayor', 'Merchant', 'Metallurgist', 'Philanthropist', 'Pioneer3',
+  'Lobbyist', 'Manager', 'Martian', 'Mayor', 'Merchant', 'Metallurgist', 'Networker', 'Philanthropist', 'Pioneer3',
   'Pioneer4', 'Planetologist', 'Planner', 'Polar Explorer', 'Producer', 'Researcher', 'Rim Settler',
   'One Giant Step', 'Spacefarer4', 'Spacefarer6', 'Specialist', 'Sponsor', 'Tactician4', 'Tactician5', 'Terraformer29',
   'Terraformer35', 'Terran5', 'Terran6', 'Thawer', 'Trader', 'Tycoon10', 'Tycoon15',
@@ -180,7 +180,7 @@ const RANDOM_AWARDS = [
   'Constructor', 'Contractor', 'Cosmic Settler', 'Cultivator', 'Desert Settler', 'Electrician',
   'Estate Dealer', 'Excentric', 'Forecaster', 'Founder', 'Highlander', 'Incorporator', 'Industrialist',
   'Investor', 'Landlord', 'Landscaper', 'Lunar Magnate', 'Magnate', 'Manufacturer', 'Metropolist', 'Miner', 'Mogul',
-  'Politician', 'Promoter', 'Scientist', 'Space Baron', 'Suburbian', 'Thermalist', 'Traveller',
+  'Politician', 'Promoter', 'Rugged', 'Scientist', 'Space Baron', 'Suburbian', 'Thermalist', 'Traveller',
   'Venuphile', 'Visionary', 'Zoologist',
 ].sort()
 
@@ -347,11 +347,10 @@ export default function AddGame() {
       format: (existingGame.format === 'Digital' ? 'Digital' : 'Physical') as 'Physical' | 'Digital',
       notes: existingGame.notes ?? '',
       players: sorted.map(r => {
-        const parts = r.corporation.split(', ')
         const params = existingGame.parameter_contributions.find(p => p.player_name === r.player_name)
         return {
           player_name: r.player_name,
-          corporation: parts[0],
+          corporation: r.corporation,
           tr: r.tr,
           milestone_vp: r.milestone_vp,
           award_vp: r.award_vp,
@@ -377,9 +376,9 @@ export default function AddGame() {
       }),
     })
 
-    setMergerCounts(sorted.map(r => r.corporation.split(', ').length))
-    setExtraCorp2(sorted.map(r => r.corporation.split(', ')[1] ?? ''))
-    setExtraCorp3(sorted.map(r => r.corporation.split(', ')[2] ?? ''))
+    setMergerCounts(sorted.map(r => r.second_corporation ? 2 : 1))
+    setExtraCorp2(sorted.map(r => r.second_corporation ?? ''))
+    setExtraCorp3(sorted.map(() => ''))
     setCeos(sorted.map(r => r.ceo ?? ''))
     setExpansions(existingGame.expansions)
     setColonies(existingGame.colonies)
@@ -497,12 +496,9 @@ export default function AddGame() {
     setSaving(true)
     setSaveError(null)
     try {
-      // Merge extra corp names into corporation string for Merger plays
       const playersWithCorps = data.players.map((p, i) => {
-        let corp = p.corporation
-        if ((mergerCounts[i] ?? 1) >= 2 && extraCorp2[i]) corp += ', ' + extraCorp2[i]
-        if ((mergerCounts[i] ?? 1) >= 3 && extraCorp3[i]) corp += ', ' + extraCorp3[i]
-        return { ...p, corporation: corp }
+        const corps = [p.corporation, extraCorp2[i], extraCorp3[i]].filter(Boolean) as string[]
+        return { ...p, corporations: corps }
       })
 
       const sessionPayload = {
@@ -549,7 +545,10 @@ export default function AddGame() {
         .insert(playersWithCorps.map((p, i) => ({
           game_id: gameId,
           player_name: p.player_name,
-          corporation: p.corporation,
+          corporation: p.corporations[0],
+          second_corporation: p.corporations[1] ?? null,
+          is_merger: p.corporations.length > 1,
+          corporations: p.corporations,
           tr: p.tr,
           milestone_vp: p.milestone_vp,
           award_vp: p.award_vp,

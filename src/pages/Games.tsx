@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { getCorps } from '../types/database'
 import PageHeader from '../components/ui/PageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import { useGames, usePlayerProfiles } from '../lib/hooks'
-import { EXPANSION_ICONS, MAP_PILL, ALL_MAPS, ALL_EXPANSIONS } from '../lib/expansions'
+import { EXPANSION_ICONS, ALL_MAPS, ALL_EXPANSIONS } from '../lib/expansions'
+import SectionHeading from '../components/ui/SectionHeading'
 
 export default function Games() {
   const { data, isLoading, error } = useGames()
@@ -33,11 +35,6 @@ export default function Games() {
 
   const hasFilters = !!search || mapFilters.length > 0 || expansionFilters.length > 0
 
-  function formatCorp(corp: string) {
-    const parts = corp.split(', ')
-    if (parts.length === 1) return corp
-    return parts.join(' + ') + ' (Merger)'
-  }
 
   function expDisplayName(n: string) {
     if (n === 'Venus') return 'Venus Next'
@@ -60,7 +57,7 @@ export default function Games() {
       />
 
       {/* Filter bar */}
-      <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {/* Search */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <input
@@ -89,14 +86,8 @@ export default function Games() {
         </div>
 
         {/* Map pills */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <span style={{
-            display: 'inline-block', alignSelf: 'flex-start',
-            fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 700,
-            letterSpacing: '0.08em', textTransform: 'uppercase',
-            color: '#5b8dd9', padding: '3px 10px', borderRadius: '4px',
-            background: 'rgba(91,141,217,0.12)', border: '1px solid rgba(91,141,217,0.25)',
-          }}>Map-Selection</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <SectionHeading effect style={{ marginTop: '-40px', marginBottom: '-65px' }}>Map-Selection</SectionHeading>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', paddingLeft: '2px' }}>
             {ALL_MAPS.map(map => {
               const active = mapFilters.includes(map)
@@ -117,29 +108,24 @@ export default function Games() {
         </div>
 
         {/* Expansion pills */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <span style={{
-            display: 'inline-block', alignSelf: 'flex-start',
-            fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 700,
-            letterSpacing: '0.08em', textTransform: 'uppercase',
-            color: '#5b8dd9', padding: '3px 10px', borderRadius: '4px',
-            background: 'rgba(91,141,217,0.12)', border: '1px solid rgba(91,141,217,0.25)',
-          }}>Expansion-Selection</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <SectionHeading effect style={{ marginTop: '-40px', marginBottom: '-65px' }}>Expansion-Selection</SectionHeading>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', paddingLeft: '2px' }}>
             {ALL_EXPANSIONS.map(exp => {
               const active = expansionFilters.includes(exp)
               return (
-                <button key={exp} onClick={() => toggleExpansion(exp)} style={{
-                  padding: '4px 10px',
+                <button key={exp} onClick={() => toggleExpansion(exp)} title={expDisplayName(exp)} style={{
+                  padding: '4px 6px',
                   background: active ? 'rgba(91,141,217,0.12)' : 'transparent',
                   border: `1px solid ${active ? '#5b8dd9' : 'var(--bd-input)'}`,
                   borderRadius: '4px', cursor: 'pointer', transition: 'all 0.12s',
-                  fontFamily: 'var(--font-body)', fontSize: '0.75rem',
-                  color: active ? '#5b8dd9' : 'var(--text-4)',
-                  display: 'flex', alignItems: 'center', gap: '5px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  opacity: active ? 1 : 0.5,
                 }}>
-                  {EXPANSION_ICONS[exp] && <img src={EXPANSION_ICONS[exp]} alt={exp} style={{ width: '14px', height: '14px', objectFit: 'contain' }} />}
-                  {active ? '✓ ' : ''}{expDisplayName(exp)}
+                  {EXPANSION_ICONS[exp]
+                    ? <img src={EXPANSION_ICONS[exp]} alt={expDisplayName(exp)} style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+                    : <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: active ? '#5b8dd9' : 'var(--text-4)', padding: '0 4px' }}>{expDisplayName(exp)}</span>
+                  }
                 </button>
               )
             })}
@@ -172,7 +158,7 @@ export default function Games() {
                 {/* Game header */}
                 <div style={{ marginBottom: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={MAP_PILL}>{game.map_name ?? 'Digital'}</span>
+                    <SectionHeading effect style={{ height: '161px', fontSize: '0.9rem', padding: '0 24px 9px', marginTop: '-58px', marginBottom: '-60px' }}>{game.map_name ?? 'Digital'}</SectionHeading>
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#5b8dd9', letterSpacing: '0.05em' }}>#{gameNum}</span>
                   </div>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-4)' }}>
@@ -230,8 +216,13 @@ export default function Games() {
                             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: result.position === 1 ? '#c9a030' : 'var(--text-3)', marginLeft: '3px', fontWeight: 700 }}>VP</span>
                           </span>
                         </div>
-                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-4)', marginTop: '1px' }}>
-                          {formatCorp(result.corporation)}
+                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--text-4)', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                          {getCorps(result).join(' + ')}
+                          {getCorps(result).length > 1 && (
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#c9a030', background: 'rgba(201,160,48,0.1)', border: '1px solid rgba(201,160,48,0.3)', borderRadius: '4px', padding: '1px 5px' }}>
+                              Merger
+                            </span>
+                          )}
                         </div>
                         {result.key_notes && (
                           <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', fontStyle: 'italic', marginTop: '2px' }}>

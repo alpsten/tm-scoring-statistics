@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts'
 import PageHeader from '../components/ui/PageHeader'
-import { useCorpStats } from '../lib/hooks'
+import { useCorpStats, useMergerStats } from '../lib/hooks'
 import type { CorporationStats } from '../types/database'
 
 type SortKey = keyof Pick<CorporationStats, 'corporation' | 'games_played' | 'wins' | 'win_rate' | 'avg_score' | 'best_score'>
@@ -12,6 +12,7 @@ const PIE_COLORS = ['#9b50f0','#e05535','#2e8b8b','#c9a030','#4a9e6b','#b87aff',
 
 export default function Corporations() {
   const { data, isLoading, error } = useCorpStats()
+  const { data: mergerData } = useMergerStats()
   const [sortKey, setSortKey] = useState<SortKey>('avg_score')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [search, setSearch] = useState('')
@@ -30,8 +31,8 @@ export default function Corporations() {
   }
 
   const allCorps = data ?? []
-  const singleCorps = allCorps.filter(c => !c.corporation.includes(', '))
-  const mergerCorps = allCorps.filter(c => c.corporation.includes(', '))
+  const singleCorps = allCorps
+  const mergerCorps = mergerData ?? []
 
   function sortCorps(list: typeof allCorps) {
     return [...list]
@@ -44,7 +45,7 @@ export default function Corporations() {
   }
 
   const filtered = sortCorps(singleCorps)
-  const filteredMergers = sortCorps(mergerCorps)
+  const filteredMergers = (mergerCorps).filter(c => c.combo.toLowerCase().includes(search.toLowerCase()))
 
   const selectedCorps = allCorps.filter(c => selected.includes(c.corporation))
 
@@ -303,48 +304,28 @@ export default function Corporations() {
                 </tr>
               </thead>
               <tbody>
-                {filteredMergers.map((c, i) => {
-                  const isSelected = selected.includes(c.corporation)
-                  const parts = c.corporation.split(', ')
-                  return (
-                    <tr
-                      key={c.corporation}
-                      style={{ borderBottom: i < filteredMergers.length - 1 ? '1px solid var(--bd-panel)' : 'none', transition: 'background 0.1s', background: isSelected ? 'rgba(155, 80, 240, 0.06)' : 'var(--bg-row)' }}
-                      onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-row-hover)' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = isSelected ? 'rgba(155, 80, 240, 0.06)' : 'var(--bg-row)' }}
-                    >
-                      <td style={{ padding: '11px 14px', textAlign: 'center' }}>
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleSelect(c.corporation)}
-                          style={{ accentColor: '#9b50f0', cursor: 'pointer' }}
-                        />
-                      </td>
-                      <td style={{ padding: '13px 18px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          {parts.map((p, pi) => (
-                            <span key={p} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <Link to={`/corporations/${encodeURIComponent(p.trim())}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: '0.87rem', color: 'var(--text-1)', textDecoration: 'none' }}>
-                                {p.trim()}
-                              </Link>
-                              {pi < parts.length - 1 && (
-                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#d4a820', fontWeight: 700 }}>+</span>
-                              )}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td style={numTd}>{c.games_played}</td>
-                      <td style={numTd}>{c.wins}</td>
-                      <td style={{ ...numTd, color: c.win_rate >= 60 ? '#4a9e6b' : c.win_rate >= 40 ? '#c9a030' : '#e05535' }}>
-                        {Math.round(c.win_rate)}%
-                      </td>
-                      <td style={numTd}>{Math.round(c.avg_score)}</td>
-                      <td style={{ ...numTd, color: '#c9a030', fontWeight: 700 }}>{c.best_score}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 700, color: '#c9a030', marginLeft: '3px' }}>VP</span></td>
-                    </tr>
-                  )
-                })}
+                {filteredMergers.map((c, i) => (
+                  <tr
+                    key={c.combo}
+                    style={{ borderBottom: i < filteredMergers.length - 1 ? '1px solid var(--bd-panel)' : 'none', transition: 'background 0.1s', background: 'var(--bg-row)' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-row-hover)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-row)' }}
+                  >
+                    <td style={{ padding: '11px 14px' }} />
+                    <td style={{ padding: '13px 18px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <Link to={`/cards/${encodeURIComponent(c.corp1)}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: '0.87rem', color: 'var(--text-1)', textDecoration: 'none' }}>{c.corp1}</Link>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#c9a030', fontWeight: 700 }}>+</span>
+                        <Link to={`/cards/${encodeURIComponent(c.corp2)}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: '0.87rem', color: 'var(--text-1)', textDecoration: 'none' }}>{c.corp2}</Link>
+                      </div>
+                    </td>
+                    <td style={numTd}>{c.games_played}</td>
+                    <td style={numTd}>{c.wins}</td>
+                    <td style={{ ...numTd, color: c.win_rate >= 60 ? '#4a9e6b' : c.win_rate >= 40 ? '#c9a030' : '#e05535' }}>{Math.round(c.win_rate)}%</td>
+                    <td style={numTd}>{Math.round(c.avg_score)}</td>
+                    <td style={{ ...numTd, color: '#c9a030', fontWeight: 700 }}>{c.best_score}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', fontWeight: 700, color: '#c9a030', marginLeft: '3px' }}>VP</span></td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

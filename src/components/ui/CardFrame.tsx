@@ -122,19 +122,10 @@ function getCardTextSections(card: CardReference): CardTextSection[] {
 }
 
 
-function getGreenCardTagSize(tagCount: number) {
-  if (tagCount <= 1) return 24
-  if (tagCount === 2) return 25
-  if (tagCount === 3) return 24
-  return 16
-}
+const TAG_SIZE = 24
 
-function getBlueCardTagSize(tagCount: number) {
-  if (tagCount <= 1) return 24
-  if (tagCount === 2) return 25
-  if (tagCount === 3) return 24
-  return 16
-}
+function getGreenCardTagSize(_tagCount: number) { return TAG_SIZE }
+function getBlueCardTagSize(_tagCount: number) { return TAG_SIZE }
 
 function applyGreenCardLayoutRules(layout: ImageCardLayout, card: CardReference, tagCount: number) {
   const textLength = card.card_text?.length ?? 0
@@ -151,16 +142,15 @@ function applyGreenCardLayoutRules(layout: ImageCardLayout, card: CardReference,
       justifyContent: 'flex-start',
     }
     layout.title = { ...layout.title, left: layout.title.left, right: layout.title.right, fontSize: '0.72rem', letterSpacing: '0.02em' }
-  } else if (tagCount > 3) {
-    layout.tag = { ...layout.tag, maxWidth: 66, top: layout.tag.top - 2 }
-    layout.title = { ...layout.title, right: layout.title.right + 20, fontSize: '0.7rem', letterSpacing: '0.01em' }
+  } else if (tagCount >= 4) {
+    layout.tag = { ...layout.tag, maxWidth: tagCount * (TAG_SIZE + 2) }
   }
 
   if (card.card_name.length >= EXTRA_LONG_TITLE_LENGTH) {
     layout.title = { ...layout.title, fontSize: '0.5rem', letterSpacing: '0' }
   } else if (card.card_name.length >= VERY_LONG_TITLE_LENGTH) {
     layout.title = { ...layout.title, fontSize: '0.54rem', letterSpacing: '0' }
-  } else if (card.card_name.length > 22) {
+  } else if (card.card_name.length >= 22) {
     layout.title = { ...layout.title, fontSize: '0.64rem', letterSpacing: '0' }
   } else if (card.card_name.length >= LONG_TITLE_LENGTH) {
     layout.title = { ...layout.title, fontSize: '0.72rem', letterSpacing: '0.01em' }
@@ -188,16 +178,15 @@ function applyBlueCardLayoutRules(layout: ImageCardLayout, card: CardReference, 
       justifyContent: 'flex-start',
     }
     layout.title = { ...layout.title, left: layout.title.left, right: layout.title.right, fontSize: '0.72rem', letterSpacing: '0.02em' }
-  } else if (tagCount > 3) {
-    layout.tag = { ...layout.tag, maxWidth: 66, top: layout.tag.top - 2 }
-    layout.title = { ...layout.title, right: layout.title.right + 20, fontSize: '0.7rem', letterSpacing: '0.01em' }
+  } else if (tagCount >= 4) {
+    layout.tag = { ...layout.tag, maxWidth: tagCount * (TAG_SIZE + 2) }
   }
 
   if (card.card_name.length >= EXTRA_LONG_TITLE_LENGTH) {
     layout.title = { ...layout.title, fontSize: '0.5rem', letterSpacing: '0' }
   } else if (card.card_name.length >= VERY_LONG_TITLE_LENGTH) {
     layout.title = { ...layout.title, fontSize: '0.54rem', letterSpacing: '0' }
-  } else if (card.card_name.length > 22) {
+  } else if (card.card_name.length >= 22) {
     layout.title = { ...layout.title, fontSize: '0.64rem', letterSpacing: '0' }
   } else if (card.card_name.length >= LONG_TITLE_LENGTH) {
     layout.title = { ...layout.title, fontSize: '0.72rem', letterSpacing: '0.01em' }
@@ -206,8 +195,10 @@ function applyBlueCardLayoutRules(layout: ImageCardLayout, card: CardReference, 
   }
 
   // Effect zone — smaller panel, shrinks sooner
+  // For legacy cards where effect_text/action_text haven't been split yet, fall back to card_text length
   if (layout.effectText) {
-    const effectLength = card.effect_text?.length ?? 0
+    const isLegacy = card.effect_text === null && card.action_text === null
+    const effectLength = isLegacy ? (card.card_text?.length ?? 0) : (card.effect_text?.length ?? 0)
     if (effectLength > 120) {
       layout.effectText = { ...layout.effectText, fontSize: '0.40rem', lineHeight: 1.14 }
     } else if (effectLength > 80) {
@@ -233,7 +224,7 @@ const GREEN_CARD_FRAME: ImageCardFrame = {
   cardHeight: 336,
   baseLayout: {
     cost: { top: 18, left: 17, width: 35, height: 35 },
-    tag: { top: 24, right: 22, maxWidth: 40, justifyContent: 'flex-end' },
+    tag: { top: 23, right: 20, maxWidth: 40, justifyContent: 'flex-end' },
     title: { top: 47, left: 40, right: 33, height: 20, fontSize: '0.79rem', letterSpacing: '0.04em' },
     text: { top: 230, left: 33, rightWithVp: 61, rightWithoutVp: 18, bottom: 61, fontSize: '0.55rem', lineHeight: 1.28 },
     effectText: null,
@@ -259,7 +250,7 @@ const BLUE_CARD_FRAME: ImageCardFrame = {
   cardHeight: 336,
   baseLayout: {
     cost: { top: 19, left: 17, width: 35, height: 35 },
-    tag: { top: 24, right: 20, maxWidth: 50, justifyContent: 'flex-end' },
+    tag: { top: 23, right: 21, maxWidth: 50, justifyContent: 'flex-end' },
     title: { top: 49, left: 40, right: 33, height: 20, fontSize: '0.79rem', letterSpacing: '0.04em' },
     text: { top: 90, left: 33, rightWithVp: 30, rightWithoutVp: 18, bottom: 61, fontSize: '0.48rem', lineHeight: 1.28 },
     effectText: { top: 140, left: 33, right: 18, bottom: 61, fontSize: '0.48rem', lineHeight: 1.28 },
@@ -277,16 +268,35 @@ const BLUE_CARD_FRAME: ImageCardFrame = {
 //   Orange separator   : y=168–192
 //   Silver text panel  : y=192–305  ← card text lives here
 function applyEventCardLayoutRules(layout: ImageCardLayout, card: CardReference, tagCount: number) {
-  if (tagCount >= 2) layout.tag = { ...layout.tag, maxWidth: 44 }
+  if (tagCount === 2) {
+    layout.tag = { ...layout.tag, maxWidth: 58 }
+    layout.title = { ...layout.title, right: layout.title.right + 8 }
+  } else if (tagCount === 3) {
+    layout.tag = {
+      ...layout.tag,
+      top: layout.tag.top + 1,
+      right: layout.tag.right + 2,
+      maxWidth: 80,
+      justifyContent: 'flex-start',
+    }
+    layout.title = { ...layout.title, fontSize: '0.72rem', letterSpacing: '0.02em' }
+  } else if (tagCount > 3) {
+    layout.tag = { ...layout.tag, maxWidth: 66, top: layout.tag.top - 2 }
+    layout.title = { ...layout.title, right: layout.title.right + 20, fontSize: '0.7rem', letterSpacing: '0.01em' }
+  }
+
   if (card.card_name.length >= EXTRA_LONG_TITLE_LENGTH) {
     layout.title = { ...layout.title, fontSize: '0.5rem', letterSpacing: '0' }
   } else if (card.card_name.length >= VERY_LONG_TITLE_LENGTH) {
     layout.title = { ...layout.title, fontSize: '0.54rem', letterSpacing: '0' }
-  } else if (card.card_name.length > 22) {
+  } else if (card.card_name.length >= 22) {
     layout.title = { ...layout.title, fontSize: '0.64rem', letterSpacing: '0' }
   } else if (card.card_name.length >= LONG_TITLE_LENGTH) {
     layout.title = { ...layout.title, fontSize: '0.72rem', letterSpacing: '0.01em' }
+  } else if (card.card_name.length > 16) {
+    layout.title = { ...layout.title, fontSize: '0.74rem', letterSpacing: '0.02em' }
   }
+
   const textLength = card.card_text?.length ?? 0
   if (textLength > 200) {
     layout.text = { ...layout.text, fontSize: '0.46rem', lineHeight: 1.14 }
@@ -301,10 +311,10 @@ const EVENT_CARD_FRAME: ImageCardFrame = {
   cardWidth: 240,
   cardHeight: 336,
   baseLayout: {
-    cost:  { top: 14, left: 10, width: 35, height: 35 },
-    tag:   { top: 14, right: 12, maxWidth: 48, justifyContent: 'flex-end' },
-    title: { top: 42, left: 52, right: 12, height: 55, fontSize: '0.79rem', letterSpacing: '0.04em' },
-    text:  { top: 192, left: 18, rightWithVp: 61, rightWithoutVp: 14, bottom: 32, fontSize: '0.55rem', lineHeight: 1.28 },
+    cost:  { top: 21, left: 18, width: 35, height: 35 },
+    tag:   { top: 25, right: 20, maxWidth: 40, justifyContent: 'flex-end' },
+    title: { top: 34, left: 2, right: 0, height: 55, fontSize: '0.79rem', letterSpacing: '0.04em' },
+    text:  { top: 140, left: 29, rightWithVp: 61, rightWithoutVp: 14, bottom: 32, fontSize: '0.55rem', lineHeight: 1.28 },
     effectText: null,
     actionText: null,
     vp:    { top: 260, left: 160, size: 52 },
@@ -381,8 +391,13 @@ const CORPORATION_CARD_FRAME: ImageCardFrame = {
 //   Black art     : y=55–138
 //   Pink pill     : y=138–158
 //   Silver panel  : y=158–216  ← card text lives here
-function applyPreludeLayoutRules(layout: ImageCardLayout, card: CardReference, _tagCount: number) {
+function applyPreludeLayoutRules(layout: ImageCardLayout, card: CardReference, tagCount: number) {
   applyCorporationLayoutRules(layout, card, 0)
+  if (tagCount === 3) {
+    layout.tag = { ...layout.tag, right: layout.tag.right + 3, maxWidth: 80, justifyContent: 'flex-start' }
+  } else if (tagCount >= 4) {
+    layout.tag = { ...layout.tag, maxWidth: tagCount * (TAG_SIZE + 2) }
+  }
 }
 
 const PRELUDE_CARD_FRAME: ImageCardFrame = {

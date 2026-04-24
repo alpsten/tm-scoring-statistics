@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { to: '/corporations',  label: 'Corporations' },
   { to: '/cards',         label: 'Cards'        },
   { to: '/ceos',          label: 'CEOs'         },
-  { to: '/ma',            label: 'M&A'          },
+  { to: '/ma',            label: 'Milestones/Awards' },
   { to: '/setup',         label: 'Setup'        },
 ]
 

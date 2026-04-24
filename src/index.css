@@ -239,6 +239,29 @@ body {
     overflow-x: auto !important;
   }
 
+  /* Section heading banners: shrink, center, and unify on mobile */
+  .section-heading-banner {
+    display: flex !important;
+    width: fit-content !important;
+    height: 78px !important;
+    font-size: 0.88rem !important;
+    padding: 0 24px 4px !important;
+    letter-spacing: 0.07em !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-top: -20px !important;
+    margin-bottom: -52px !important;
+  }
+
+  .section-heading-effect {
+    height: 100px !important;
+    font-size: 0.65rem !important;
+    padding: 0 16px 6px !important;
+    letter-spacing: 0.04em !important;
+    margin-top: -20px !important;
+    margin-bottom: -30px !important;
+  }
+
   /* Responsive grids */
   .stat-grid,
   .records-grid {

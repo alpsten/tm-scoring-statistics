@@ -1,4 +1,5 @@
 import PageHeader from '../components/ui/PageHeader'
+import SectionHeading from '../components/ui/SectionHeading'
 import { useAllMilestones, useAllAwards } from '../lib/hooks'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -129,23 +130,6 @@ export default function MilestonesAwards() {
 
   const loading = mlLoading || awLoading
 
-  const sectionLabel = (text: string) => (
-    <span style={{
-      display: 'inline-block',
-      fontFamily: 'var(--font-body)',
-      fontSize: '0.68rem',
-      fontWeight: 700,
-      letterSpacing: '0.08em',
-      textTransform: 'uppercase' as const,
-      color: '#5b8dd9',
-      padding: '3px 10px',
-      borderRadius: '4px',
-      background: 'rgba(91,141,217,0.12)',
-      border: '1px solid rgba(91,141,217,0.25)',
-      marginBottom: '16px',
-    }}>{text}</span>
-  )
-
   const panel = (children: React.ReactNode) => (
     <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden' }}>
       {children}
@@ -182,20 +166,20 @@ export default function MilestonesAwards() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '28px', marginBottom: '28px' }}>
         {/* Milestones */}
         <div>
-          {sectionLabel('Milestones — most claimed')}
+          <SectionHeading effect>Milestones — most claimed</SectionHeading>
           {panel(<RankTable rows={milestoneRanked} nameLabel="Milestone" />)}
         </div>
 
         {/* Awards */}
         <div>
-          {sectionLabel('Awards — most funded')}
+          <SectionHeading effect>Awards — most funded</SectionHeading>
           {panel(<RankTable rows={awardRanked} nameLabel="Award" />)}
         </div>
       </div>
 
       {/* Per-player breakdown */}
       <div>
-        {sectionLabel('Per-player activity')}
+        <SectionHeading effect>Per-player activity</SectionHeading>
         {panel(
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>

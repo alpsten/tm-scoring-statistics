@@ -7,11 +7,18 @@ import PositionBadge from '../components/ui/PositionBadge'
 import SectionHeading from '../components/ui/SectionHeading'
 import DataTable from '../components/ui/DataTable'
 import type { DataTableColumn } from '../components/ui/DataTable'
+import { parseCardName } from '../components/ui/tagUtils'
+import { CARD_NAME_CORRECTIONS } from '../lib/logParser'
+import { getCorps, isMergerResult } from '../types/database'
+
+function normalizeForLookup(s: string) { return s.toLowerCase().replace(/\s+/g, '') }
 
 export default function CardDetail() {
   const { name } = useParams<{ name: string }>()
   const navigate = useNavigate()
-  const cardName = decodeURIComponent(name ?? '')
+  const rawName = decodeURIComponent(name ?? '')
+  // Apply known corrections first, then fall back to the raw name
+  const cardName = CARD_NAME_CORRECTIONS[rawName] ?? rawName
 
   const { data: refData,   isLoading: refLoading   } = useCardReference()
   const { data: statsData, isLoading: statsLoading } = useCardStats()
@@ -20,6 +27,7 @@ export default function CardDetail() {
   const { data: games,     isLoading: gamesLoading } = useGames()
 
   const ref = (refData ?? []).find(c => c.card_name === cardName)
+    ?? (refData ?? []).find(c => normalizeForLookup(c.card_name) === normalizeForLookup(cardName))
   const isCorporation = ref?.card_type === 'Corporation'
   const isCEO = ref?.card_type === 'CEO'
 
@@ -43,7 +51,13 @@ export default function CardDetail() {
 
   const corpGames = isCorporation
     ? (games ?? [])
-        .filter(g => g.player_results.some(r => r.corporation === cardName))
+        .filter(g => g.player_results.some(r => !isMergerResult(r) && r.corporation === cardName))
+        .sort((a, b) => b.date.localeCompare(a.date))
+    : []
+
+  const mergerGames = isCorporation
+    ? (games ?? [])
+        .filter(g => g.player_results.some(r => isMergerResult(r) && getCorps(r).includes(cardName)))
         .sort((a, b) => b.date.localeCompare(a.date))
     : []
 
@@ -57,6 +71,7 @@ export default function CardDetail() {
 
   type HistoryRow = { id: string; game_number: number | null; date: string; map_name: string | null; player_name: string; position: number; total_vp: number }
   type CEOHistoryRow = HistoryRow & { corporation: string }
+  type MergerRow = HistoryRow & { combo: string }
 
   const corpHistoryColumns: DataTableColumn<HistoryRow>[] = [
     {
@@ -103,10 +118,27 @@ export default function CardDetail() {
         <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--text-4)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.78rem', padding: 0 }}>← Back</button>
       </div>
 
-      <PageHeader
-        title={cardName}
-        subtitle={hasData ? `Played ${timesPlayed} time${timesPlayed !== 1 ? 's' : ''}` : 'No play history yet'}
-      />
+      {(() => {
+        const { baseName, variant } = parseCardName(cardName)
+        const variantStyle = variant === 'ares'
+          ? { bg: 'rgba(210,80,50,0.12)', color: '#d05032', border: 'rgba(210,80,50,0.35)' }
+          : variant === 'promo'
+          ? { bg: 'rgba(91,141,217,0.12)', color: '#5b8dd9', border: 'rgba(91,141,217,0.35)' }
+          : null
+        return (
+          <PageHeader
+            title={variant && variantStyle ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+                {baseName}
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: '4px', background: variantStyle.bg, color: variantStyle.color, border: `1px solid ${variantStyle.border}` }}>
+                  {variant}
+                </span>
+              </span>
+            ) : cardName}
+            subtitle={hasData ? `Played ${timesPlayed} time${timesPlayed !== 1 ? 's' : ''}` : 'No play history yet'}
+          />
+        )
+      })()}
 
       {/* Card frame */}
       {ref && (
@@ -120,7 +152,7 @@ export default function CardDetail() {
         <>
           <div className="card-detail-grid">
             <StatCard label="Games played" value={corpStat.games_played} sub={`${corpStat.wins} wins`} accent="neutral" />
-            <StatCard label="Win rate"     value={`${Math.round(corpStat.win_rate)}%`} accent={corpStat.win_rate >= 60 ? 'win' : corpStat.win_rate >= 40 ? 'score' : 'mars'} />
+            <StatCard label="Win rate"     value={`${Math.round(corpStat.win_rate)}%`} sub={`(${corpStat.wins}/${corpStat.games_played} wins)`} accent={corpStat.win_rate >= 60 ? 'win' : corpStat.win_rate >= 40 ? 'score' : 'mars'} />
             <StatCard label="Avg score"    value={Math.round(corpStat.avg_score)} valueSuffix="VP" accent="score" />
             <StatCard label="Best score"   value={corpStat.best_score} valueSuffix="VP" accent="score" badge />
           </div>
@@ -133,8 +165,41 @@ export default function CardDetail() {
                 wrapperStyle={{ marginBottom: '32px' }}
                 columns={corpHistoryColumns}
                 rows={corpGames.map(game => {
-                  const result = game.player_results.find(r => r.corporation === cardName)!
+                  const result = game.player_results.find(r => !isMergerResult(r) && r.corporation === cardName)!
                   return { id: game.id, game_number: game.game_number, date: game.date, map_name: game.map_name, player_name: result.player_name, position: result.position, total_vp: result.total_vp }
+                })}
+                rowKey={r => r.id}
+              />
+            </>
+          )}
+
+          {mergerGames.length > 0 && (
+            <>
+              <SectionHeading>Merger plays</SectionHeading>
+              <DataTable
+                compact
+                wrapperStyle={{ marginBottom: '32px' }}
+                columns={[
+                  ...corpHistoryColumns.slice(0, 3) as DataTableColumn<MergerRow>[],
+                  {
+                    key: 'combo', label: 'Combo', tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.83rem' },
+                    render: r => (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                        {r.combo.split(' + ').map((corp, ci) => (
+                          <span key={corp} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            {ci > 0 && <span style={{ color: 'var(--text-4)' }}>+</span>}
+                            <Link to={`/cards/${encodeURIComponent(corp)}`} style={{ color: 'var(--text-3)', textDecoration: 'none' }}>{corp}</Link>
+                          </span>
+                        ))}
+                      </span>
+                    ),
+                  },
+                  ...corpHistoryColumns.slice(3) as DataTableColumn<MergerRow>[],
+                ]}
+                rows={mergerGames.map(game => {
+                  const result = game.player_results.find(r => isMergerResult(r) && getCorps(r).includes(cardName))!
+                  const combo = [...getCorps(result)].sort().join(' + ')
+                  return { id: game.id, game_number: game.game_number, date: game.date, map_name: game.map_name, player_name: result.player_name, position: result.position, total_vp: result.total_vp, combo }
                 })}
                 rowKey={r => r.id}
               />
@@ -148,7 +213,7 @@ export default function CardDetail() {
         <>
           <div className="card-detail-grid">
             <StatCard label="Games played" value={ceoStat.times_played} sub={`${ceoStat.wins} wins`} accent="neutral" />
-            <StatCard label="Win rate"     value={`${Math.round(ceoStat.win_rate)}%`} accent={ceoStat.win_rate >= 60 ? 'win' : ceoStat.win_rate >= 40 ? 'score' : 'mars'} />
+            <StatCard label="Win rate"     value={`${Math.round(ceoStat.win_rate)}%`} sub={`(${ceoStat.wins}/${ceoStat.times_played} wins)`} accent={ceoStat.win_rate >= 60 ? 'win' : ceoStat.win_rate >= 40 ? 'score' : 'mars'} />
             <StatCard label="Avg score"    value={Math.round(ceoStat.avg_score)} valueSuffix="VP" accent="score" />
             <StatCard label="Best score"   value={ceoStat.best_score} valueSuffix="VP" accent="score" badge />
           </div>
@@ -176,7 +241,7 @@ export default function CardDetail() {
         <>
           <div className="card-detail-grid">
             <StatCard label="Times played" value={cardStat.times_played} accent="neutral" />
-            <StatCard label="Win rate"     value={`${Math.round(cardStat.win_rate)}%`} sub={`${cardStat.win_count} wins`} accent={cardStat.win_rate >= 50 ? 'win' : cardStat.win_rate > 33 ? 'score' : 'mars'} />
+            <StatCard label="Win rate"     value={`${Math.round(cardStat.win_rate)}%`} sub={`(${cardStat.win_count}/${cardStat.times_played} wins)`} accent={cardStat.win_rate >= 50 ? 'win' : cardStat.win_rate > 33 ? 'score' : 'mars'} />
             {cardStat.avg_vp_contribution > 0 && (
               <StatCard label="Avg VP contribution" value={Math.round(cardStat.avg_vp_contribution)} accent="score" />
             )}

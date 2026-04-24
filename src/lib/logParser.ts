@@ -5,6 +5,17 @@ const MILESTONE_NAME_CORRECTIONS: Record<string, string> = {
   'Philantropist': 'Philanthropist',
 }
 
+// Known card name mismatches between app log output and card_reference canonical names.
+// Add entries here whenever a card is renamed or the app log spells it differently.
+export const CARD_NAME_CORRECTIONS: Record<string, string> = {
+  'MarsMaths': 'Mars Maths',
+  'Anti-desertification Techniques': 'Anti-Desertification Techniques',
+  'Anti-desertification techniques': 'Anti-Desertification Techniques',
+  'Anti-desertification Techniques ': 'Anti-Desertification Techniques',
+  'COÂ² Reducers': 'CO2 Reducers',
+  'CO² Reducers': 'CO2 Reducers',
+}
+
 // Fix UTF-8 text that was mis-decoded as Latin-1 (mojibake)
 // e.g. "RÃ¶nnegÃ¥rd" → "Rönnegård"
 function fixEncoding(s: string): string {
@@ -117,7 +128,8 @@ export function parseGameLog(raw: string): ParsedLog {
     for (const player of result.players) {
       const prefix = player + ' played '
       if (line.startsWith(prefix)) {
-        const card = line.slice(prefix.length).trim()
+        const rawCard = line.slice(prefix.length).trim()
+        const card = CARD_NAME_CORRECTIONS[rawCard] ?? rawCard
         if (!CARD_BLOCKLIST.has(card)) {
           const key = `${player}::${card}`
           if (!seenCards.has(key)) {

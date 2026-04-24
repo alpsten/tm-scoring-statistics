@@ -40,7 +40,8 @@ const columns: DataTableColumn<CEORow>[] = [
     key: 'wins',
     label: 'Wins',
     align: 'center',
-    tdStyle: { fontSize: '0.87rem', color: '#4a9e6b' },
+    tdStyle: { fontSize: '0.87rem' },
+    render: c => <span style={{ color: c.wins > 0 ? '#4a9e6b' : 'var(--text-4)' }}>{c.wins}</span>,
   },
   {
     key: 'win_rate',

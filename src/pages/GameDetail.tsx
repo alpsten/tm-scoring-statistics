@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { getCorps } from '../types/database'
 import { useQueryClient } from '@tanstack/react-query'
 import { useGame, useGameByNumber, deleteGame, useGameCards, useGameMilestones, useGameAwards, useCardReference } from '../lib/hooks'
 import { useAuth } from '../context/useAuth'
-import { EXPANSION_ICONS, MAP_PILL } from '../lib/expansions'
+import { EXPANSION_ICONS } from '../lib/expansions'
 import Tag from '../components/ui/Tag'
 import { parseTags } from '../components/ui/tagUtils'
 import SectionHeading from '../components/ui/SectionHeading'
@@ -134,7 +135,7 @@ export default function GameDetail() {
       </div>
 
       <div style={{ marginBottom: '24px' }}>
-        <span style={MAP_PILL}>{game.map_name ?? 'Digital'}</span>
+        <SectionHeading effect style={{ height: '161px', fontSize: '0.9rem', padding: '0 24px 9px', marginTop: '-58px', marginBottom: '-60px' }}>{game.map_name ?? 'Digital'}</SectionHeading>
         <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-4)', marginTop: '6px' }}>
           {gameNum ? `#${gameNum} · ` : ''}{new Date(game.date).toLocaleDateString('sv-SE')} · {game.player_count} players{game.generations ? ` · ${game.generations} generations` : ''}
         </div>
@@ -148,7 +149,9 @@ export default function GameDetail() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '6px' }}>
             <div>
               <div style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-1)' }}>{winner.player_name}</div>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-4)', marginTop: '3px' }}>{winner.corporation}</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-4)', marginTop: '3px' }}>
+                {getCorps(winner).join(' + ')}{getCorps(winner).length > 1 ? ' (Merger)' : ''}
+              </div>
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1.3rem', color: '#c9a030', lineHeight: 1, flexShrink: 0 }}>
               {winner.total_vp}<span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1.3rem', color: '#c9a030', marginLeft: '4px' }}>VP</span>
@@ -329,16 +332,24 @@ export default function GameDetail() {
                         <Link to={`/players/${encodeURIComponent(r.player_name)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--text-1)', textDecoration: 'none', fontWeight: r.position === 1 ? 600 : 400 }}>
                           {r.player_name}
                         </Link>
-                        <Link to={`/corporations/${encodeURIComponent(r.corporation)}`} className="corp-inline" style={{ display: 'none', fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: '#b87aff', textDecoration: 'none' }}>
-                          {r.corporation}
-                        </Link>
+                        <span className="corp-inline" style={{ display: 'none', fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: '#b87aff' }}>
+                          {getCorps(r).join(' + ')}
+                        </span>
                       </div>
                     </div>
                   </td>
                   <td className="corp-col" style={tdStyle}>
-                    <Link to={`/corporations/${encodeURIComponent(r.corporation)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#b87aff', textDecoration: 'none' }}>
-                      {r.corporation}
-                    </Link>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                      {getCorps(r).map((corp, ci) => (
+                        <span key={corp} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          {ci > 0 && <span style={{ color: 'var(--text-4)' }}>+</span>}
+                          <Link to={`/cards/${encodeURIComponent(corp)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#b87aff', textDecoration: 'none' }}>{corp}</Link>
+                        </span>
+                      ))}
+                      {getCorps(r).length > 1 && (
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#c9a030', background: 'rgba(201,160,48,0.1)', border: '1px solid rgba(201,160,48,0.3)', borderRadius: '4px', padding: '1px 5px' }}>Merger</span>
+                      )}
+                    </span>
                   </td>
                   {scoreFields.map(f => (
                     <td key={f.key} style={{ ...tdStyle, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-2)' }}>

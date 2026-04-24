@@ -33,6 +33,10 @@ export interface PlayerResult {
   position: number
   key_notes: string | null
   ceo: string | null
+  corporations: string[]        // canonical: all corps sorted, always length >= 1
+  // legacy columns kept during transition — will be removed in Stage 3
+  is_merger: boolean | null
+  second_corporation: string | null
 }
 
 export interface GameExpansion {
@@ -170,7 +174,8 @@ export interface GameSessionInput {
 
 export interface PlayerResultInput {
   player_name: string
-  corporation: string
+  corporation: string       // primary corp (first alphabetically)
+  corporations: string[]    // all corps
   tr: number
   milestone_vp: number
   award_vp: number
@@ -185,6 +190,16 @@ export interface PlayerResultInput {
   total_vp: number
   position: number
   key_notes: string
+}
+
+// Returns the corporations array for a result, with fallback for legacy rows
+export function getCorps(r: Pick<PlayerResult, 'corporations' | 'corporation' | 'second_corporation'>): string[] {
+  if (r.corporations?.length) return r.corporations
+  return [r.corporation, r.second_corporation].filter(Boolean) as string[]
+}
+
+export function isMergerResult(r: Pick<PlayerResult, 'corporations' | 'corporation' | 'second_corporation'>): boolean {
+  return getCorps(r).length > 1
 }
 
 export interface CardPlayedInput {

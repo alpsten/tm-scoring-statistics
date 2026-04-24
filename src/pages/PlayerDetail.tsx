@@ -7,6 +7,8 @@ import SectionHeading from '../components/ui/SectionHeading'
 import DataTable from '../components/ui/DataTable'
 import type { DataTableColumn } from '../components/ui/DataTable'
 import { useGames, usePlayerStats, usePlayerProfiles, usePlayerCardStats } from '../lib/hooks'
+import { CARD_NAME_CORRECTIONS } from '../lib/logParser'
+import { getCorps } from '../types/database'
 
 export default function PlayerDetail() {
   const rawName = useParams<{ name: string }>().name
@@ -51,11 +53,14 @@ export default function PlayerDetail() {
       key: 'card_name',
       label: 'Card',
       tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)' },
-      render: c => (
-        <Link to={`/cards/${encodeURIComponent(c.card_name)}`} style={{ color: 'var(--text-1)', textDecoration: 'none' }}>
-          {c.card_name}
-        </Link>
-      ),
+      render: c => {
+        const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
+        return (
+          <Link to={`/cards/${encodeURIComponent(canonical)}`} style={{ color: 'var(--text-1)', textDecoration: 'none' }}>
+            {canonical}
+          </Link>
+        )
+      },
     },
     { key: 'times_played', label: 'Times played', align: 'right', tdStyle: { fontSize: '0.82rem' } },
     {
@@ -342,9 +347,9 @@ export default function PlayerDetail() {
         const corpCounts: Record<string, number> = {}
         for (const game of playerGames) {
           const result = game.player_results.find(r => r.player_name === name)!
-          result.corporation.split(', ').forEach(c => {
-            corpCounts[c] = (corpCounts[c] ?? 0) + 1
-          })
+          for (const corp of getCorps(result)) {
+            corpCounts[corp] = (corpCounts[corp] ?? 0) + 1
+          }
         }
         const sorted = Object.entries(corpCounts).sort((a, b) => b[1] - a[1])
         if (sorted.length === 0) return null

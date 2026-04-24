@@ -15,6 +15,7 @@ import {
   fetchAllMilestones,
   fetchAllAwards,
   fetchCEOStats,
+  fetchMergerStats,
 } from './queries'
 
 export { deleteGame } from './queries'
@@ -93,6 +94,10 @@ export function usePlayerCardStats(playerName: string) {
 
 export function useCEOStats() {
   return useQuery({ queryKey: ['ceo-stats'], queryFn: fetchCEOStats })
+}
+
+export function useMergerStats() {
+  return useQuery({ queryKey: ['merger-stats'], queryFn: fetchMergerStats })
 }
 
 export function useAllMilestones() {
