@@ -60,6 +60,10 @@ function mapGame(raw: RawGame): GameWithResults {
     expansions: raw.game_expansions.map(e => e.expansion_name),
     colonies: raw.game_colonies.map(c => c.colony_name),
     parameter_contributions: raw.parameter_contributions ?? [],
+    player_results: raw.player_results.map(r => ({
+      ...r,
+      corporations: r.corporations ?? [],
+    })),
   }
 }
 
