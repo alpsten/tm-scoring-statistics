@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/useAuth'
 
@@ -28,6 +29,17 @@ const PARAM_LABELS = [
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>(
+    () => (localStorage.getItem('viewportMode') as 'desktop' | 'mobile') ?? 'desktop'
+  )
+
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="viewport"]')
+    if (meta) {
+      meta.setAttribute('content', viewMode === 'desktop' ? 'width=1280' : 'width=device-width, initial-scale=1.0')
+    }
+    localStorage.setItem('viewportMode', viewMode)
+  }, [viewMode])
 
   async function handleSignOut() {
     await signOut()
@@ -74,7 +86,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav style={{ padding: '12px 0', flex: 1, overflowY: 'auto' }}>
+      <nav style={{ padding: '12px 0', flex: '0 0 auto' }}>
         {NAV_ITEMS.map(({ to, label }) => (
           <NavLink
             key={to}
@@ -112,7 +124,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       </nav>
 
       {/* Terraforming parameter decoration */}
-      <div style={{ padding: '16px 20px', borderTop: '1px solid var(--bd-sidebar)', borderBottom: '1px solid var(--bd-sidebar)' }}>
+      <div style={{ padding: '16px 20px', borderTop: '1px solid var(--bd-sidebar)' }}>
         {PARAM_LABELS.map(({ label, color }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
             <div className="pulse-mars" style={{ width: '5px', height: '5px', borderRadius: '50%', background: color, flexShrink: 0 }} />
@@ -121,6 +133,40 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             </span>
           </div>
         ))}
+      </div>
+
+      {/* View mode toggle */}
+      <div style={{ padding: '12px 20px', borderTop: '1px solid var(--bd-sidebar)', borderBottom: '1px solid var(--bd-sidebar)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--text-4)', textTransform: 'uppercase' }}>View</span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {(['desktop', 'mobile'] as const).map(mode => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                style={{
+                  padding: '2px 8px',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.55rem',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                  borderRadius: '3px',
+                  border: `1px solid ${viewMode === mode ? '#5b8dd9' : 'var(--bd-sidebar)'}`,
+                  background: viewMode === mode ? 'rgba(91,141,217,0.15)' : 'transparent',
+                  color: viewMode === mode ? '#5b8dd9' : 'var(--text-4)',
+                }}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+        </div>
+        {viewMode === 'mobile' && (
+          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.62rem', color: '#c9a030', fontStyle: 'italic', lineHeight: 1.4 }}>
+            Mobile view is still in development — some layouts may appear unexpected.
+          </div>
+        )}
       </div>
 
       {/* Admin / auth section */}
@@ -134,13 +180,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 display: 'block',
                 padding: '8px 12px',
                 marginBottom: '8px',
-                background: isActive ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.05)',
-                border: '1px solid rgba(0,0,0,0.15)',
+                background: isActive ? 'rgba(210,120,50,0.25)' : 'rgba(210,120,50,0.15)',
+                border: '1px solid rgba(210,120,50,0.5)',
                 borderRadius: '4px',
-                color: 'var(--text-2)',
+                color: '#d07832',
                 fontSize: '0.78rem',
                 fontFamily: 'var(--font-body)',
-                fontWeight: 500,
+                fontWeight: 600,
                 textDecoration: 'none',
                 textAlign: 'center',
                 letterSpacing: '0.03em',
