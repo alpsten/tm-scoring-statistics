@@ -16,6 +16,7 @@ import CardDetail from './pages/CardDetail'
 import Setup from './pages/Setup'
 import MilestonesAwards from './pages/MilestonesAwards'
 import CEOs from './pages/CEOs'
+import Leaderboard from './pages/Leaderboard'
 
 function CorpDetailRedirect() {
   const { name } = useParams<{ name: string }>()
@@ -68,6 +69,7 @@ export default function App() {
               <Route path="ceos"             element={<CEOs />}             />
               <Route path="ceos/:name"       element={<CEODetailRedirect />} />
               <Route path="ma"               element={<MilestonesAwards />} />
+              <Route path="leaderboard"      element={<Leaderboard />}      />
 
               {/* Protected admin routes */}
               <Route path="admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />

@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { to: '/ceos',          label: 'CEOs'         },
   { to: '/ma',            label: 'Milestones/Awards' },
   { to: '/setup',         label: 'Setup'        },
+  { to: '/leaderboard',  label: 'Leaderboard'  },
 ]
 
 const NAV_PILL = '/tm-scoring-statistics/misc/standard-project-blank.png'
