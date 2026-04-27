@@ -32,6 +32,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>(
     () => (localStorage.getItem('viewportMode') as 'desktop' | 'mobile') ?? 'desktop'
   )
+  const [showMobileDisclaimer, setShowMobileDisclaimer] = useState(false)
 
   useEffect(() => {
     const meta = document.querySelector('meta[name="viewport"]')
@@ -144,7 +145,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             {(['desktop', 'mobile'] as const).map(mode => (
               <button
                 key={mode}
-                onClick={() => setViewMode(mode)}
+                onClick={() => { if (mode === 'mobile') { setShowMobileDisclaimer(true) } else { setViewMode(mode) } }}
                 style={{
                   padding: '2px 8px',
                   fontFamily: 'var(--font-mono)',
@@ -235,6 +236,32 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         )}
       </div>
 
+      {showMobileDisclaimer && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+          <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '8px', padding: '28px 24px', maxWidth: '320px', width: '100%' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.9rem', color: '#c9a030', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '12px' }}>
+              ⚠ Mobile View
+            </div>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 20px' }}>
+              Mobile view is currently under development. Some layouts and elements may not appear as expected.
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setShowMobileDisclaimer(false)}
+                style={{ flex: 1, padding: '8px', background: 'transparent', border: '1px solid var(--bd-sidebar)', borderRadius: '4px', color: 'var(--text-4)', fontFamily: 'var(--font-body)', fontSize: '0.78rem', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setViewMode('mobile'); setShowMobileDisclaimer(false) }}
+                style={{ flex: 1, padding: '8px', background: 'rgba(201,160,48,0.15)', border: '1px solid rgba(201,160,48,0.4)', borderRadius: '4px', color: '#c9a030', fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Continue anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }
