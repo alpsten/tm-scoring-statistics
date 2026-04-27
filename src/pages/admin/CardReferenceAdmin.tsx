@@ -156,7 +156,6 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
   const isActive = values.card_type === 'Active'
   const isComplexOptional = values.card_type === 'Corporation' || values.card_type === 'Prelude'
   const isGlobalEvent = values.card_type === 'Global Event'
-  const [showExtended, setShowExtended] = useState(() => !!(values.effect_text || values.action_text || values.action_text_2))
   const [showEffect, setShowEffect] = useState(() => !!values.effect_text)
   const [showEffect2, setShowEffect2] = useState(() => !!values.effect_text_2)
   const [showAction, setShowAction] = useState(() => !!values.action_text)
@@ -376,20 +375,68 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
           <>
             {textArea('card_text', 'Gain resources', 'Resources gained…')}
             {textArea('resources', 'Resource icons', '1:megacredit, 2:steel, 3:titanium, 4:plant, 5:energy, 6:heat')}
-            {textArea('flavour_text', 'Flavour text', 'Flavour text…')}
-            <div style={{ flex: '1 1 100%' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-3)' }}>
-                <input type="checkbox" checked={showExtended} onChange={e => setShowExtended(e.target.checked)} />
-                Has Effect / Action text
-              </label>
+
+            {/* Effect */}
+            <div style={{ flex: '1 1 260px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {!showEffect && (
+                  <button type="button" onClick={() => setShowEffect(true)} style={addBtnStyle}>+ Add effect</button>
+                )}
+                {showEffect && !showEffect2 && (
+                  <button type="button" onClick={() => setShowEffect2(true)} style={addBtnStyle}>+ Add another effect</button>
+                )}
+              </div>
+              {showEffect && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#625c7c' }}>Effect</span>
+                    <button type="button" onClick={() => { setShowEffect(false); setShowEffect2(false); onChange({ ...values, effect_text: '', effect_text_2: '' }) }} style={removeBtnStyle}>× Remove</button>
+                  </div>
+                  <textarea value={values.effect_text} onChange={set('effect_text')} placeholder="Effect text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                </>
+              )}
+              {showEffect2 && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#625c7c' }}>Effect 2</span>
+                    <button type="button" onClick={() => { setShowEffect2(false); onChange({ ...values, effect_text_2: '' }) }} style={removeBtnStyle}>× Remove</button>
+                  </div>
+                  <textarea value={values.effect_text_2} onChange={set('effect_text_2')} placeholder="Second effect text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                </>
+              )}
             </div>
-            {showExtended && (
-              <>
-                {textArea('effect_text', 'Effect', 'Effect text…')}
-                {textArea('action_text', 'Action 1', 'Action text…')}
-                {textArea('action_text_2', 'Action 2', 'Second action text (shown with OR)…')}
-              </>
-            )}
+
+            {/* Action */}
+            <div style={{ flex: '1 1 260px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {!showAction && (
+                  <button type="button" onClick={() => setShowAction(true)} style={addBtnStyle}>+ Add action</button>
+                )}
+                {showAction && !showAction2 && (
+                  <button type="button" onClick={() => setShowAction2(true)} style={addBtnStyle}>+ Add another action</button>
+                )}
+              </div>
+              {showAction && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#625c7c' }}>Action</span>
+                    <button type="button" onClick={() => { setShowAction(false); setShowAction2(false); onChange({ ...values, action_text: '', action_text_2: '' }) }} style={removeBtnStyle}>× Remove</button>
+                  </div>
+                  <textarea value={values.action_text} onChange={set('action_text')} placeholder="Action text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                </>
+              )}
+              {showAction2 && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#625c7c' }}>Action 2 (OR)</span>
+                    <button type="button" onClick={() => { setShowAction2(false); onChange({ ...values, action_text_2: '' }) }} style={removeBtnStyle}>× Remove</button>
+                  </div>
+                  <textarea value={values.action_text_2} onChange={set('action_text_2')} placeholder="Second action text (shown with OR)…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                </>
+              )}
+            </div>
+
+            {textArea('flavour_text', 'Flavour text', 'Flavour text…')}
           </>
         )}
         {isGlobalEvent && (
