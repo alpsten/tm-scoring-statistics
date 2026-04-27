@@ -50,21 +50,35 @@ export default function PlayerDetail() {
   }
 
   const myResults = playerGames.map(g => g.player_results.find(r => r.player_name === name)!)
-  const highestTR       = myResults.length > 0 ? Math.max(...myResults.map(r => r.tr))          : null
-  const highestGreenery = myResults.length > 0 ? Math.max(...myResults.map(r => r.greenery_vp)) : null
-  const highestCity     = myResults.length > 0 ? Math.max(...myResults.map(r => r.city_vp))     : null
-  const highestCardVP   = myResults.length > 0 ? Math.max(...myResults.map(r => r.card_vp))     : null
   const totalVP = myResults.reduce((sum, r) => sum + r.total_vp, 0)
+
+  type GameRecord = { value: number; gameNumber: number | null }
+  const findBest = (fn: (r: typeof myResults[0]) => number): GameRecord | null => {
+    let best: GameRecord | null = null
+    for (const g of playerGames) {
+      const r = g.player_results.find(p => p.player_name === name)!
+      const v = fn(r)
+      if (best === null || v > best.value) best = { value: v, gameNumber: g.game_number }
+    }
+    return best
+  }
+
+  const bestScore    = findBest(r => r.total_vp)
+  const bestTR       = findBest(r => r.tr)
+  const bestGreenery = findBest(r => r.greenery_vp)
+  const bestCity     = findBest(r => r.city_vp)
+  const bestCardVP   = findBest(r => r.card_vp)
   const biggestWin = (() => {
-    const margins = playerGames
-      .map(g => {
-        const me = g.player_results.find(r => r.player_name === name)!
-        if (me.position !== 1) return null
-        const second = g.player_results.find(r => r.position === 2)
-        return second ? me.total_vp - second.total_vp : null
-      })
-      .filter((v): v is number => v !== null)
-    return margins.length > 0 ? Math.max(...margins) : null
+    let best: GameRecord | null = null
+    for (const g of playerGames) {
+      const me = g.player_results.find(r => r.player_name === name)!
+      if (me.position !== 1) continue
+      const second = g.player_results.find(r => r.position === 2)
+      if (!second) continue
+      const margin = me.total_vp - second.total_vp
+      if (best === null || margin > best.value) best = { value: margin, gameNumber: g.game_number }
+    }
+    return best
   })()
 
   const chartData = playerGames.map(g => {
@@ -221,7 +235,7 @@ export default function PlayerDetail() {
             label: 'Wins',
             node: (
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 700 }}>
-                <span style={{ color: '#c9a030' }}>{stats.wins} wins of {stats.games_played} games</span>
+                <span style={{ color: 'var(--text-1)' }}>{stats.wins} wins of {stats.games_played} games</span>
                 <span style={{ color: stats.win_rate >= 60 ? '#4a9e6b' : stats.win_rate >= 40 ? '#c9a030' : '#e05535', fontWeight: 400 }}> ({Math.round(stats.win_rate)}% Win Rate)</span>
               </span>
             ),
@@ -230,7 +244,7 @@ export default function PlayerDetail() {
             label: 'Average Score Per Game',
             node: (
               <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#c9a030' }}>
-                {Math.round(stats.avg_score)}<span style={{ marginLeft: '5px', fontWeight: 400, fontSize: '0.8rem' }}>VP</span>
+                {Math.round(stats.avg_score)} <span style={{ fontSize: '0.95rem', fontWeight: 700 }}>VP</span>
               </span>
             ),
           },
@@ -238,7 +252,7 @@ export default function PlayerDetail() {
             label: 'Total VP Gained',
             node: (
               <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#c9a030' }}>
-                {totalVP.toLocaleString()}<span style={{ marginLeft: '5px', fontWeight: 400, fontSize: '0.8rem' }}>VP</span>
+                {totalVP.toLocaleString()} <span style={{ fontSize: '0.95rem', fontWeight: 700 }}>VP</span>
               </span>
             ),
           },
@@ -250,56 +264,32 @@ export default function PlayerDetail() {
         ))}
       </div>
 
-      {/* Panel 2: Per-game records */}
-      <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '4px 16px', marginBottom: '32px' }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.78rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', padding: '12px 0 8px', borderBottom: '1px solid var(--bd-panel)' }}>
-          Highest Score In a Single Game
+      {/* Panel 2: Per-game records grid */}
+      <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '14px 16px', marginBottom: '32px' }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '12px' }}>
+          Highest In a Single Game
         </div>
-        {([
-          {
-            label: 'Highest Score',
-            node: (
-              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#c9a030', background: 'rgba(201,160,48,0.12)', border: '1px solid rgba(201,160,48,0.4)', borderRadius: '4px', padding: '3px 10px' }}>
-                {stats.best_score} VP
-              </span>
-            ),
-          },
-          {
-            label: 'Biggest Win',
-            node: biggestWin != null
-              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#c9a030', background: 'rgba(201,160,48,0.12)', border: '1px solid rgba(201,160,48,0.4)', borderRadius: '4px', padding: '3px 10px' }}>+{biggestWin} VP</span>
-              : <span style={{ color: 'var(--text-5)' }}>—</span>,
-          },
-          {
-            label: 'Terraforming Rating',
-            node: highestTR != null
-              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#e05535', background: 'rgba(224,85,53,0.12)', border: '1px solid rgba(224,85,53,0.4)', borderRadius: '4px', padding: '3px 10px' }}>{highestTR} TR</span>
-              : <span style={{ color: 'var(--text-5)' }}>—</span>,
-          },
-          {
-            label: 'Greenery VP',
-            node: highestGreenery != null
-              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#4a9e6b', background: 'rgba(74,158,107,0.12)', border: '1px solid rgba(74,158,107,0.4)', borderRadius: '4px', padding: '3px 10px' }}>{highestGreenery} VP</span>
-              : <span style={{ color: 'var(--text-5)' }}>—</span>,
-          },
-          {
-            label: 'City VP',
-            node: highestCity != null
-              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#8e8e9a', background: 'rgba(142,142,154,0.12)', border: '1px solid rgba(142,142,154,0.4)', borderRadius: '4px', padding: '3px 10px' }}>{highestCity} VP</span>
-              : <span style={{ color: 'var(--text-5)' }}>—</span>,
-          },
-          {
-            label: 'Card VP',
-            node: highestCardVP != null
-              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#a0693a', background: 'rgba(160,105,58,0.12)', border: '1px solid rgba(160,105,58,0.4)', borderRadius: '4px', padding: '3px 10px' }}>{highestCardVP} VP</span>
-              : <span style={{ color: 'var(--text-5)' }}>—</span>,
-          },
-        ]).map((row, i, arr) => (
-          <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < arr.length - 1 ? '1px solid var(--bd-panel)' : 'none' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>{row.label}</span>
-            {row.node}
-          </div>
-        ))}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          {([
+            { label: 'Highest Score',       record: bestScore,    color: '#c9a030', bg: 'rgba(201,160,48,0.10)',  border: 'rgba(201,160,48,0.35)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'Biggest Win',         record: biggestWin,   color: '#c9a030', bg: 'rgba(201,160,48,0.10)',  border: 'rgba(201,160,48,0.35)',  fmt: (v: number) => `+${v} VP` },
+            { label: 'Terraforming Rating', record: bestTR,       color: '#e05535', bg: 'rgba(224,85,53,0.10)',   border: 'rgba(224,85,53,0.35)',   fmt: (v: number) => `${v} TR`  },
+            { label: 'Greenery VP',         record: bestGreenery, color: '#4a9e6b', bg: 'rgba(74,158,107,0.10)',  border: 'rgba(74,158,107,0.35)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'City VP',             record: bestCity,     color: '#8e8e9a', bg: 'rgba(142,142,154,0.10)', border: 'rgba(142,142,154,0.35)', fmt: (v: number) => `${v} VP`  },
+            { label: 'Card VP',             record: bestCardVP,   color: '#a0693a', bg: 'rgba(160,105,58,0.10)',  border: 'rgba(160,105,58,0.35)',  fmt: (v: number) => `${v} VP`  },
+          ] as const).map(({ label, record, color, bg, border, fmt }) => {
+            const inner = (
+              <>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '8px' }}>{label}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1.3rem', color }}>{record ? fmt(record.value) : '—'}</div>
+              </>
+            )
+            const cardStyle: React.CSSProperties = { background: bg, border: `1px solid ${border}`, borderRadius: '6px', padding: '12px 14px', textDecoration: 'none', display: 'block' }
+            return record?.gameNumber != null
+              ? <Link key={label} to={`/games/${record.gameNumber}`} style={cardStyle}>{inner}</Link>
+              : <div key={label} style={cardStyle}>{inner}</div>
+          })}
+        </div>
       </div>
 
       {/* Score trend chart */}
