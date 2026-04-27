@@ -41,7 +41,7 @@ export default function Layout() {
         <Outlet />
 
         <footer style={{ borderTop: '1px solid var(--bd-panel)', padding: '24px 36px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+          <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
             <div style={footerCard}>
               Not affiliated with or endorsed by FryxGames — but you should buy
               <a href="https://fryxgames.se/product/terraforming-mars/" target="_blank" rel="noopener noreferrer" style={orangeBtn}>THEIR GAME</a>
