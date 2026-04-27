@@ -53,9 +53,9 @@ const ALL_TAGS = [
 ]
 
 const RESOURCE_TYPES = [
-  'Animal', 'Asteroid', 'Camp', 'Cube', 'Data', 'Delegates', 'Fighter',
-  'Floater', 'Hydroelectric', 'Microbe', 'Orbitals', 'Preservation',
-  'Robot', 'Science', 'Seeds', 'Syndicate Fleets', 'Venusian Habitat',
+  'Animal', 'Asteroid', 'Camp', 'Cathedral', 'City-tile', 'Colony', 'Cube', 'Data', 'Delegates', 'Fighter',
+  'Floater', 'Hydroelectric', 'Jovian-tag', 'Microbe', 'Mining-tile', 'Moon-tag', 'Ocean-tile', 'Orbitals',
+  'Preservation', 'Road-tile', 'Robot', 'Science', 'Seeds', 'Syndicate Fleets', 'Venusian Habitat', 'Venus-tag',
 ]
 
 const BASE_VP_OPTIONS = [-2, -1, 0, 1, 2, 3, 4]
@@ -223,11 +223,11 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
         </div>
       </div>
 
-      {/* Row 2: Resource VP type, Resources per VP (conditional), Base VP */}
+      {/* Row 2: Resource/Card VP type, Resources per VP (conditional), Base VP */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div style={{ flex: '1 1 150px' }}>
           <label style={labelStyle}>
-            Resource VP type{' '}
+            Resource/Card VP type{' '}
             <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: '#504270' }}>(e.g. Floater, Animal)</span>
           </label>
           <select value={values.resource_vp_type} onChange={set('resource_vp_type')} style={inputStyle}>
