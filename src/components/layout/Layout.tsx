@@ -47,7 +47,7 @@ export default function Layout() {
               <a href="https://fryxgames.se/product/terraforming-mars/" target="_blank" rel="noopener noreferrer" style={orangeBtn}>THEIR GAME</a>
             </div>
             <div style={footerCard}>
-              Made possible with help from the
+              This site was made possible with help from the
               <a href="https://github.com/terraforming-mars/terraforming-mars" target="_blank" rel="noopener noreferrer" style={orangeBtn}>Terraforming Mars Community</a>
             </div>
             <a href="https://github.com/alpsten/tm-scoring-statistics" target="_blank" rel="noopener noreferrer" style={{ ...footerCard, ...greenBtn, justifyContent: 'center' }}>Source Code</a>
