@@ -21,6 +21,7 @@ export default function PlayerDetail() {
     return () => window.removeEventListener('resize', handler)
   }, [])
   const [openYears, setOpenYears] = useState<Set<string>>(new Set())
+  const [collapsedCardSections, setCollapsedCardSections] = useState<Set<string>>(new Set(['Green cards', 'Blue cards', 'Red cards']))
   const { data: games, isLoading: gamesLoading } = useGames()
   const { data: playerStats, isLoading: statsLoading } = usePlayerStats()
   const { data: profiles = [] } = usePlayerProfiles()
@@ -273,7 +274,7 @@ export default function PlayerDetail() {
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '12px' }}>
           Highest In a Single Game
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gridTemplateRows: 'repeat(3, auto)', gridAutoFlow: 'column', gap: '8px' }}>
           {([
             { label: 'Highest Score',       record: bestScore,    color: '#c9a030', bg: 'rgba(201,160,48,0.12)',  border: 'rgba(201,160,48,0.4)',  fmt: (v: number) => `${v} VP`  },
             { label: 'Biggest Win',         record: biggestWin,   color: '#c9a030', bg: 'rgba(201,160,48,0.12)',  border: 'rgba(201,160,48,0.4)',  fmt: (v: number) => `+${v} VP` },
@@ -453,27 +454,49 @@ export default function PlayerDetail() {
       {/* Cards played */}
       {playerCards.length > 0 && (() => {
         const typeMap = Object.fromEntries(cardRef.map(c => [c.card_name, c.card_type]))
+        const top10 = [...playerCards].sort((a, b) => b.times_played - a.times_played).slice(0, 10)
         const sections: { label: string; color: string; bg: string; border: string; types: string[] }[] = [
-          { label: 'Green cards',  color: '#4a9e6b', bg: 'rgba(74,158,107,0.08)',  border: 'rgba(74,158,107,0.3)',  types: ['Automated'] },
-          { label: 'Blue cards',   color: '#5b8dd9', bg: 'rgba(91,141,217,0.08)',  border: 'rgba(91,141,217,0.3)',  types: ['Active'] },
-          { label: 'Red cards',    color: '#e05535', bg: 'rgba(224,85,53,0.08)',   border: 'rgba(224,85,53,0.3)',   types: ['Event'] },
+          { label: 'Green cards', color: '#4a9e6b', bg: 'rgba(74,158,107,0.08)',  border: 'rgba(74,158,107,0.3)',  types: ['Automated'] },
+          { label: 'Blue cards',  color: '#5b8dd9', bg: 'rgba(91,141,217,0.08)',  border: 'rgba(91,141,217,0.3)',  types: ['Active'] },
+          { label: 'Red cards',   color: '#e05535', bg: 'rgba(224,85,53,0.08)',   border: 'rgba(224,85,53,0.3)',   types: ['Event'] },
         ]
+        const toggleSection = (label: string) =>
+          setCollapsedCardSections(prev => { const s = new Set(prev); s.has(label) ? s.delete(label) : s.add(label); return s })
         return (
           <div style={{ marginBottom: '28px' }}>
             <SectionHeading>Cards played · {playerCards.length} unique</SectionHeading>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+              {/* Top 10 across all types */}
+              <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '10px 14px', marginBottom: '4px' }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: '8px' }}>
+                  Top 10 Most Played
+                </div>
+                <DataTable compact columns={cardColumns} rows={top10} rowKey={c => c.card_name} />
+              </div>
+
+              {/* Colour sections — collapsed by default */}
               {sections.map(({ label, color, bg, border, types }) => {
                 const rows = playerCards.filter(c => {
                   const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
                   return types.includes(typeMap[canonical] ?? '')
                 }).sort((a, b) => b.times_played - a.times_played)
                 if (rows.length === 0) return null
+                const collapsed = collapsedCardSections.has(label)
                 return (
                   <div key={label}>
-                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color, background: bg, border: `1px solid ${border}`, borderRadius: '4px', padding: '5px 12px', marginBottom: '4px', display: 'inline-block' }}>
-                      {label} · {rows.length}
-                    </div>
-                    <DataTable compact columns={cardColumns} rows={rows} rowKey={c => c.card_name} />
+                    <button
+                      onClick={() => toggleSection(label)}
+                      style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', background: bg, border: `1px solid ${border}`, borderRadius: collapsed ? '6px' : '6px 6px 0 0', cursor: 'pointer' }}
+                    >
+                      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color }}>{label} · {rows.length}</span>
+                      <span style={{ fontSize: '0.7rem', color, transform: collapsed ? 'none' : 'rotate(180deg)', transition: 'transform 0.15s' }}>▼</span>
+                    </button>
+                    {!collapsed && (
+                      <div style={{ border: `1px solid ${border}`, borderTop: 'none', borderRadius: '0 0 6px 6px', overflow: 'hidden' }}>
+                        <DataTable compact columns={cardColumns} rows={rows} rowKey={c => c.card_name} />
+                      </div>
+                    )}
                   </div>
                 )
               })}
