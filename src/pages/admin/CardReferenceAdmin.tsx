@@ -69,6 +69,7 @@ type EditValues = {
   card_text: string
   resources: string
   effect_text: string
+  effect_text_2: string
   action_text: string
   action_text_2: string
   flavour_text: string
@@ -88,6 +89,7 @@ function emptyEditValues(): EditValues {
     card_text: '',
     resources: '',
     effect_text: '',
+    effect_text_2: '',
     action_text: '',
     action_text_2: '',
     flavour_text: '',
@@ -107,10 +109,12 @@ function cardTextToEditSections(card: CardReference) {
   const text = card.card_text ?? ''
 
   if (card.card_type === 'Active') {
+    const [effect1, effect2 = ''] = (card.effect_text ?? '').split('\n\n')
     return {
       card_text: text,
       resources: card.resources ?? '',
-      effect_text: card.effect_text ?? '',
+      effect_text: effect1 ?? '',
+      effect_text_2: effect2,
       action_text: card.action_text ?? '',
       action_text_2: card.action_text_2 ?? '',
       flavour_text: card.flavour_text ?? '',
@@ -120,13 +124,14 @@ function cardTextToEditSections(card: CardReference) {
   const flavour = extractSection(text, 'Flavour')
   if (flavour) {
     const cardText = text.replace(/\n?Flavour:\s*[\s\S]*$/i, '').trim()
-    return { card_text: cardText, resources: card.resources ?? '', effect_text: card.effect_text ?? '', action_text: card.action_text ?? '', action_text_2: card.action_text_2 ?? '', flavour_text: card.flavour_text ?? flavour }
+    return { card_text: cardText, resources: card.resources ?? '', effect_text: card.effect_text ?? '', effect_text_2: '', action_text: card.action_text ?? '', action_text_2: card.action_text_2 ?? '', flavour_text: card.flavour_text ?? flavour }
   }
 
   return {
     card_text: text,
     resources: card.resources ?? '',
     effect_text: card.effect_text ?? '',
+    effect_text_2: '',
     action_text: card.action_text ?? '',
     action_text_2: card.action_text_2 ?? '',
     flavour_text: card.flavour_text ?? '',
@@ -152,8 +157,11 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
   const isComplexOptional = values.card_type === 'Corporation' || values.card_type === 'Prelude'
   const isGlobalEvent = values.card_type === 'Global Event'
   const [showExtended, setShowExtended] = useState(() => !!(values.effect_text || values.action_text || values.action_text_2))
+  const [showEffect2, setShowEffect2] = useState(() => !!values.effect_text_2)
+  const [showAction2, setShowAction2] = useState(() => !!values.action_text_2)
+
   const textArea = (
-    key: keyof Pick<EditValues, 'card_text' | 'resources' | 'effect_text' | 'action_text' | 'action_text_2' | 'flavour_text'>,
+    key: keyof Pick<EditValues, 'card_text' | 'resources' | 'effect_text' | 'effect_text_2' | 'action_text' | 'action_text_2' | 'flavour_text'>,
     label: string,
     placeholder: string,
     rows = 3,
@@ -172,6 +180,7 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {/* Row 1: Card name, Type, MC Cost, Expansions */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div style={{ flex: '2 1 200px' }}>
           <label style={labelStyle}>Card name *</label>
@@ -184,9 +193,13 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
             {CARD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
-        <div style={{ flex: '2 1 260px' }}>
+        <div style={{ flex: '0 0 80px' }}>
+          <label style={labelStyle}>MC Cost</label>
+          <input type="number" min={0} max={50} value={values.mc_cost} onChange={set('mc_cost')} placeholder="—" style={inputStyle} />
+        </div>
+        <div style={{ flex: '2 1 220px' }}>
           <label style={labelStyle}>Expansions</label>
-          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 31px)', gap: '5px' }}>
             {EXPANSIONS_LIST.map(e => {
               const active = values.expansions.includes(e)
               return (
@@ -207,25 +220,14 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
             })}
           </div>
         </div>
-        <div style={{ flex: '0 0 80px' }}>
-          <label style={labelStyle}>MC Cost</label>
-          <input type="number" min={0} max={50} value={values.mc_cost} onChange={set('mc_cost')} placeholder="—" style={inputStyle} />
-        </div>
-        <div style={{ flex: '0 0 90px' }}>
-          <label style={labelStyle}>Base VP</label>
-          <select value={values.base_vp} onChange={set('base_vp')} style={inputStyle}>
-            <option value="">—</option>
-            {BASE_VP_OPTIONS.map(n => <option key={n} value={n}>{n} VP</option>)}
-          </select>
-        </div>
       </div>
+
+      {/* Row 2: Resource VP type, Resources per VP (conditional), Base VP */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div style={{ flex: '1 1 150px' }}>
           <label style={labelStyle}>
             Resource VP type{' '}
-            <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: '#504270' }}>
-              (e.g. Floater, Animal)
-            </span>
+            <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: '#504270' }}>(e.g. Floater, Animal)</span>
           </label>
           <select value={values.resource_vp_type} onChange={set('resource_vp_type')} style={inputStyle}>
             <option value="">— none —</option>
@@ -241,7 +243,16 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
             </select>
           </div>
         )}
+        <div style={{ flex: '0 0 90px' }}>
+          <label style={labelStyle}>Base VP</label>
+          <select value={values.base_vp} onChange={set('base_vp')} style={inputStyle}>
+            <option value="">—</option>
+            {BASE_VP_OPTIONS.map(n => <option key={n} value={n}>{n} VP</option>)}
+          </select>
+        </div>
       </div>
+
+      {/* Tags */}
       <div>
         <label style={labelStyle}>Tags</label>
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -254,11 +265,7 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
                 key={tag}
                 type="button"
                 onClick={() => {
-                  const next = count === 0
-                    ? [...current, tag]
-                    : count === 1
-                    ? [...current, tag]   // add second instance
-                    : current.filter(t => t !== tag) // remove all
+                  const next = count === 0 ? [...current, tag] : count === 1 ? [...current, tag] : current.filter(t => t !== tag)
                   onChange({ ...values, tags: next.join(', '), noTagExplicit: false })
                 }}
                 title={tag}
@@ -283,6 +290,8 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
           </button>
         </div>
       </div>
+
+      {/* Card type-specific fields */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         {isSimple && (
           <>
@@ -295,9 +304,46 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
           <>
             {textArea('card_text', 'Gain resources', 'Resources gained…')}
             {textArea('resources', 'Resource icons', '5:steel, 3:plant…', 1)}
-            {textArea('effect_text', 'Effect', 'Effect text…')}
-            {textArea('action_text', 'Action 1', 'Action text…')}
-            {textArea('action_text_2', 'Action 2', 'Second action text (shown with OR)…')}
+
+            {/* Effect with optional second effect */}
+            <div style={{ flex: '1 1 260px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <label style={{ ...labelStyle, marginBottom: 0 }}>Effect</label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#625c7c' }}>
+                  <input type="checkbox" checked={showEffect2} onChange={e => setShowEffect2(e.target.checked)} />
+                  Add another effect
+                </label>
+              </div>
+              <textarea value={values.effect_text} onChange={set('effect_text')} placeholder="Effect text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+              {showEffect2 && (
+                <textarea value={values.effect_text_2} onChange={set('effect_text_2')} placeholder="Second effect text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+              )}
+            </div>
+
+            {/* Action with optional second action */}
+            <div style={{ flex: '1 1 260px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <label style={{ ...labelStyle, marginBottom: 0 }}>Action</label>
+                {!showAction2 && (
+                  <button type="button" onClick={() => setShowAction2(true)} style={{ padding: '2px 8px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '3px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.68rem', cursor: 'pointer' }}>
+                    + Add another action
+                  </button>
+                )}
+              </div>
+              <textarea value={values.action_text} onChange={set('action_text')} placeholder="Action text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+              {showAction2 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#625c7c' }}>Action 2 (OR)</span>
+                    <button type="button" onClick={() => { setShowAction2(false); onChange({ ...values, action_text_2: '' }) }} style={{ padding: '1px 7px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '3px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.68rem', cursor: 'pointer' }}>
+                      × Remove
+                    </button>
+                  </div>
+                  <textarea value={values.action_text_2} onChange={set('action_text_2')} placeholder="Second action text (shown with OR)…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                </div>
+              )}
+            </div>
+
             {textArea('flavour_text', 'Flavour text', 'Flavour text…')}
           </>
         )}
@@ -328,25 +374,15 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
           </>
         )}
       </div>
+
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-        <button
-          onClick={onSave}
-          disabled={saving}
-          style={{ padding: '6px 18px', background: '#9b50f0', border: 'none', borderRadius: '4px', color: '#fff', fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer' }}
-        >
+        <button onClick={onSave} disabled={saving} style={{ padding: '6px 18px', background: '#9b50f0', border: 'none', borderRadius: '4px', color: '#fff', fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer' }}>
           {saving ? 'Saving…' : isNew ? 'Add card' : 'Save'}
         </button>
-        <button
-          onClick={onCancel}
-          style={{ padding: '6px 14px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.82rem', cursor: 'pointer' }}
-        >
+        <button onClick={onCancel} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.82rem', cursor: 'pointer' }}>
           Cancel
         </button>
-        {error && (
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#e05535' }}>
-            Error: {error}
-          </span>
-        )}
+        {error && <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#e05535' }}>Error: {error}</span>}
       </div>
     </div>
   )
@@ -437,7 +473,7 @@ export default function CardReferenceAdmin() {
         tags: editValues.tags.trim() || null,
         card_text: editValues.card_text.trim() || null,
         resources: editValues.resources.trim() || null,
-        effect_text: editValues.effect_text.trim() || null,
+        effect_text: [editValues.effect_text, editValues.effect_text_2].map(s => s.trim()).filter(Boolean).join('\n\n') || null,
         action_text: editValues.action_text.trim() || null,
         action_text_2: editValues.action_text_2.trim() || null,
         flavour_text: editValues.flavour_text.trim() || null,
