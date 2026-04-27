@@ -22,6 +22,7 @@ export default function PlayerDetail() {
   }, [])
   const [openYears, setOpenYears] = useState<Set<string>>(new Set())
   const [collapsedCardSections, setCollapsedCardSections] = useState<Set<string>>(new Set(['Green cards', 'Blue cards', 'Red cards']))
+  const [allCorpsOpen, setAllCorpsOpen] = useState(false)
   const { data: games, isLoading: gamesLoading } = useGames()
   const { data: playerStats, isLoading: statsLoading } = usePlayerStats()
   const { data: profiles = [] } = usePlayerProfiles()
@@ -443,7 +444,7 @@ export default function PlayerDetail() {
             if (result.position === 1) map[corp].wins++
           }
         }
-        const corpRows: CorpRow[] = Object.entries(map)
+        const allCorpRows: CorpRow[] = Object.entries(map)
           .map(([corp, { times, wins, scores }]) => ({
             corp,
             times_played: times,
@@ -452,7 +453,7 @@ export default function PlayerDetail() {
             avg_score: scores.reduce((s, v) => s + v, 0) / scores.length,
           }))
           .sort((a, b) => b.times_played - a.times_played)
-          .slice(0, 5)
+        const corpRows = allCorpRows.slice(0, 5)
         if (corpRows.length === 0) return null
 
         const corpColumns: DataTableColumn<CorpRow>[] = [
@@ -498,6 +499,22 @@ export default function PlayerDetail() {
           <div style={{ marginBottom: '28px' }}>
             <SectionHeading>Corporations Played</SectionHeading>
             <DataTable compact columns={corpColumns} rows={corpRows} rowKey={r => r.corp} />
+            {allCorpRows.length > 5 && (
+              <div style={{ marginTop: '8px' }}>
+                <button
+                  onClick={() => setAllCorpsOpen(o => !o)}
+                  style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', background: 'rgba(184,122,255,0.06)', border: '1px solid rgba(184,122,255,0.2)', borderRadius: allCorpsOpen ? '6px 6px 0 0' : '6px', cursor: 'pointer' }}
+                >
+                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#b87aff' }}>All corporations · {allCorpRows.length}</span>
+                  <span style={{ fontSize: '0.7rem', color: '#b87aff', transform: allCorpsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
+                </button>
+                {allCorpsOpen && (
+                  <div style={{ border: '1px solid rgba(184,122,255,0.2)', borderTop: 'none', borderRadius: '0 0 6px 6px', overflow: 'hidden' }}>
+                    <DataTable compact columns={corpColumns} rows={allCorpRows} rowKey={r => r.corp} />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )
       })()}
