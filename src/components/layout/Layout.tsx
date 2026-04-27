@@ -36,31 +36,49 @@ export default function Layout() {
       >
         <Outlet />
 
-        <footer style={{
-          borderTop: '1px solid var(--bd-panel)',
-          padding: '24px 36px',
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '12px 32px',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 24px', alignItems: 'center' }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)' }}>
-              A fan-made statistics tracker for Terraforming Mars.
-            </span>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)' }}>
-              Not affiliated with or endorsed by FryxGames.
-            </span>
+        <footer style={{ borderTop: '1px solid var(--bd-panel)', padding: '24px 36px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
+            {[
+              {
+                label: 'A fan-made statistics tracker for Terraforming Mars.',
+                href: null,
+              },
+              {
+                label: 'Not affiliated with or endorsed by FryxGames — but you should buy their game!',
+                href: 'https://fryxgames.se/product/terraforming-mars/',
+                linkText: 'Buy here ↗',
+              },
+              {
+                label: 'Made possible with help from the Terraforming Mars community.',
+                href: 'https://github.com/terraforming-mars/terraforming-mars',
+                linkText: 'Community repo ↗',
+              },
+              {
+                label: 'View the source code for this app.',
+                href: 'https://github.com/alpsten/tm-scoring-statistics',
+                linkText: 'GitHub ↗',
+              },
+            ].map(({ label, href, linkText }) => (
+              <div
+                key={label}
+                style={{
+                  padding: '10px 14px',
+                  background: 'rgba(210,120,50,0.08)',
+                  border: '1px solid rgba(210,120,50,0.25)',
+                  borderRadius: '4px',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '0.72rem',
+                  color: 'var(--text-4)',
+                  lineHeight: 1.5,
+                }}
+              >
+                {label}
+                {href && linkText && (
+                  <>{' '}<a href={href} target="_blank" rel="noopener noreferrer" style={{ color: '#d07832', textDecoration: 'none', fontWeight: 600 }}>{linkText}</a></>
+                )}
+              </div>
+            ))}
           </div>
-          <a
-            href="https://github.com/alpsten/tm-scoring-statistics"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-3)', textDecoration: 'none', whiteSpace: 'nowrap' }}
-          >
-            GitHub ↗
-          </a>
         </footer>
       </main>
     </div>
