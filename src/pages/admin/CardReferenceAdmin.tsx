@@ -300,14 +300,14 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
         {isSimple && (
           <>
             {textArea('card_text', 'Gain resources', 'Resources gained…')}
-            {textArea('resources', 'Resource icons', '5:steel, 3:plant…', 1)}
+            {textArea('resources', 'Resource icons', '1:megacredit, 2:steel, 3:titanium, 4:plant, 5:energy, 6:heat')}
             {textArea('flavour_text', 'Flavour text', 'Flavour text…')}
           </>
         )}
         {isActive && (
           <>
             {textArea('card_text', 'Gain resources', 'Resources gained…')}
-            {textArea('resources', 'Resource icons', '5:steel, 3:plant…', 1)}
+            {textArea('resources', 'Resource icons', '1:megacredit, 2:steel, 3:titanium, 4:plant, 5:energy, 6:heat')}
 
             {/* Effect */}
             <div style={{ flex: '1 1 260px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -375,7 +375,7 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
         {isComplexOptional && (
           <>
             {textArea('card_text', 'Gain resources', 'Resources gained…')}
-            {textArea('resources', 'Resource icons', '5:steel, 3:plant…', 1)}
+            {textArea('resources', 'Resource icons', '1:megacredit, 2:steel, 3:titanium, 4:plant, 5:energy, 6:heat')}
             {textArea('flavour_text', 'Flavour text', 'Flavour text…')}
             <div style={{ flex: '1 1 100%' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-3)' }}>
