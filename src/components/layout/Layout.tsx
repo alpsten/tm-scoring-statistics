@@ -1,6 +1,10 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
+
+const footerCard: React.CSSProperties = { padding: '10px 14px', background: 'rgba(210,120,50,0.08)', border: '1px solid rgba(210,120,50,0.25)', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', lineHeight: 1.5 }
+const orangeBtn: React.CSSProperties = { padding: '2px 8px', background: 'rgba(210,120,50,0.15)', border: '1px solid rgba(210,120,50,0.4)', borderRadius: '3px', color: '#d07832', textDecoration: 'none', fontWeight: 600, fontSize: '0.68rem' }
+const greenBtn: React.CSSProperties = { display: 'inline-block', padding: '3px 10px', background: 'rgba(74,158,107,0.15)', border: '1px solid rgba(74,158,107,0.4)', borderRadius: '3px', color: '#4a9e6b', textDecoration: 'none', fontWeight: 600, fontSize: '0.68rem' }
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -38,42 +42,19 @@ export default function Layout() {
 
         <footer style={{ borderTop: '1px solid var(--bd-panel)', padding: '24px 36px' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
-            {[
-              {
-                label: 'Not affiliated with or endorsed by FryxGames — but you should buy their game!',
-                href: 'https://fryxgames.se/product/terraforming-mars/',
-                linkText: 'Buy here ↗',
-              },
-              {
-                label: 'Made possible with help from the Terraforming Mars community.',
-                href: 'https://github.com/terraforming-mars/terraforming-mars',
-                linkText: 'Community repo ↗',
-              },
-              {
-                label: 'View the source code for this app.',
-                href: 'https://github.com/alpsten/tm-scoring-statistics',
-                linkText: 'GitHub ↗',
-              },
-            ].map(({ label, href, linkText }) => (
-              <div
-                key={label}
-                style={{
-                  padding: '10px 14px',
-                  background: 'rgba(210,120,50,0.08)',
-                  border: '1px solid rgba(210,120,50,0.25)',
-                  borderRadius: '4px',
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '0.72rem',
-                  color: 'var(--text-4)',
-                  lineHeight: 1.5,
-                }}
-              >
-                {label}
-                {href && linkText && (
-                  <>{' '}<a href={href} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '6px', padding: '3px 10px', background: 'rgba(210,120,50,0.15)', border: '1px solid rgba(210,120,50,0.4)', borderRadius: '3px', color: '#d07832', textDecoration: 'none', fontWeight: 600, fontSize: '0.68rem', letterSpacing: '0.04em' }}>{linkText.replace(' ↗', '')}</a></>
-                )}
-              </div>
-            ))}
+            <div style={footerCard}>
+              Not affiliated with or endorsed by FryxGames — but you should buy{' '}
+              <a href="https://fryxgames.se/product/terraforming-mars/" target="_blank" rel="noopener noreferrer" style={orangeBtn}>their game</a>
+              .
+            </div>
+            <div style={footerCard}>
+              Made possible with help from the{' '}
+              <a href="https://github.com/terraforming-mars/terraforming-mars" target="_blank" rel="noopener noreferrer" style={orangeBtn}>Terraforming Mars Community</a>
+              .
+            </div>
+            <div style={footerCard}>
+              <a href="https://github.com/alpsten/tm-scoring-statistics" target="_blank" rel="noopener noreferrer" style={greenBtn}>Source Code</a>
+            </div>
           </div>
         </footer>
       </main>
