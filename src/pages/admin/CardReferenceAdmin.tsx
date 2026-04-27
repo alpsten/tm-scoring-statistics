@@ -243,13 +243,15 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
             </select>
           </div>
         )}
-        <div style={{ flex: '0 0 90px' }}>
-          <label style={labelStyle}>Base VP</label>
-          <select value={values.base_vp} onChange={set('base_vp')} style={inputStyle}>
-            <option value="">—</option>
-            {BASE_VP_OPTIONS.map(n => <option key={n} value={n}>{n} VP</option>)}
-          </select>
-        </div>
+        {!values.resource_vp_type && (
+          <div style={{ flex: '0 0 90px' }}>
+            <label style={labelStyle}>Base VP</label>
+            <select value={values.base_vp} onChange={set('base_vp')} style={inputStyle}>
+              <option value="">—</option>
+              {BASE_VP_OPTIONS.map(n => <option key={n} value={n}>{n} VP</option>)}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Tags */}
@@ -309,14 +311,23 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
             <div style={{ flex: '1 1 260px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <label style={{ ...labelStyle, marginBottom: 0 }}>Effect</label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#625c7c' }}>
-                  <input type="checkbox" checked={showEffect2} onChange={e => setShowEffect2(e.target.checked)} />
-                  Add another effect
-                </label>
+                {!showEffect2 && (
+                  <button type="button" onClick={() => setShowEffect2(true)} style={{ padding: '2px 8px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '3px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.68rem', cursor: 'pointer' }}>
+                    + Add another effect
+                  </button>
+                )}
               </div>
               <textarea value={values.effect_text} onChange={set('effect_text')} placeholder="Effect text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
               {showEffect2 && (
-                <textarea value={values.effect_text_2} onChange={set('effect_text_2')} placeholder="Second effect text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#625c7c' }}>Effect 2</span>
+                    <button type="button" onClick={() => { setShowEffect2(false); onChange({ ...values, effect_text_2: '' }) }} style={{ padding: '1px 7px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '3px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.68rem', cursor: 'pointer' }}>
+                      × Remove
+                    </button>
+                  </div>
+                  <textarea value={values.effect_text_2} onChange={set('effect_text_2')} placeholder="Second effect text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                </div>
               )}
             </div>
 
