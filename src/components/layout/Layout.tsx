@@ -70,7 +70,7 @@ export default function Layout() {
               >
                 {label}
                 {href && linkText && (
-                  <>{' '}<a href={href} target="_blank" rel="noopener noreferrer" style={{ color: '#d07832', textDecoration: 'none', fontWeight: 600 }}>{linkText}</a></>
+                  <>{' '}<a href={href} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '6px', padding: '3px 10px', background: 'rgba(210,120,50,0.15)', border: '1px solid rgba(210,120,50,0.4)', borderRadius: '3px', color: '#d07832', textDecoration: 'none', fontWeight: 600, fontSize: '0.68rem', letterSpacing: '0.04em' }}>{linkText.replace(' ↗', '')}</a></>
                 )}
               </div>
             ))}
