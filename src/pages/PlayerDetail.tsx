@@ -6,7 +6,7 @@ import PositionBadge from '../components/ui/PositionBadge'
 import SectionHeading from '../components/ui/SectionHeading'
 import DataTable from '../components/ui/DataTable'
 import type { DataTableColumn } from '../components/ui/DataTable'
-import { useGames, usePlayerStats, usePlayerProfiles, usePlayerCardStats } from '../lib/hooks'
+import { useGames, usePlayerStats, usePlayerProfiles, usePlayerCardStats, useCardReference } from '../lib/hooks'
 import { CARD_NAME_CORRECTIONS } from '../lib/logParser'
 import { getCorps } from '../types/database'
 
@@ -20,11 +20,22 @@ export default function PlayerDetail() {
     window.addEventListener('resize', handler)
     return () => window.removeEventListener('resize', handler)
   }, [])
-  const [closedYears, setClosedYears] = useState<Set<string>>(new Set())
+  const [openYears, setOpenYears] = useState<Set<string>>(new Set())
   const { data: games, isLoading: gamesLoading } = useGames()
   const { data: playerStats, isLoading: statsLoading } = usePlayerStats()
   const { data: profiles = [] } = usePlayerProfiles()
   const { data: playerCards = [] } = usePlayerCardStats(name!)
+  const { data: cardRef = [] } = useCardReference()
+
+  useEffect(() => {
+    if (!gamesLoading && games) {
+      const myGames = games.filter(g => g.player_results.some(r => r.player_name === name))
+      if (myGames.length > 0) {
+        const latest = myGames[0].date.slice(0, 4)
+        setOpenYears(new Set([latest]))
+      }
+    }
+  }, [gamesLoading])
 
   if (gamesLoading || statsLoading) return <div style={loadingStyle}>Loading…</div>
 
@@ -196,9 +207,8 @@ export default function PlayerDetail() {
             label: 'Wins',
             node: (
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 700 }}>
-                <span style={{ color: '#c9a030' }}>{stats.wins}</span>
-                <span style={{ color: '#2e8b8b' }}> wins of {stats.games_played} games</span>
-                <span style={{ color: 'var(--text-4)', fontWeight: 400 }}> ({Math.round(stats.win_rate)}% Win Rate)</span>
+                <span style={{ color: '#c9a030' }}>{stats.wins} wins of {stats.games_played} games</span>
+                <span style={{ color: stats.win_rate >= 60 ? '#4a9e6b' : stats.win_rate >= 40 ? '#c9a030' : '#e05535', fontWeight: 400 }}> ({Math.round(stats.win_rate)}% Win Rate)</span>
               </span>
             ),
           },
@@ -233,13 +243,13 @@ export default function PlayerDetail() {
           {
             label: 'Most City VP',
             node: highestCity != null
-              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#5b8dd9', background: 'rgba(91,141,217,0.12)', border: '1px solid rgba(91,141,217,0.4)', borderRadius: '4px', padding: '3px 10px' }}>{highestCity} VP</span>
+              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#8e8e9a', background: 'rgba(142,142,154,0.12)', border: '1px solid rgba(142,142,154,0.4)', borderRadius: '4px', padding: '3px 10px' }}>{highestCity} VP</span>
               : <span style={{ color: 'var(--text-5)' }}>—</span>,
           },
           {
             label: 'Most Card VP',
             node: highestCardVP != null
-              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#b87aff', background: 'rgba(184,122,255,0.12)', border: '1px solid rgba(184,122,255,0.4)', borderRadius: '4px', padding: '3px 10px' }}>{highestCardVP} VP</span>
+              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#a0693a', background: 'rgba(160,105,58,0.12)', border: '1px solid rgba(160,105,58,0.4)', borderRadius: '4px', padding: '3px 10px' }}>{highestCardVP} VP</span>
               : <span style={{ color: 'var(--text-5)' }}>—</span>,
           },
         ]).map((row, i, arr) => (
@@ -401,17 +411,36 @@ export default function PlayerDetail() {
       })()}
 
       {/* Cards played */}
-      {playerCards.length > 0 && (
-        <div style={{ marginBottom: '28px' }}>
-          <SectionHeading>Cards played · {playerCards.length} unique</SectionHeading>
-          <DataTable
-            compact
-            columns={cardColumns}
-            rows={playerCards}
-            rowKey={c => c.card_name}
-          />
-        </div>
-      )}
+      {playerCards.length > 0 && (() => {
+        const typeMap = Object.fromEntries(cardRef.map(c => [c.card_name, c.card_type]))
+        const sections: { label: string; color: string; bg: string; border: string; types: string[] }[] = [
+          { label: 'Green cards',  color: '#4a9e6b', bg: 'rgba(74,158,107,0.08)',  border: 'rgba(74,158,107,0.3)',  types: ['Automated'] },
+          { label: 'Blue cards',   color: '#5b8dd9', bg: 'rgba(91,141,217,0.08)',  border: 'rgba(91,141,217,0.3)',  types: ['Active'] },
+          { label: 'Red cards',    color: '#e05535', bg: 'rgba(224,85,53,0.08)',   border: 'rgba(224,85,53,0.3)',   types: ['Event'] },
+        ]
+        return (
+          <div style={{ marginBottom: '28px' }}>
+            <SectionHeading>Cards played · {playerCards.length} unique</SectionHeading>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {sections.map(({ label, color, bg, border, types }) => {
+                const rows = playerCards.filter(c => {
+                  const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
+                  return types.includes(typeMap[canonical] ?? '')
+                }).sort((a, b) => b.times_played - a.times_played)
+                if (rows.length === 0) return null
+                return (
+                  <div key={label}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color, background: bg, border: `1px solid ${border}`, borderRadius: '4px', padding: '5px 12px', marginBottom: '4px', display: 'inline-block' }}>
+                      {label} · {rows.length}
+                    </div>
+                    <DataTable compact columns={cardColumns} rows={rows} rowKey={c => c.card_name} />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Games played */}
       <div>
@@ -424,11 +453,11 @@ export default function PlayerDetail() {
           }, {})
           const years = Object.keys(byYear).sort((a, b) => b.localeCompare(a))
           return years.map(year => {
-            const open = !closedYears.has(year)
+            const open = openYears.has(year)
             return (
               <div key={year} style={{ marginBottom: '8px' }}>
                 <button
-                  onClick={() => setClosedYears(prev => { const s = new Set(prev); s.has(year) ? s.delete(year) : s.add(year); return s })}
+                  onClick={() => setOpenYears(prev => { const s = new Set(prev); s.has(year) ? s.delete(year) : s.add(year); return s })}
                   style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: open ? '6px 6px 0 0' : '6px', cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.08em', color: 'var(--text-3)' }}
                 >
                   <span>{year}</span>
