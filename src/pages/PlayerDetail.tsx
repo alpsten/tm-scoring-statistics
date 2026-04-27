@@ -432,26 +432,72 @@ export default function PlayerDetail() {
 
       {/* Corporations played */}
       {(() => {
-        const corpCounts: Record<string, number> = {}
+        type CorpRow = { corp: string; times_played: number; wins: number; win_rate: number; avg_score: number }
+        const map: Record<string, { times: number; wins: number; scores: number[] }> = {}
         for (const game of playerGames) {
           const result = game.player_results.find(r => r.player_name === name)!
           for (const corp of getCorps(result)) {
-            corpCounts[corp] = (corpCounts[corp] ?? 0) + 1
+            if (!map[corp]) map[corp] = { times: 0, wins: 0, scores: [] }
+            map[corp].times++
+            map[corp].scores.push(result.total_vp)
+            if (result.position === 1) map[corp].wins++
           }
         }
-        const sorted = Object.entries(corpCounts).sort((a, b) => b[1] - a[1])
-        if (sorted.length === 0) return null
+        const corpRows: CorpRow[] = Object.entries(map)
+          .map(([corp, { times, wins, scores }]) => ({
+            corp,
+            times_played: times,
+            wins,
+            win_rate: (wins / times) * 100,
+            avg_score: scores.reduce((s, v) => s + v, 0) / scores.length,
+          }))
+          .sort((a, b) => b.times_played - a.times_played)
+          .slice(0, 5)
+        if (corpRows.length === 0) return null
+
+        const corpColumns: DataTableColumn<CorpRow>[] = [
+          {
+            key: 'corp',
+            label: 'Corporation',
+            tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.83rem' },
+            render: r => (
+              <Link to={`/corporations/${encodeURIComponent(r.corp)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>
+                {r.corp}
+              </Link>
+            ),
+          },
+          { key: 'times_played', label: 'Played', align: 'right', tdStyle: { fontSize: '0.82rem' } },
+          {
+            key: 'wins',
+            label: 'Wins',
+            align: 'right',
+            tdStyle: { fontSize: '0.82rem' },
+            render: r => <span style={{ color: '#4a9e6b' }}>{r.wins}</span>,
+          },
+          {
+            key: 'win_rate',
+            label: 'Win Rate',
+            align: 'right',
+            tdStyle: { fontSize: '0.82rem' },
+            render: r => (
+              <span style={{ color: r.win_rate >= 60 ? '#4a9e6b' : r.win_rate >= 40 ? '#c9a030' : '#e05535' }}>
+                {Math.round(r.win_rate)}%
+              </span>
+            ),
+          },
+          {
+            key: 'avg_score',
+            label: 'Avg Score',
+            align: 'right',
+            tdStyle: { fontSize: '0.82rem' },
+            render: r => <span style={{ color: '#c9a030' }}>{Math.round(r.avg_score)} VP</span>,
+          },
+        ]
+
         return (
           <div style={{ marginBottom: '28px' }}>
             <SectionHeading>Corporations Played</SectionHeading>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {sorted.map(([corp, count]) => (
-                <Link key={corp} to={`/corporations/${encodeURIComponent(corp)}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '8px 14px', textDecoration: 'none' }}>
-                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#b87aff' }}>{corp}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-4)' }}>({count})</span>
-                </Link>
-              ))}
-            </div>
+            <DataTable compact columns={corpColumns} rows={corpRows} rowKey={r => r.corp} />
           </div>
         )
       })()}
