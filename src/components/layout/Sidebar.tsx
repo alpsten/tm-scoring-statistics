@@ -169,14 +169,16 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             Mobile view is still in development — some layouts may appear unexpected.
           </div>
         )}
-        <a
-          href="https://github.com/alpsten/tm-scoring-statistics"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ display: 'block', marginTop: '10px', padding: '4px 8px', background: 'rgba(74,158,107,0.1)', border: '1px solid rgba(74,158,107,0.35)', borderRadius: '3px', color: '#4a9e6b', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', textDecoration: 'none', textAlign: 'center' }}
-        >
-          Source Code
-        </a>
+        <div style={{ borderTop: '1px solid var(--bd-sidebar)', marginTop: '10px', paddingTop: '10px' }}>
+          <a
+            href="https://github.com/alpsten/tm-scoring-statistics"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'block', padding: '4px 8px', background: 'rgba(74,158,107,0.1)', border: '1px solid rgba(74,158,107,0.35)', borderRadius: '3px', color: '#4a9e6b', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', textDecoration: 'none', textAlign: 'center' }}
+          >
+            Source Code
+          </a>
+        </div>
       </div>
 
       {/* Admin / auth section */}
