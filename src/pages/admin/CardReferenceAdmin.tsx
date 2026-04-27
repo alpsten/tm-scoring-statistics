@@ -52,11 +52,7 @@ const ALL_TAGS = [
   'Jovian', 'Mars', 'Microbe', 'Moon', 'Plant', 'Planet', 'Power', 'Science', 'Space', 'Venus', 'Wild',
 ]
 
-const RESOURCE_TYPES = [
-  'Animal', 'Asteroid', 'Camp', 'Cathedral', 'City-tile', 'Colony', 'Cube', 'Data', 'Delegates', 'Fighter',
-  'Floater', 'Hydroelectric', 'Jovian-tag', 'Microbe', 'Mining-tile', 'Moon-tag', 'Ocean-tile', 'Orbitals',
-  'Preservation', 'Road-tile', 'Robot', 'Science', 'Seeds', 'Syndicate Fleets', 'Venusian Habitat', 'Venus-tag',
-]
+const DEFAULT_VP_TYPES = ['Animal', 'Floater', 'Jovian-tag', 'Ocean-tile']
 
 const BASE_VP_OPTIONS = [-2, -1, 0, 1, 2, 3, 4]
 
@@ -140,7 +136,7 @@ function cardTextToEditSections(card: CardReference) {
 
 // ─── Inline edit form ─────────────────────────────────────────────────────────
 
-function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
+function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew, vpTypes }: {
   values: EditValues
   onChange: (v: EditValues) => void
   saving: boolean
@@ -148,6 +144,7 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
   onSave: () => void
   onCancel: () => void
   isNew?: boolean
+  vpTypes: string[]
 }) {
   const set = (k: keyof EditValues) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -230,10 +227,16 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
             Resource/Card VP type{' '}
             <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: '#504270' }}>(e.g. Floater, Animal)</span>
           </label>
-          <select value={values.resource_vp_type} onChange={set('resource_vp_type')} style={inputStyle}>
-            <option value="">— none —</option>
-            {RESOURCE_TYPES.map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
+          <input
+            list="vp-type-list"
+            value={values.resource_vp_type}
+            onChange={set('resource_vp_type')}
+            placeholder="e.g. Floater, Ocean-tile…"
+            style={inputStyle}
+          />
+          <datalist id="vp-type-list">
+            {vpTypes.map(r => <option key={r} value={r} />)}
+          </datalist>
         </div>
         {values.resource_vp_type && (
           <div style={{ flex: '0 0 160px' }}>
@@ -480,6 +483,10 @@ export default function CardReferenceAdmin() {
 
   const allTags = [...new Set((cards ?? []).flatMap(c => parseTags(c.tags)))].sort()
   const allExpansions = [...new Set((cards ?? []).flatMap(c => c.expansions))].sort()
+  const vpTypes = [...new Set([
+    ...DEFAULT_VP_TYPES,
+    ...(cards ?? []).map(c => c.resource_vp_type).filter((v): v is string => !!v),
+  ])].sort()
 
   const filtered = (cards ?? []).filter(c => {
     if (search && !c.card_name.toLowerCase().includes(search.toLowerCase())) return false
@@ -714,6 +721,7 @@ export default function CardReferenceAdmin() {
             onSave={saveEdit}
             onCancel={cancelEdit}
             isNew
+            vpTypes={vpTypes}
           />
         </div>
       )}
@@ -723,7 +731,7 @@ export default function CardReferenceAdmin() {
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid #282042' }}>
-              {['Card', 'Type', 'Tags', 'Expansion', 'Base VP', 'Resource VP', ''].map((h, i) => (
+              {['Card', 'Type', 'Tags', 'Expansion', 'MC', 'Base VP', 'Resource VP', ''].map((h, i) => (
                 <th key={i} style={{ padding: '10px 16px', textAlign: i === 6 ? 'right' : 'left', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
                   {h}
                 </th>
@@ -737,7 +745,7 @@ export default function CardReferenceAdmin() {
                 style={{ borderBottom: i < filtered.length - 1 ? '1px solid #282042' : 'none', background: editingId === card.id ? 'rgba(155,80,240,0.04)' : 'transparent' }}
               >
                 {editingId === card.id ? (
-                  <td colSpan={7} style={{ padding: '16px' }}>
+                  <td colSpan={8} style={{ padding: '16px' }}>
                     <EditRow
                       values={editValues}
                       onChange={setEditValues}
@@ -745,6 +753,7 @@ export default function CardReferenceAdmin() {
                       error={saveError}
                       onSave={saveEdit}
                       onCancel={cancelEdit}
+                      vpTypes={vpTypes}
                     />
                   </td>
                 ) : (
@@ -772,6 +781,9 @@ export default function CardReferenceAdmin() {
                           : <span style={{ color: '#504270' }}>—</span>
                         }
                       </div>
+                    </td>
+                    <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: card.mc_cost != null ? '#ece6ff' : '#3e325e' }}>
+                      {card.mc_cost != null ? `${card.mc_cost}` : '—'}
                     </td>
                     <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#c9a030' }}>
                       {card.base_vp != null ? `${card.base_vp} VP` : '—'}
