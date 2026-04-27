@@ -91,10 +91,10 @@ export default function PlayerDetail() {
     return { date: g.date.slice(5), score: result.total_vp, win: result.position === 1 }
   }).reverse()
 
-  type GameRow = { id: string; game_number: number | null; date: string; map_name: string | null; corporation: string; position: number; total_vp: number; key_notes: string | null }
+  type GameRow = { id: string; game_number: number | null; date: string; map_name: string | null; corporations: string[]; position: number; total_vp: number; key_notes: string | null }
   const gameRows: GameRow[] = playerGames.map(game => {
     const result = game.player_results.find(r => r.player_name === name)!
-    return { id: game.id, game_number: game.game_number, date: game.date, map_name: game.map_name, corporation: result.corporation, position: result.position, total_vp: result.total_vp, key_notes: result.key_notes ?? null }
+    return { id: game.id, game_number: game.game_number, date: game.date, map_name: game.map_name, corporations: result.corporations.length > 0 ? result.corporations : [result.corporation], position: result.position, total_vp: result.total_vp, key_notes: result.key_notes ?? null }
   })
 
   const cardColumns: DataTableColumn<typeof playerCards[0]>[] = [
@@ -143,13 +143,18 @@ export default function PlayerDetail() {
       render: r => <>{r.map_name ?? '—'}</>,
     },
     {
-      key: 'corporation',
+      key: 'corporations',
       label: 'Corporation',
       tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.8rem' },
       render: r => (
-        <Link to={`/corporations/${encodeURIComponent(r.corporation)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>
-          {r.corporation}
-        </Link>
+        <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
+          {r.corporations.map((corp, i) => (
+            <span key={corp} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              {i > 0 && <span style={{ color: 'var(--text-5)', fontSize: '0.7rem' }}>+</span>}
+              <Link to={`/corporations/${encodeURIComponent(corp)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>{corp}</Link>
+            </span>
+          ))}
+        </span>
       ),
     },
     {
