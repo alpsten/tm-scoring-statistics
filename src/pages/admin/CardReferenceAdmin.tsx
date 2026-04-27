@@ -52,7 +52,11 @@ const ALL_TAGS = [
   'Jovian', 'Mars', 'Microbe', 'Moon', 'Plant', 'Planet', 'Power', 'Science', 'Space', 'Venus', 'Wild',
 ]
 
-const DEFAULT_VP_TYPES = ['Animal', 'Floater', 'Jovian-tag', 'Ocean-tile']
+const DEFAULT_VP_TYPES = [
+  'Animal', 'Asteroid', 'Camp', 'Cathedral', 'City-tile', 'Colony', 'Cube', 'Data', 'Delegates', 'Fighter',
+  'Floater', 'Hydroelectric', 'Jovian-tag', 'Microbe', 'Mining-tile', 'Moon-tag', 'Ocean-tile', 'Orbitals',
+  'Preservation', 'Road-tile', 'Robot', 'Science', 'Seeds', 'Syndicate Fleets', 'Venusian Habitat', 'Venus-tag',
+]
 
 const BASE_VP_OPTIONS = [-2, -1, 0, 1, 2, 3, 4]
 
