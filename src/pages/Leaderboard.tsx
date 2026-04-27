@@ -100,7 +100,7 @@ export default function Leaderboard() {
       <PageHeader title="Leaderboard" subtitle="All-time records across all players" />
 
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(91,141,217,0.08)', border: '1px solid rgba(91,141,217,0.25)', borderRadius: '4px', padding: '8px 14px', marginBottom: '28px', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#5b8dd9' }}>
-        Every record on this page is the best performance achieved in a single game.
+        Every record on this page is the best performance achieved in a single game — it does not necessarily mean that player won that game.
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px', marginBottom: hasMoon ? '32px' : 0 }}>
