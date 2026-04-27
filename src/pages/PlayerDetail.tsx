@@ -53,11 +53,12 @@ export default function PlayerDetail() {
   const totalVP = myResults.reduce((sum, r) => sum + r.total_vp, 0)
 
   type GameRecord = { value: number; gameNumber: number | null }
-  const findBest = (fn: (r: typeof myResults[0]) => number): GameRecord | null => {
+  const findBest = (fn: (r: typeof myResults[0]) => number | null): GameRecord | null => {
     let best: GameRecord | null = null
     for (const g of playerGames) {
       const r = g.player_results.find(p => p.player_name === name)!
       const v = fn(r)
+      if (v === null) continue
       if (best === null || v > best.value) best = { value: v, gameNumber: g.game_number }
     }
     return best
@@ -68,6 +69,9 @@ export default function PlayerDetail() {
   const bestGreenery = findBest(r => r.greenery_vp)
   const bestCity     = findBest(r => r.city_vp)
   const bestCardVP   = findBest(r => r.card_vp)
+  const bestHabitat  = findBest(r => r.habitat_vp)
+  const bestMining   = findBest(r => r.mining_vp)
+  const bestLogistics = findBest(r => r.logistics_vp)
   const biggestWin = (() => {
     let best: GameRecord | null = null
     for (const g of playerGames) {
@@ -269,7 +273,7 @@ export default function PlayerDetail() {
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '12px' }}>
           Highest In a Single Game
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
           {([
             { label: 'Highest Score',       record: bestScore,    color: '#c9a030', bg: 'rgba(201,160,48,0.12)',  border: 'rgba(201,160,48,0.4)',  fmt: (v: number) => `${v} VP`  },
             { label: 'Biggest Win',         record: biggestWin,   color: '#c9a030', bg: 'rgba(201,160,48,0.12)',  border: 'rgba(201,160,48,0.4)',  fmt: (v: number) => `+${v} VP` },
@@ -277,6 +281,9 @@ export default function PlayerDetail() {
             { label: 'Greenery VP',         record: bestGreenery, color: '#4a9e6b', bg: 'rgba(74,158,107,0.12)',  border: 'rgba(74,158,107,0.4)',  fmt: (v: number) => `${v} VP`  },
             { label: 'City VP',             record: bestCity,     color: '#8e8e9a', bg: 'rgba(142,142,154,0.12)', border: 'rgba(142,142,154,0.4)', fmt: (v: number) => `${v} VP`  },
             { label: 'Card VP',             record: bestCardVP,   color: '#a0693a', bg: 'rgba(160,105,58,0.12)',  border: 'rgba(160,105,58,0.4)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'Habitat VP',          record: bestHabitat,  color: '#8c94b0', bg: 'rgba(140,148,176,0.12)', border: 'rgba(140,148,176,0.4)', fmt: (v: number) => `${v} VP`  },
+            { label: 'Mining VP',           record: bestMining,   color: '#c97b3a', bg: 'rgba(201,123,58,0.12)',  border: 'rgba(201,123,58,0.4)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'Logistics VP',        record: bestLogistics, color: '#2e8b8b', bg: 'rgba(46,139,139,0.12)', border: 'rgba(46,139,139,0.4)',  fmt: (v: number) => `${v} VP`  },
           ] as const).map(({ label, record, color, bg, border, fmt }) => {
             const badge = record
               ? record.gameNumber != null
