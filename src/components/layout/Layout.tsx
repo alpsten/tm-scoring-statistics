@@ -40,7 +40,7 @@ export default function Layout() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
             {[
               {
-                label: 'A fan-made statistics tracker for Terraforming Mars. Not affiliated with or endorsed by FryxGames — but you should buy their game!',
+                label: 'Not affiliated with or endorsed by FryxGames — but you should buy their game!',
                 href: 'https://fryxgames.se/product/terraforming-mars/',
                 linkText: 'Buy here ↗',
               },
