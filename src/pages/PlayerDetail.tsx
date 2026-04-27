@@ -20,6 +20,7 @@ export default function PlayerDetail() {
     window.addEventListener('resize', handler)
     return () => window.removeEventListener('resize', handler)
   }, [])
+  const [closedYears, setClosedYears] = useState<Set<string>>(new Set())
   const { data: games, isLoading: gamesLoading } = useGames()
   const { data: playerStats, isLoading: statsLoading } = usePlayerStats()
   const { data: profiles = [] } = usePlayerProfiles()
@@ -220,25 +221,25 @@ export default function PlayerDetail() {
           {
             label: 'Highest TR',
             node: highestTR != null
-              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#e05535' }}>{highestTR}</span>
+              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#e05535', background: 'rgba(224,85,53,0.12)', border: '1px solid rgba(224,85,53,0.4)', borderRadius: '4px', padding: '3px 10px' }}>{highestTR} TR</span>
               : <span style={{ color: 'var(--text-5)' }}>—</span>,
           },
           {
-            label: 'Highest Greenery',
+            label: 'Most Greenery VP',
             node: highestGreenery != null
-              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#4a9e6b' }}>{highestGreenery} <span style={{ fontWeight: 400, fontSize: '0.8rem' }}>VP</span></span>
+              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#4a9e6b', background: 'rgba(74,158,107,0.12)', border: '1px solid rgba(74,158,107,0.4)', borderRadius: '4px', padding: '3px 10px' }}>{highestGreenery} VP</span>
               : <span style={{ color: 'var(--text-5)' }}>—</span>,
           },
           {
-            label: 'Highest City',
+            label: 'Most City VP',
             node: highestCity != null
-              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#5b8dd9' }}>{highestCity} <span style={{ fontWeight: 400, fontSize: '0.8rem' }}>VP</span></span>
+              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#5b8dd9', background: 'rgba(91,141,217,0.12)', border: '1px solid rgba(91,141,217,0.4)', borderRadius: '4px', padding: '3px 10px' }}>{highestCity} VP</span>
               : <span style={{ color: 'var(--text-5)' }}>—</span>,
           },
           {
-            label: 'Highest Card VP',
+            label: 'Most Card VP',
             node: highestCardVP != null
-              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#b87aff' }}>{highestCardVP} <span style={{ fontWeight: 400, fontSize: '0.8rem' }}>VP</span></span>
+              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#b87aff', background: 'rgba(184,122,255,0.12)', border: '1px solid rgba(184,122,255,0.4)', borderRadius: '4px', padding: '3px 10px' }}>{highestCardVP} VP</span>
               : <span style={{ color: 'var(--text-5)' }}>—</span>,
           },
         ]).map((row, i, arr) => (
@@ -415,12 +416,41 @@ export default function PlayerDetail() {
       {/* Games played */}
       <div>
         <SectionHeading>Game history</SectionHeading>
-        <DataTable
-          compact
-          columns={gameHistoryColumns}
-          rows={gameRows}
-          rowKey={r => r.id}
-        />
+        {(() => {
+          const byYear = gameRows.reduce<Record<string, GameRow[]>>((acc, row) => {
+            const y = row.date.slice(0, 4)
+            ;(acc[y] ??= []).push(row)
+            return acc
+          }, {})
+          const years = Object.keys(byYear).sort((a, b) => b.localeCompare(a))
+          return years.map(year => {
+            const open = !closedYears.has(year)
+            return (
+              <div key={year} style={{ marginBottom: '8px' }}>
+                <button
+                  onClick={() => setClosedYears(prev => { const s = new Set(prev); s.has(year) ? s.delete(year) : s.add(year); return s })}
+                  style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: open ? '6px 6px 0 0' : '6px', cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.08em', color: 'var(--text-3)' }}
+                >
+                  <span>{year}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-5)', fontWeight: 400 }}>{byYear[year].length} games</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-5)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
+                  </span>
+                </button>
+                {open && (
+                  <div style={{ border: '1px solid var(--bd-panel)', borderTop: 'none', borderRadius: '0 0 6px 6px', overflow: 'hidden' }}>
+                    <DataTable
+                      compact
+                      columns={gameHistoryColumns}
+                      rows={byYear[year]}
+                      rowKey={r => r.id}
+                    />
+                  </div>
+                )}
+              </div>
+            )
+          })
+        })()}
       </div>
     </div>
   )
