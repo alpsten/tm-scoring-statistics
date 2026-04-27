@@ -449,3 +449,39 @@ export async function fetchCardReference(): Promise<CardReference[]> {
     expansions: (c.card_expansions ?? []).map((e: { expansion: string }) => e.expansion),
   })) as CardReference[]
 }
+
+// ── Site notes ────────────────────────────────────────────────────────────────
+
+export type NoteCategory = 'in_progress' | 'todo' | 'done'
+
+export interface SiteNote {
+  id: string
+  category: NoteCategory
+  content: string
+  created_at: string
+}
+
+export async function fetchNotes(): Promise<SiteNote[]> {
+  const { data, error } = await supabase
+    .from('site_notes')
+    .select('*')
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return data as SiteNote[]
+}
+
+export async function addNote(category: NoteCategory, content: string): Promise<void> {
+  const { error } = await supabase.from('site_notes').insert({ category, content })
+  if (error) throw error
+}
+
+export async function updateNote(id: string, patch: Partial<Pick<SiteNote, 'category' | 'content'>>): Promise<void> {
+  const { error } = await supabase.from('site_notes').update(patch).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteNote(id: string): Promise<void> {
+  const { error } = await supabase.from('site_notes').delete().eq('id', id)
+  if (error) throw error
+}
+

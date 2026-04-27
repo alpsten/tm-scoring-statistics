@@ -8,15 +8,16 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { to: '/',              label: 'Overview'     },
-  { to: '/games',         label: 'Games'        },
-  { to: '/players',       label: 'Players'      },
-  { to: '/corporations',  label: 'Corporations' },
-  { to: '/cards',         label: 'Cards'        },
-  { to: '/ceos',          label: 'CEOs'         },
-  { to: '/ma',            label: 'Milestones/Awards' },
-  { to: '/setup',         label: 'Setup'        },
-  { to: '/leaderboard',  label: 'Leaderboard'  },
+  { to: '/',             label: 'Overview'         },
+  { to: '/leaderboard',  label: 'Leaderboard'      },
+  { to: '/games',        label: 'Games'            },
+  { to: '/players',      label: 'Players'          },
+  { to: '/corporations', label: 'Corporations'     },
+  { to: '/cards',        label: 'Cards'            },
+  { to: '/ceos',         label: 'CEOs'             },
+  { to: '/ma',           label: 'Milestones/Awards'},
+  { to: '/setup',        label: 'Setup'            },
+  { to: '/notes',        label: 'Notes'            },
 ]
 
 const NAV_PILL = '/tm-scoring-statistics/misc/standard-project-blank.png'

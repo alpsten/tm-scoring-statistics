@@ -16,9 +16,10 @@ import {
   fetchAllAwards,
   fetchCEOStats,
   fetchMergerStats,
+  fetchNotes,
 } from './queries'
 
-export { deleteGame } from './queries'
+export { deleteGame, addNote, updateNote, deleteNote } from './queries'
 
 export function useGames() {
   return useQuery({ queryKey: ['games'], queryFn: fetchGames })
@@ -106,4 +107,8 @@ export function useAllMilestones() {
 
 export function useAllAwards() {
   return useQuery({ queryKey: ['all-awards'], queryFn: fetchAllAwards })
+}
+
+export function useNotes() {
+  return useQuery({ queryKey: ['site-notes'], queryFn: fetchNotes })
 }
