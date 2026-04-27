@@ -271,23 +271,24 @@ export default function PlayerDetail() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           {([
-            { label: 'Highest Score',       record: bestScore,    color: '#c9a030', bg: 'rgba(201,160,48,0.10)',  border: 'rgba(201,160,48,0.35)',  fmt: (v: number) => `${v} VP`  },
-            { label: 'Biggest Win',         record: biggestWin,   color: '#c9a030', bg: 'rgba(201,160,48,0.10)',  border: 'rgba(201,160,48,0.35)',  fmt: (v: number) => `+${v} VP` },
-            { label: 'Terraforming Rating', record: bestTR,       color: '#e05535', bg: 'rgba(224,85,53,0.10)',   border: 'rgba(224,85,53,0.35)',   fmt: (v: number) => `${v} TR`  },
-            { label: 'Greenery VP',         record: bestGreenery, color: '#4a9e6b', bg: 'rgba(74,158,107,0.10)',  border: 'rgba(74,158,107,0.35)',  fmt: (v: number) => `${v} VP`  },
-            { label: 'City VP',             record: bestCity,     color: '#8e8e9a', bg: 'rgba(142,142,154,0.10)', border: 'rgba(142,142,154,0.35)', fmt: (v: number) => `${v} VP`  },
-            { label: 'Card VP',             record: bestCardVP,   color: '#a0693a', bg: 'rgba(160,105,58,0.10)',  border: 'rgba(160,105,58,0.35)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'Highest Score',       record: bestScore,    color: '#c9a030', bg: 'rgba(201,160,48,0.12)',  border: 'rgba(201,160,48,0.4)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'Biggest Win',         record: biggestWin,   color: '#c9a030', bg: 'rgba(201,160,48,0.12)',  border: 'rgba(201,160,48,0.4)',  fmt: (v: number) => `+${v} VP` },
+            { label: 'Terraforming Rating', record: bestTR,       color: '#e05535', bg: 'rgba(224,85,53,0.12)',   border: 'rgba(224,85,53,0.4)',   fmt: (v: number) => `${v} TR`  },
+            { label: 'Greenery VP',         record: bestGreenery, color: '#4a9e6b', bg: 'rgba(74,158,107,0.12)',  border: 'rgba(74,158,107,0.4)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'City VP',             record: bestCity,     color: '#8e8e9a', bg: 'rgba(142,142,154,0.12)', border: 'rgba(142,142,154,0.4)', fmt: (v: number) => `${v} VP`  },
+            { label: 'Card VP',             record: bestCardVP,   color: '#a0693a', bg: 'rgba(160,105,58,0.12)',  border: 'rgba(160,105,58,0.4)',  fmt: (v: number) => `${v} VP`  },
           ] as const).map(({ label, record, color, bg, border, fmt }) => {
-            const inner = (
-              <>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '8px' }}>{label}</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1.3rem', color }}>{record ? fmt(record.value) : '—'}</div>
-              </>
+            const badge = record
+              ? record.gameNumber != null
+                ? <Link to={`/games/${record.gameNumber}`} style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color, background: bg, border: `1px solid ${border}`, borderRadius: '4px', padding: '3px 10px', textDecoration: 'none', whiteSpace: 'nowrap' as const }}>{fmt(record.value)}</Link>
+                : <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color, background: bg, border: `1px solid ${border}`, borderRadius: '4px', padding: '3px 10px', whiteSpace: 'nowrap' as const }}>{fmt(record.value)}</span>
+              : <span style={{ color: 'var(--text-5)' }}>—</span>
+            return (
+              <div key={label} style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>{label}</span>
+                {badge}
+              </div>
             )
-            const cardStyle: React.CSSProperties = { background: bg, border: `1px solid ${border}`, borderRadius: '6px', padding: '12px 14px', textDecoration: 'none', display: 'block' }
-            return record?.gameNumber != null
-              ? <Link key={label} to={`/games/${record.gameNumber}`} style={cardStyle}>{inner}</Link>
-              : <div key={label} style={cardStyle}>{inner}</div>
           })}
         </div>
       </div>
