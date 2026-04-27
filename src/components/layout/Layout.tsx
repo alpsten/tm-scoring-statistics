@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 
-const footerCard: React.CSSProperties = { padding: '10px 14px', background: 'rgba(210,120,50,0.08)', border: '1px solid rgba(210,120,50,0.25)', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: '6px' }
-const orangeBtn: React.CSSProperties = { padding: '2px 8px', background: 'rgba(210,120,50,0.15)', border: '1px solid rgba(210,120,50,0.4)', borderRadius: '3px', color: '#d07832', textDecoration: 'none', fontWeight: 600, fontSize: '0.68rem' }
+const footerCard: React.CSSProperties = { padding: '10px 14px', background: 'rgba(210,120,50,0.08)', border: '1px solid rgba(210,120,50,0.25)', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#d07832', lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: '6px' }
+const orangeBtn: React.CSSProperties = { padding: '2px 8px', background: 'rgba(224,85,53,0.15)', border: '1px solid rgba(224,85,53,0.5)', borderRadius: '3px', color: '#e05535', textDecoration: 'none', fontWeight: 600, fontSize: '0.68rem' }
 const greenBtn: React.CSSProperties = { padding: '3px 10px', background: 'rgba(74,158,107,0.15)', border: '1px solid rgba(74,158,107,0.4)', borderRadius: '3px', color: '#4a9e6b', textDecoration: 'none', fontWeight: 600, fontSize: '0.68rem', justifyContent: 'center' }
 
 export default function Layout() {
@@ -44,7 +44,7 @@ export default function Layout() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
             <div style={footerCard}>
               Not affiliated with or endorsed by FryxGames — but you should buy
-              <a href="https://fryxgames.se/product/terraforming-mars/" target="_blank" rel="noopener noreferrer" style={orangeBtn}>their game</a>
+              <a href="https://fryxgames.se/product/terraforming-mars/" target="_blank" rel="noopener noreferrer" style={orangeBtn}>THEIR GAME</a>
             </div>
             <div style={footerCard}>
               Made possible with help from the
