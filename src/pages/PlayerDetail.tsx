@@ -37,6 +37,12 @@ export default function PlayerDetail() {
     return <div style={loadingStyle}>Player not found. <Link to="/players" style={{ color: '#e05535' }}>Back</Link></div>
   }
 
+  const myResults = playerGames.map(g => g.player_results.find(r => r.player_name === name)!)
+  const highestTR      = myResults.length > 0 ? Math.max(...myResults.map(r => r.tr))          : null
+  const highestGreenery = myResults.length > 0 ? Math.max(...myResults.map(r => r.greenery_vp)) : null
+  const highestCity    = myResults.length > 0 ? Math.max(...myResults.map(r => r.city_vp))      : null
+  const highestCardVP  = myResults.length > 0 ? Math.max(...myResults.map(r => r.card_vp))      : null
+
   const chartData = playerGames.map(g => {
     const result = g.player_results.find(r => r.player_name === name)!
     return { date: g.date.slice(5), score: result.total_vp, win: result.position === 1 }
@@ -145,6 +151,8 @@ export default function PlayerDetail() {
       />
 
       {profile && (profile.preferred_color || profile.playing_style || profile.rival || profile.favorite_card || profile.most_tilting_card || profile.trivia) && (
+        <>
+        <SectionHeading>Profile</SectionHeading>
         <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '16px 20px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
           {profile.playing_style && (
             <div>
@@ -160,13 +168,13 @@ export default function PlayerDetail() {
           )}
           {profile.favorite_card && (
             <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '3px' }}>Fav card</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '3px' }}>Favorite card</div>
               <Link to={`/cards/${encodeURIComponent(profile.favorite_card)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#b87aff', textDecoration: 'none' }}>{profile.favorite_card}</Link>
             </div>
           )}
           {profile.most_tilting_card && (
             <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '3px' }}>Tilting card</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '3px' }}>Most Frustrating Card</div>
               <Link to={`/cards/${encodeURIComponent(profile.most_tilting_card)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-2)', textDecoration: 'none' }}>{profile.most_tilting_card}</Link>
             </div>
           )}
@@ -177,38 +185,61 @@ export default function PlayerDetail() {
             </div>
           )}
         </div>
+        </>
       )}
 
+      <SectionHeading>Personal Achievements</SectionHeading>
       <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '4px 16px', marginBottom: '32px' }}>
         {([
           {
-            label: 'Total Wins',
+            label: 'Wins',
             node: (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.95rem', fontWeight: 700 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 700 }}>
                 <span style={{ color: '#c9a030' }}>{stats.wins}</span>
-                <span style={{ color: '#2e8b8b' }}> of {stats.games_played} games</span>
+                <span style={{ color: '#2e8b8b' }}> wins of {stats.games_played} games</span>
+                <span style={{ color: 'var(--text-4)', fontWeight: 400 }}> ({Math.round(stats.win_rate)}% Win Rate)</span>
               </span>
             ),
           },
           {
-            label: 'Win Rate',
-            node: <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#2e8b8b' }}>{Math.round(stats.win_rate)}%</span>,
-          },
-          {
-            label: 'Average Score per Game',
+            label: 'Average Score Per Game',
             node: (
               <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#c9a030' }}>
-                {Math.round(stats.avg_score)}<span style={{ marginLeft: '5px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#c9a030' }}>VP</span>
+                {Math.round(stats.avg_score)}<span style={{ marginLeft: '5px', fontWeight: 400, fontSize: '0.8rem' }}>VP</span>
               </span>
             ),
           },
           {
-            label: 'Best score',
+            label: 'Highest Score',
             node: (
               <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#c9a030', background: 'rgba(201,160,48,0.12)', border: '1px solid rgba(201,160,48,0.4)', borderRadius: '4px', padding: '3px 10px' }}>
                 {stats.best_score} VP
               </span>
             ),
+          },
+          {
+            label: 'Highest TR',
+            node: highestTR != null
+              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#e05535' }}>{highestTR}</span>
+              : <span style={{ color: 'var(--text-5)' }}>—</span>,
+          },
+          {
+            label: 'Highest Greenery',
+            node: highestGreenery != null
+              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#4a9e6b' }}>{highestGreenery} <span style={{ fontWeight: 400, fontSize: '0.8rem' }}>VP</span></span>
+              : <span style={{ color: 'var(--text-5)' }}>—</span>,
+          },
+          {
+            label: 'Highest City',
+            node: highestCity != null
+              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#5b8dd9' }}>{highestCity} <span style={{ fontWeight: 400, fontSize: '0.8rem' }}>VP</span></span>
+              : <span style={{ color: 'var(--text-5)' }}>—</span>,
+          },
+          {
+            label: 'Highest Card VP',
+            node: highestCardVP != null
+              ? <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: '#b87aff' }}>{highestCardVP} <span style={{ fontWeight: 400, fontSize: '0.8rem' }}>VP</span></span>
+              : <span style={{ color: 'var(--text-5)' }}>—</span>,
           },
         ]).map((row, i, arr) => (
           <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < arr.length - 1 ? '1px solid var(--bd-panel)' : 'none' }}>
