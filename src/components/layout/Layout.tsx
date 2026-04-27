@@ -6,7 +6,7 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Mobile backdrop */}
@@ -31,7 +31,6 @@ export default function Layout() {
         className="grid-bg"
         style={{
           flex: 1,
-          overflowY: 'auto',
           background: 'var(--bg-main)',
         }}
       >
