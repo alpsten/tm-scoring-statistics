@@ -480,7 +480,7 @@ export default function PlayerDetail() {
                     <LineChart data={chartData}>
                       <XAxis dataKey="fullDate" tick={false} axisLine={false} tickLine={false} height={1} />
                       <YAxis domain={['auto', 'auto']} tick={{ fontFamily: 'var(--font-mono)', fontSize: 9, fill: 'var(--text-4)' }} axisLine={false} tickLine={false} width={26} />
-                      <Tooltip labelFormatter={(d: string) => d} contentStyle={{ background: 'var(--bg-input)', border: '1px solid var(--bd-secondary)', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-1)' }} cursor={{ stroke: 'rgba(255,255,255,0.06)' }} />
+                      <Tooltip labelFormatter={(d: any) => d} contentStyle={{ background: 'var(--bg-input)', border: '1px solid var(--bd-secondary)', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-1)' }} cursor={{ stroke: 'rgba(255,255,255,0.06)' }} />
                       <ReferenceLine y={chartAvg} stroke="var(--bd-secondary)" strokeDasharray="4 3" />
                       <Line type="monotone" dataKey="score" stroke="var(--text-4)" strokeWidth={1.5}
                         dot={(props: any) => {
@@ -503,7 +503,7 @@ export default function PlayerDetail() {
                     <XAxis dataKey="fullDate" tick={false} axisLine={false} tickLine={false} height={1} />
                     <YAxis domain={[0, 'auto']} tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: 'var(--text-4)' }} axisLine={false} tickLine={false} width={32} />
                     <Tooltip
-                      labelFormatter={(d: string) => d}
+                      labelFormatter={(d: any) => d}
                       contentStyle={{ background: 'var(--bg-input)', border: '1px solid var(--bd-secondary)', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-1)' }}
                       cursor={{ stroke: 'rgba(255,255,255,0.06)' }}
                     />
