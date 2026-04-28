@@ -6,9 +6,12 @@ import PositionBadge from '../components/ui/PositionBadge'
 import SectionHeading from '../components/ui/SectionHeading'
 import DataTable from '../components/ui/DataTable'
 import type { DataTableColumn } from '../components/ui/DataTable'
-import { useGames, usePlayerStats, usePlayerProfiles, usePlayerCardStats, useCardReference } from '../lib/hooks'
+import { useGames, usePlayerStats, usePlayerProfiles, usePlayerCardStats, useCardReference, useCardStats } from '../lib/hooks'
 import { CARD_NAME_CORRECTIONS } from '../lib/logParser'
 import { getCorps } from '../types/database'
+import Tag from '../components/ui/Tag'
+import { parseTags } from '../components/ui/tagUtils'
+import { EXPANSION_ICONS } from '../lib/expansions'
 
 export default function PlayerDetail() {
   const rawName = useParams<{ name: string }>().name
@@ -23,11 +26,13 @@ export default function PlayerDetail() {
   const [openYears, setOpenYears] = useState<Set<string>>(new Set())
   const [collapsedCardSections, setCollapsedCardSections] = useState<Set<string>>(new Set(['Green cards', 'Blue cards', 'Red cards']))
   const [allCorpsOpen, setAllCorpsOpen] = useState(false)
+  const [chartYear, setChartYear] = useState<string>('All')
   const { data: games, isLoading: gamesLoading } = useGames()
   const { data: playerStats, isLoading: statsLoading } = usePlayerStats()
   const { data: profiles = [] } = usePlayerProfiles()
   const { data: playerCards = [] } = usePlayerCardStats(name!)
   const { data: cardRef = [] } = useCardReference()
+  const { data: globalCardStats = [] } = useCardStats()
 
   useEffect(() => {
     if (!gamesLoading && games) {
@@ -87,16 +92,30 @@ export default function PlayerDetail() {
     return best
   })()
 
-  const chartData = playerGames.map(g => {
+  const allChartData = playerGames.map(g => {
     const result = g.player_results.find(r => r.player_name === name)!
-    return { date: g.date.slice(5), score: result.total_vp, win: result.position === 1 }
+    return { fullDate: g.date, date: g.date.slice(5), year: g.date.slice(0, 4), score: result.total_vp, win: result.position === 1 }
   }).reverse()
-
+  const chartYears = [...new Set(allChartData.map(d => d.year))].sort()
+  const chartData = chartYear === 'All' ? allChartData : allChartData.filter(d => d.year === chartYear)
+  const chartAvg = chartData.length > 0 ? chartData.reduce((s, d) => s + d.score, 0) / chartData.length : stats.avg_score
+  const monthGroups = chartData.reduce<{ key: string; label: string; firstDate: string; lastDate: string }[]>((acc, d) => {
+    const key = chartYear === 'All' ? d.year : d.fullDate.slice(0, 7)
+    const existing = acc.find(g => g.key === key)
+    if (existing) { existing.lastDate = d.fullDate } else {
+      const label = chartYear === 'All' ? d.year : new Date(d.fullDate).toLocaleString('en', { month: 'short' })
+      acc.push({ key, label, firstDate: d.fullDate, lastDate: d.fullDate })
+    }
+    return acc
+  }, [])
   type GameRow = { id: string; game_number: number | null; date: string; map_name: string | null; corporations: string[]; position: number; total_vp: number; key_notes: string | null }
   const gameRows: GameRow[] = playerGames.map(game => {
     const result = game.player_results.find(r => r.player_name === name)!
     return { id: game.id, game_number: game.game_number, date: game.date, map_name: game.map_name, corporations: result.corporations.length > 0 ? result.corporations : [result.corporation], position: result.position, total_vp: result.total_vp, key_notes: result.key_notes ?? null }
   })
+
+  const cardRefMap = Object.fromEntries(cardRef.map(c => [c.card_name, c]))
+  const globalWinRateMap = Object.fromEntries(globalCardStats.map(s => [s.card_name, s.win_rate]))
 
   const cardColumns: DataTableColumn<typeof playerCards[0]>[] = [
     {
@@ -112,17 +131,76 @@ export default function PlayerDetail() {
         )
       },
     },
-    { key: 'times_played', label: 'Times played', align: 'right', tdStyle: { fontSize: '0.82rem' } },
+    { key: 'times_played', label: 'Played', align: 'center', tdStyle: { fontSize: '0.82rem' } },
     {
-      key: 'avg_vp',
-      label: 'Avg VP',
-      align: 'right',
+      key: 'card_name' as any,
+      label: 'VP',
+      align: 'center',
       tdStyle: { fontSize: '0.82rem' },
-      render: c => (
-        <span style={{ color: c.avg_vp != null ? '#c9a030' : 'var(--text-5)' }}>
-          {c.avg_vp != null ? Math.round(c.avg_vp) : '—'}
-        </span>
-      ),
+      render: c => {
+        const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
+        const base_vp = cardRefMap[canonical]?.base_vp
+        return <span style={{ color: base_vp != null ? '#c9a030' : 'var(--text-5)' }}>{base_vp ?? '—'}</span>
+      },
+    },
+    {
+      key: 'card_name' as any,
+      label: 'Win Rate',
+      align: 'center',
+      tdStyle: { fontSize: '0.82rem' },
+      render: c => {
+        const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
+        const wr = globalWinRateMap[canonical]
+        if (wr == null) return <span style={{ color: 'var(--text-5)' }}>—</span>
+        return <span style={{ color: wr >= 50 ? '#4a9e6b' : wr > 33 ? '#c9a030' : '#e05535' }}>{Math.round(wr)}%</span>
+      },
+    },
+    {
+      key: 'card_name' as any,
+      label: 'Cost',
+      align: 'center',
+      tdStyle: { fontSize: '0.82rem' },
+      render: c => {
+        const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
+        const ref = cardRefMap[canonical]
+        if (!ref || ref.mc_cost == null) return <span style={{ color: 'var(--text-5)' }}>—</span>
+        return <span style={{ color: '#c9a030' }}>{ref.mc_cost}</span>
+      },
+    },
+    {
+      key: 'card_name' as any,
+      label: 'Tags',
+      align: 'center',
+      tdStyle: { fontSize: '0.82rem' },
+      render: c => {
+        const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
+        const tags = parseTags(cardRefMap[canonical]?.tags ?? null)
+        if (tags.length === 0) return <span style={{ color: 'var(--text-5)' }}>—</span>
+        return (
+          <span style={{ display: 'inline-flex', gap: '3px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {tags.map((t, i) => <Tag key={`${t}-${i}`} name={t} />)}
+          </span>
+        )
+      },
+    },
+    {
+      key: 'card_name' as any,
+      label: 'Expansion',
+      align: 'center',
+      tdStyle: { fontSize: '0.82rem' },
+      render: c => {
+        const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
+        const exps = cardRefMap[canonical]?.expansions ?? []
+        if (exps.length === 0) return <span style={{ color: 'var(--text-5)' }}>—</span>
+        return (
+          <span style={{ display: 'inline-flex', gap: '3px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {exps.map(exp => EXPANSION_ICONS[exp]
+              ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} style={{ width: '16px', height: '16px', objectFit: 'contain' }} />
+              : <span key={exp} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', color: 'var(--text-4)' }}>{exp.slice(0, 3).toUpperCase()}</span>
+            )}
+          </span>
+        )
+      },
     },
   ]
 
@@ -199,43 +277,96 @@ export default function PlayerDetail() {
         subtitle={`${stats.games_played} games played`}
       />
 
-      {profile && (profile.preferred_color || profile.playing_style || profile.rival || profile.favorite_card || profile.most_tilting_card || profile.trivia) && (
-        <>
-        <SectionHeading>Profile</SectionHeading>
-        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '16px 20px', marginBottom: '24px', display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
-          {profile.playing_style && (
-            <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '3px' }}>Style</div>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-2)' }}>{profile.playing_style}</div>
+      {profile && (profile.preferred_color || profile.playing_style || profile.rival || profile.favorite_card || profile.most_tilting_card || profile.favorite_corporation || profile.trivia) && (() => {
+        const COLOR_NAMES: Record<string, string> = {
+          '#c62828': 'Red', '#2e7d32': 'Green', '#1565c0': 'Blue', '#f9a825': 'Yellow',
+          '#37474f': 'Black', '#e0e0e0': 'White', '#d84315': 'Orange', '#ad1457': 'Pink',
+          '#6a1b9a': 'Purple', '#78909c': 'Silver',
+        }
+        const labelEl = (text: string) => (
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '5px' }}>{text}</div>
+        )
+        const rankedList = (items: (string | null | undefined)[], render: (v: string, i: number) => React.ReactNode) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {items.filter(Boolean).map((v, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: 'var(--text-5)', minWidth: '12px' }}>{i + 1}.</span>
+                {render(v!, i)}
+              </div>
+            ))}
+          </div>
+        )
+        return (
+          <>
+          <SectionHeading>Profile</SectionHeading>
+          <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '16px 20px', marginBottom: '24px', display: 'inline-block', minWidth: 0 }}>
+            {/* Top row: ranked lists */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', marginBottom: (profile.playing_style || profile.rival || profile.trivia) ? '16px' : 0 }}>
+              {(profile.preferred_color || profile.preferred_color_2 || profile.preferred_color_3) && (
+                <div>
+                  {labelEl('Preferred Colors')}
+                  {rankedList([profile.preferred_color, profile.preferred_color_2, profile.preferred_color_3], (col) => (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ width: 12, height: 12, borderRadius: '50%', background: col, border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0 }} />
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-2)' }}>{COLOR_NAMES[col] ?? col}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {profile.favorite_card && (
+                <div>
+                  {labelEl('Favorite Cards')}
+                  {rankedList([profile.favorite_card, profile.favorite_card_2, profile.favorite_card_3], (card) => (
+                    <Link to={`/cards/${encodeURIComponent(card)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#b87aff', textDecoration: 'none' }}>{card}</Link>
+                  ))}
+                </div>
+              )}
+              {profile.most_tilting_card && (
+                <div>
+                  {labelEl('Most Frustrating Cards')}
+                  {rankedList([profile.most_tilting_card, profile.most_tilting_card_2, profile.most_tilting_card_3], (card) => (
+                    <Link to={`/cards/${encodeURIComponent(card)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-2)', textDecoration: 'none' }}>{card}</Link>
+                  ))}
+                </div>
+              )}
+              {profile.favorite_corporation && (
+                <div>
+                  {labelEl('Favorite Corporations')}
+                  {rankedList([profile.favorite_corporation, profile.favorite_corporation_2, profile.favorite_corporation_3], (corp) => (
+                    <Link to={`/cards/${encodeURIComponent(corp)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#c9a030', textDecoration: 'none' }}>{corp}</Link>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-          {profile.rival && (
-            <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '3px' }}>Rival</div>
-              <Link to={`/players/${encodeURIComponent(profile.rival)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#e05535', textDecoration: 'none' }}>{profile.rival}</Link>
-            </div>
-          )}
-          {profile.favorite_card && (
-            <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '3px' }}>Favorite card</div>
-              <Link to={`/cards/${encodeURIComponent(profile.favorite_card)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#b87aff', textDecoration: 'none' }}>{profile.favorite_card}</Link>
-            </div>
-          )}
-          {profile.most_tilting_card && (
-            <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '3px' }}>Most Frustrating Card</div>
-              <Link to={`/cards/${encodeURIComponent(profile.most_tilting_card)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-2)', textDecoration: 'none' }}>{profile.most_tilting_card}</Link>
-            </div>
-          )}
-          {profile.trivia && (
-            <div style={{ width: '100%' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '3px' }}>Trivia</div>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-3)', fontStyle: 'italic', lineHeight: 1.55 }}>{profile.trivia}</div>
-            </div>
-          )}
-        </div>
-        </>
-      )}
+            {/* Bottom row: style, rival, trivia */}
+            {(profile.playing_style || profile.rival || profile.trivia) && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', paddingTop: '14px', borderTop: '1px solid var(--bd-panel)', alignItems: 'baseline' }}>
+                {profile.playing_style && (
+                  <div>
+                    {labelEl('Style')}
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-2)' }}>{profile.playing_style}</div>
+                  </div>
+                )}
+                {profile.rival && (
+                  <div>
+                    {labelEl('Rival')}
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem' }}>
+                      <Link to={`/players/${encodeURIComponent(profile.rival)}`} style={{ color: '#e05535', textDecoration: 'none' }}>{profile.rival}</Link>
+                    </div>
+                  </div>
+                )}
+                {profile.trivia && (
+                  <div>
+                    {labelEl('Trivia')}
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-2)' }}>{profile.trivia}</div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          </>
+        )
+      })()}
 
       <SectionHeading>Personal Achievements</SectionHeading>
 
@@ -286,11 +417,11 @@ export default function PlayerDetail() {
             { label: 'Biggest Win',         record: biggestWin,   color: '#c9a030', bg: 'rgba(201,160,48,0.12)',  border: 'rgba(201,160,48,0.4)',  fmt: (v: number) => `+${v} VP` },
             { label: 'Terraforming Rating', record: bestTR,       color: '#e05535', bg: 'rgba(224,85,53,0.12)',   border: 'rgba(224,85,53,0.4)',   fmt: (v: number) => `${v} TR`  },
             { label: 'Greenery VP',         record: bestGreenery, color: '#4a9e6b', bg: 'rgba(74,158,107,0.12)',  border: 'rgba(74,158,107,0.4)',  fmt: (v: number) => `${v} VP`  },
-            { label: 'City VP',             record: bestCity,     color: '#8e8e9a', bg: 'rgba(142,142,154,0.12)', border: 'rgba(142,142,154,0.4)', fmt: (v: number) => `${v} VP`  },
-            { label: 'Card VP',             record: bestCardVP,   color: '#a0693a', bg: 'rgba(160,105,58,0.12)',  border: 'rgba(160,105,58,0.4)',  fmt: (v: number) => `${v} VP`  },
-            { label: 'Habitat VP',          record: bestHabitat,  color: '#8c94b0', bg: 'rgba(140,148,176,0.12)', border: 'rgba(140,148,176,0.4)', fmt: (v: number) => `${v} VP`  },
-            { label: 'Mining VP',           record: bestMining,   color: '#c97b3a', bg: 'rgba(201,123,58,0.12)',  border: 'rgba(201,123,58,0.4)',  fmt: (v: number) => `${v} VP`  },
-            { label: 'Logistics VP',        record: bestLogistics, color: '#2e8b8b', bg: 'rgba(46,139,139,0.12)', border: 'rgba(46,139,139,0.4)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'City VP',             record: bestCity,     color: '#b0b0c4', bg: 'rgba(176,176,196,0.12)', border: 'rgba(176,176,196,0.4)', fmt: (v: number) => `${v} VP`  },
+            { label: 'Card VP',             record: bestCardVP,   color: '#b07840', bg: 'rgba(176,120,64,0.12)',  border: 'rgba(176,120,64,0.4)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'Habitat VP',          record: bestHabitat,  color: '#2ec4b6', bg: 'rgba(46,196,182,0.12)',  border: 'rgba(46,196,182,0.4)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'Mining VP',           record: bestMining,   color: '#7a4820', bg: 'rgba(122,72,32,0.12)',   border: 'rgba(122,72,32,0.4)',   fmt: (v: number) => `${v} VP`  },
+            { label: 'Logistics VP',        record: bestLogistics, color: '#8080a0', bg: 'rgba(128,128,160,0.12)', border: 'rgba(128,128,160,0.4)', fmt: (v: number) => `${v} VP`  },
           ] as const).map(({ label, record, color, bg, border, fmt }) => {
             const badge = record
               ? record.gameNumber != null
@@ -309,55 +440,92 @@ export default function PlayerDetail() {
 
       {/* Score trend chart */}
       <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '20px 24px', marginBottom: '28px' }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '16px' }}>
-          Score trend
-        </div>
-        {isMobile ? (
-          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
-            <div style={{ width: Math.max(chartData.length * 22, 300), height: 220 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <XAxis dataKey="date" tick={{ fontFamily: 'var(--font-mono)', fontSize: 9, fill: 'var(--text-4)' }} axisLine={false} tickLine={false} interval={Math.floor(chartData.length / 8)} />
-                  <YAxis domain={['auto', 'auto']} tick={{ fontFamily: 'var(--font-mono)', fontSize: 9, fill: 'var(--text-4)' }} axisLine={false} tickLine={false} width={26} />
-                  <Tooltip contentStyle={{ background: 'var(--bg-input)', border: '1px solid var(--bd-secondary)', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-1)' }} cursor={{ stroke: 'rgba(255,255,255,0.06)' }} />
-                  <ReferenceLine y={stats.avg_score} stroke="var(--bd-secondary)" strokeDasharray="4 3" />
-                  <Line type="monotone" dataKey="score" stroke="var(--text-4)" strokeWidth={1.5}
-                    dot={(props: any) => {
-                      const { cx, cy, payload } = props
-                      return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={4} fill={payload?.win ? '#e05535' : 'var(--bd-secondary)'} stroke="var(--bg-input)" strokeWidth={1.5} />
-                    }}
-                    activeDot={{ r: 5, fill: '#b87aff', stroke: 'var(--bg-input)', strokeWidth: 1.5 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-4)' }}>Score trend</span>
+          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+            {['All', ...chartYears].map(y => (
+              <button key={y} onClick={() => setChartYear(y)} style={{ padding: '2px 9px', borderRadius: '10px', border: `1px solid ${chartYear === y ? '#5b8dd9' : 'var(--bd-panel)'}`, background: chartYear === y ? 'rgba(91,141,217,0.12)' : 'transparent', color: chartYear === y ? '#5b8dd9' : 'var(--text-4)', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', cursor: 'pointer', transition: 'all 0.12s' }}>
+                {y}
+              </button>
+            ))}
           </div>
-        ) : (
-        <div className="player-score-chart">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
-            <XAxis dataKey="date" tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: 'var(--text-4)' }} axisLine={false} tickLine={false} />
-            <YAxis domain={[0, 'auto']} tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: 'var(--text-4)' }} axisLine={false} tickLine={false} width={32} />
-            <Tooltip
-              contentStyle={{ background: 'var(--bg-input)', border: '1px solid var(--bd-secondary)', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-1)' }}
-              cursor={{ stroke: 'rgba(255,255,255,0.06)' }}
-            />
-            <ReferenceLine y={stats.avg_score} stroke="var(--bd-secondary)" strokeDasharray="4 3" label={{ value: 'avg', position: 'insideTopRight', fontSize: 9, fill: 'var(--text-4)', fontFamily: 'var(--font-mono)' }} />
-            <Line
-              type="monotone"
-              dataKey="score"
-              stroke="#888888"
-              strokeWidth={1.5}
-              dot={(props: any) => {
-                const { cx, cy, payload } = props
-                return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={5} fill={payload?.win ? '#e05535' : 'var(--bd-secondary)'} stroke="var(--bg-input)" strokeWidth={1.5} />
-              }}
-              activeDot={{ r: 6, fill: '#b87aff', stroke: 'var(--bg-input)', strokeWidth: 1.5 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
         </div>
-        )}
+        {(() => {
+          const N = chartData.length
+          const monthLabels = (leftMargin: number, rightMargin: number) => monthGroups.length > 0 ? (
+            <div style={{ position: 'relative', height: '28px', marginLeft: `${leftMargin}px`, marginRight: `${rightMargin}px` }}>
+              {monthGroups.map((g, i) => {
+                const firstIdx = chartData.findIndex(d => d.fullDate === g.firstDate)
+                const nextFirstIdx = i < monthGroups.length - 1 ? chartData.findIndex(d => d.fullDate === monthGroups[i + 1].firstDate) : N
+                const leftPct = firstIdx / N * 100
+                const nextPct = nextFirstIdx / N * 100
+                const midPct = (leftPct + nextPct) / 2
+                return (
+                  <div key={g.key}>
+                    <div style={{ position: 'absolute', left: `${leftPct}%`, top: 0, width: '1px', height: '12px', background: '#5b8dd9' }} />
+                    <div style={{ position: 'absolute', left: `${midPct}%`, top: '14px', transform: 'translateX(-50%)', fontFamily: 'var(--font-mono)', fontSize: '9px', fontWeight: 600, color: '#5b8dd9', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
+                      {g.label.toUpperCase()}
+                    </div>
+                  </div>
+                )
+              })}
+              <div style={{ position: 'absolute', right: 0, top: 0, width: '1px', height: '12px', background: '#5b8dd9' }} />
+            </div>
+          ) : null
+          return isMobile ? (
+            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+              <div style={{ width: Math.max(N * 22, 300) }}>
+                <div style={{ height: 220 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <XAxis dataKey="fullDate" tick={false} axisLine={false} tickLine={false} height={1} />
+                      <YAxis domain={['auto', 'auto']} tick={{ fontFamily: 'var(--font-mono)', fontSize: 9, fill: 'var(--text-4)' }} axisLine={false} tickLine={false} width={26} />
+                      <Tooltip labelFormatter={(d: string) => d} contentStyle={{ background: 'var(--bg-input)', border: '1px solid var(--bd-secondary)', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-1)' }} cursor={{ stroke: 'rgba(255,255,255,0.06)' }} />
+                      <ReferenceLine y={chartAvg} stroke="var(--bd-secondary)" strokeDasharray="4 3" />
+                      <Line type="monotone" dataKey="score" stroke="var(--text-4)" strokeWidth={1.5}
+                        dot={(props: any) => {
+                          const { cx, cy, payload } = props
+                          return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={4} fill={payload?.win ? '#e05535' : 'var(--bd-secondary)'} stroke="var(--bg-input)" strokeWidth={1.5} />
+                        }}
+                        activeDot={{ r: 5, fill: '#b87aff', stroke: 'var(--bg-input)', strokeWidth: 1.5 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                {monthLabels(31, 4)}
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="player-score-chart">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <XAxis dataKey="fullDate" tick={false} axisLine={false} tickLine={false} height={1} />
+                    <YAxis domain={[0, 'auto']} tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: 'var(--text-4)' }} axisLine={false} tickLine={false} width={32} />
+                    <Tooltip
+                      labelFormatter={(d: string) => d}
+                      contentStyle={{ background: 'var(--bg-input)', border: '1px solid var(--bd-secondary)', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-1)' }}
+                      cursor={{ stroke: 'rgba(255,255,255,0.06)' }}
+                    />
+                    <ReferenceLine y={chartAvg} stroke="var(--bd-secondary)" strokeDasharray="4 3" label={{ value: 'avg', position: 'insideTopRight', fontSize: 9, fill: 'var(--text-4)', fontFamily: 'var(--font-mono)' }} />
+                    <Line
+                      type="monotone"
+                      dataKey="score"
+                      stroke="#888888"
+                      strokeWidth={1.5}
+                      dot={(props: any) => {
+                        const { cx, cy, payload } = props
+                        return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={5} fill={payload?.win ? '#e05535' : 'var(--bd-secondary)'} stroke="var(--bg-input)" strokeWidth={1.5} />
+                      }}
+                      activeDot={{ r: 6, fill: '#b87aff', stroke: 'var(--bg-input)', strokeWidth: 1.5 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              {monthLabels(37, 5)}
+            </>
+          )
+        })()}
         <div style={{ display: 'flex', gap: '16px', marginTop: '10px', fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--text-4)' }}>
           <span><span style={{ color: '#e05535' }}>●</span> Win</span>
           <span><span style={{ color: 'var(--bd-secondary)' }}>●</span> Other finish</span>
@@ -467,18 +635,18 @@ export default function PlayerDetail() {
               </Link>
             ),
           },
-          { key: 'times_played', label: 'Played', align: 'right', tdStyle: { fontSize: '0.82rem' } },
+          { key: 'times_played', label: 'Played', align: 'center', tdStyle: { fontSize: '0.82rem' } },
           {
             key: 'wins',
             label: 'Wins',
-            align: 'right',
+            align: 'center',
             tdStyle: { fontSize: '0.82rem' },
             render: r => <span style={{ color: '#4a9e6b' }}>{r.wins}</span>,
           },
           {
             key: 'win_rate',
             label: 'Win Rate',
-            align: 'right',
+            align: 'center',
             tdStyle: { fontSize: '0.82rem' },
             render: r => (
               <span style={{ color: r.win_rate >= 60 ? '#4a9e6b' : r.win_rate >= 40 ? '#c9a030' : '#e05535' }}>
@@ -489,7 +657,7 @@ export default function PlayerDetail() {
           {
             key: 'avg_score',
             label: 'Avg Score',
-            align: 'right',
+            align: 'center',
             tdStyle: { fontSize: '0.82rem' },
             render: r => <span style={{ color: '#c9a030' }}>{Math.round(r.avg_score)} VP</span>,
           },

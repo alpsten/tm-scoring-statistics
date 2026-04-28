@@ -212,9 +212,18 @@ export interface CardPlayedInput {
 export interface PlayerProfile {
   player_name: string
   preferred_color: string | null
+  preferred_color_2: string | null
+  preferred_color_3: string | null
   trivia: string | null
   favorite_card: string | null
+  favorite_card_2: string | null
+  favorite_card_3: string | null
   most_tilting_card: string | null
+  most_tilting_card_2: string | null
+  most_tilting_card_3: string | null
+  favorite_corporation: string | null
+  favorite_corporation_2: string | null
+  favorite_corporation_3: string | null
   playing_style: string | null
   rival: string | null
 }

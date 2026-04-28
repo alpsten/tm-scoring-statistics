@@ -399,6 +399,7 @@ export default function Cards() {
                   { label: 'Card',     key: 'card_name'           as SortKey, align: 'left'   },
                   { label: 'Type',     key: null,                              align: 'center' },
                   { label: 'Tags',     key: null,                              align: 'center' },
+                  { label: 'Cost',     key: null,                              align: 'center' },
                   { label: 'Played',   key: 'times_played'        as SortKey, align: 'center' },
                   { label: 'Win Rate', key: 'win_rate'            as SortKey, align: 'center' },
                   { label: 'Avg VP',   key: 'avg_vp_contribution' as SortKey, align: 'center' },
@@ -454,6 +455,9 @@ export default function Cards() {
                           <Tag key={`${tag}-${i}`} name={tag} />
                         ))}
                       </div>
+                    </td>
+                    <td style={{ ...numTd, textAlign: 'center', color: card.mc_cost != null ? '#c9a030' : 'var(--text-5)' }}>
+                      {card.mc_cost != null ? `${card.mc_cost}` : '—'}
                     </td>
                     <td style={{ ...numTd, textAlign: 'center', color: stats ? 'var(--text-2)' : 'var(--text-5)' }}>
                       {stats ? stats.times_played : '—'}

@@ -181,7 +181,7 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew, vpT
   )
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '780px' }}>
       {/* Row 1: Card name, Type, MC Cost, Expansions */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div style={{ flex: '2 1 200px' }}>
@@ -736,7 +736,7 @@ export default function CardReferenceAdmin() {
           <thead>
             <tr style={{ borderBottom: '1px solid #282042' }}>
               {['Card', 'Type', 'Tags', 'Expansion', 'MC', 'Base VP', 'Resource VP', ''].map((h, i) => (
-                <th key={i} style={{ padding: '10px 16px', textAlign: i === 6 ? 'right' : 'left', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
+                <th key={i} style={{ padding: '10px 16px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
                   {h}
                 </th>
               ))}

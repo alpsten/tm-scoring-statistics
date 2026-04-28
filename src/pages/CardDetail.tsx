@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
 import StatCard from '../components/ui/StatCard'
 import CardFrame from '../components/ui/CardFrame'
-import { useCardStats, useCardReference, useCorpStats, useCEOStats, useGames } from '../lib/hooks'
+import { useCardStats, useCardReference, useCorpStats, useCEOStats, useGames, useCardPlays } from '../lib/hooks'
 import PositionBadge from '../components/ui/PositionBadge'
 import SectionHeading from '../components/ui/SectionHeading'
 import DataTable from '../components/ui/DataTable'
@@ -25,13 +25,14 @@ export default function CardDetail() {
   const { data: corpData,  isLoading: corpLoading  } = useCorpStats()
   const { data: ceoData,   isLoading: ceoLoading   } = useCEOStats()
   const { data: games,     isLoading: gamesLoading } = useGames()
+  const { data: cardPlays, isLoading: playsLoading } = useCardPlays(cardName)
 
   const ref = (refData ?? []).find(c => c.card_name === cardName)
     ?? (refData ?? []).find(c => normalizeForLookup(c.card_name) === normalizeForLookup(cardName))
   const isCorporation = ref?.card_type === 'Corporation'
   const isCEO = ref?.card_type === 'CEO'
 
-  if (refLoading || statsLoading || corpLoading || ceoLoading || ((isCorporation || isCEO) && gamesLoading)) {
+  if (refLoading || statsLoading || corpLoading || ceoLoading || gamesLoading || playsLoading) {
     return <div style={loadingStyle}>Loading…</div>
   }
 
@@ -237,25 +238,80 @@ export default function CardDetail() {
       )}
 
       {/* Project card stats */}
-      {!isCorporation && !isCEO && cardStat && (
-        <>
-          <div className="card-detail-grid">
-            <StatCard label="Times played" value={cardStat.times_played} accent="neutral" />
-            <StatCard label="Win rate"     value={`${Math.round(cardStat.win_rate)}%`} sub={`(${cardStat.win_count}/${cardStat.times_played} wins)`} accent={cardStat.win_rate >= 50 ? 'win' : cardStat.win_rate > 33 ? 'score' : 'mars'} />
-            {cardStat.avg_vp_contribution > 0 && (
-              <StatCard label="Avg VP contribution" value={Math.round(cardStat.avg_vp_contribution)} accent="score" />
-            )}
-            <StatCard label="Avg player score" value={Math.round(cardStat.avg_player_score)} valueSuffix="VP" accent="score" badge />
-          </div>
+      {!isCorporation && !isCEO && cardStat && (() => {
+        const gameMap = Object.fromEntries((games ?? []).map(g => [g.id, g]))
+        const playsMap: Record<string, Record<string, number | null>> = {}
+        for (const p of cardPlays ?? []) {
+          if (!playsMap[p.game_id]) playsMap[p.game_id] = {}
+          playsMap[p.game_id][p.player_name] = p.vp_from_card
+        }
+        type CardHistoryRow = { id: string; game_number: number | null; date: string; map_name: string | null; player_name: string; position: number; total_vp: number; vp_from_card: number | null }
+        const historyRows: CardHistoryRow[] = []
+        for (const [game_id, players] of Object.entries(playsMap)) {
+          const game = gameMap[game_id]
+          if (!game) continue
+          for (const [player_name, vp_from_card] of Object.entries(players)) {
+            const result = game.player_results.find(r => r.player_name === player_name)
+            if (!result) continue
+            historyRows.push({ id: `${game_id}-${player_name}`, game_number: game.game_number, date: game.date, map_name: game.map_name, player_name, position: result.position, total_vp: result.total_vp, vp_from_card })
+          }
+        }
+        historyRows.sort((a, b) => b.date.localeCompare(a.date))
 
-          <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '20px 24px' }}>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-4)', fontStyle: 'italic', margin: 0 }}>
-              Note: Win rate reflects the playing player's final game result, not a causal claim about this card's strength.
-              Always consider sample size when interpreting percentages.
-            </p>
-          </div>
-        </>
-      )}
+        const hasVP = historyRows.some(r => r.vp_from_card != null)
+        const cardHistoryColumns: DataTableColumn<CardHistoryRow>[] = [
+          {
+            key: 'date', label: 'Date',
+            tdStyle: { fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--text-3)' },
+            render: r => r.game_number != null
+              ? <Link to={`/games/${r.game_number}`} style={{ color: 'var(--text-3)', textDecoration: 'none' }}>{new Date(r.date).toLocaleDateString('sv-SE')}</Link>
+              : <>{new Date(r.date).toLocaleDateString('sv-SE')}</>,
+          },
+          { key: 'map_name', label: 'Map', tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)' }, render: r => <>{r.map_name ?? '—'}</> },
+          {
+            key: 'player_name', label: 'Player', tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.83rem' },
+            render: r => <Link to={`/players/${encodeURIComponent(r.player_name)}`} style={{ color: 'var(--text-3)', textDecoration: 'none' }}>{r.player_name}</Link>,
+          },
+          { key: 'position', label: 'Position', align: 'center', render: r => <PositionBadge position={r.position} /> },
+          {
+            key: 'total_vp', label: 'Score', align: 'center', tdStyle: { fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem' },
+            render: r => <span style={{ color: r.position === 1 ? '#c9a030' : 'var(--text-3)' }}>{r.total_vp}<span style={{ marginLeft: '3px' }}>VP</span></span>,
+          },
+          ...(hasVP ? [{
+            key: 'vp_from_card' as const, label: 'Card VP', align: 'center' as const, tdStyle: { fontFamily: 'var(--font-mono)', fontSize: '0.85rem' },
+            render: (r: CardHistoryRow) => r.vp_from_card != null
+              ? <span style={{ color: '#c9a030' }}>{r.vp_from_card} VP</span>
+              : <span style={{ color: 'var(--text-5)' }}>—</span>,
+          }] : []),
+        ]
+
+        return (
+          <>
+            <div className="card-detail-grid">
+              <StatCard label="Times played" value={cardStat.times_played} accent="neutral" />
+              <StatCard label="Win rate"     value={`${Math.round(cardStat.win_rate)}%`} sub={`(${cardStat.win_count}/${cardStat.times_played} wins)`} accent={cardStat.win_rate >= 50 ? 'win' : cardStat.win_rate > 33 ? 'score' : 'mars'} />
+              {cardStat.avg_vp_contribution > 0 && (
+                <StatCard label="Avg VP contribution" value={Math.round(cardStat.avg_vp_contribution)} accent="score" />
+              )}
+              <StatCard label="Avg player score" value={Math.round(cardStat.avg_player_score)} valueSuffix="VP" accent="score" badge />
+            </div>
+
+            {historyRows.length > 0 && (
+              <>
+                <SectionHeading>Game history</SectionHeading>
+                <DataTable compact wrapperStyle={{ marginBottom: '24px' }} columns={cardHistoryColumns} rows={historyRows} rowKey={r => r.id} />
+              </>
+            )}
+
+            <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '20px 24px' }}>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-4)', fontStyle: 'italic', margin: 0 }}>
+                Note: Win rate reflects the playing player's final game result, not a causal claim about this card's strength.
+                Always consider sample size when interpreting percentages.
+              </p>
+            </div>
+          </>
+        )
+      })()}
     </div>
   )
 }

@@ -261,6 +261,21 @@ export async function fetchPlayerCardStats(playerName: string): Promise<PlayerCa
     .sort((a, b) => b.times_played - a.times_played || a.card_name.localeCompare(b.card_name))
 }
 
+export interface CardPlay {
+  game_id: string
+  player_name: string
+  vp_from_card: number | null
+}
+
+export async function fetchCardPlays(cardName: string): Promise<CardPlay[]> {
+  const { data, error } = await supabase
+    .from('cards_played')
+    .select('game_id, player_name, vp_from_card')
+    .eq('card_name', cardName)
+  if (error) throw error
+  return (data ?? []) as CardPlay[]
+}
+
 export async function fetchPlayerProfiles(): Promise<PlayerProfile[]> {
   const { data, error } = await supabase
     .from('player_profiles')

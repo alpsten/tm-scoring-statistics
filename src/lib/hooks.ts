@@ -17,6 +17,7 @@ import {
   fetchCEOStats,
   fetchMergerStats,
   fetchNotes,
+  fetchCardPlays,
 } from './queries'
 
 export { deleteGame, addNote, updateNote, deleteNote } from './queries'
@@ -111,4 +112,12 @@ export function useAllAwards() {
 
 export function useNotes() {
   return useQuery({ queryKey: ['site-notes'], queryFn: fetchNotes })
+}
+
+export function useCardPlays(cardName: string) {
+  return useQuery({
+    queryKey: ['card-plays', cardName],
+    queryFn: () => fetchCardPlays(cardName),
+    enabled: !!cardName,
+  })
 }

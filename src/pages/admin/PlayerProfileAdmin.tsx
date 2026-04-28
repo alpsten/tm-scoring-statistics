@@ -27,32 +27,48 @@ async function fetchAllPlayerNames(): Promise<string[]> {
 
 type EditValues = {
   preferred_color: string
+  preferred_color_2: string
+  preferred_color_3: string
   trivia: string
   favorite_card: string
+  favorite_card_2: string
+  favorite_card_3: string
   most_tilting_card: string
+  most_tilting_card_2: string
+  most_tilting_card_3: string
+  favorite_corporation: string
+  favorite_corporation_2: string
+  favorite_corporation_3: string
   playing_style: string
   rival: string
 }
 
 function emptyEdit(): EditValues {
-  return { preferred_color: '', trivia: '', favorite_card: '', most_tilting_card: '', playing_style: '', rival: '' }
+  return { preferred_color: '', preferred_color_2: '', preferred_color_3: '', trivia: '', favorite_card: '', favorite_card_2: '', favorite_card_3: '', most_tilting_card: '', most_tilting_card_2: '', most_tilting_card_3: '', favorite_corporation: '', favorite_corporation_2: '', favorite_corporation_3: '', playing_style: '', rival: '' }
 }
 
 function toEdit(p?: PlayerProfile): EditValues {
   if (!p) return emptyEdit()
   return {
     preferred_color: p.preferred_color ?? '',
+    preferred_color_2: p.preferred_color_2 ?? '',
+    preferred_color_3: p.preferred_color_3 ?? '',
     trivia: p.trivia ?? '',
     favorite_card: p.favorite_card ?? '',
+    favorite_card_2: p.favorite_card_2 ?? '',
+    favorite_card_3: p.favorite_card_3 ?? '',
     most_tilting_card: p.most_tilting_card ?? '',
+    most_tilting_card_2: p.most_tilting_card_2 ?? '',
+    most_tilting_card_3: p.most_tilting_card_3 ?? '',
+    favorite_corporation: p.favorite_corporation ?? '',
+    favorite_corporation_2: p.favorite_corporation_2 ?? '',
+    favorite_corporation_3: p.favorite_corporation_3 ?? '',
     playing_style: p.playing_style ?? '',
     rival: p.rival ?? '',
   }
 }
 
-function CardSearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
-  const { data: cardRef = [] } = useCardReference()
-  const allCardNames = cardRef.map(c => c.card_name).sort()
+function SearchInput({ value, onChange, placeholder, names }: { value: string; onChange: (v: string) => void; placeholder?: string; names: string[] }) {
   const [query, setQuery] = useState(value)
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -68,7 +84,7 @@ function CardSearchInput({ value, onChange, placeholder }: { value: string; onCh
   }, [])
 
   const matches = query.length > 0
-    ? allCardNames.filter(n => n.toLowerCase().includes(query.toLowerCase())).slice(0, 8)
+    ? names.filter(n => n.toLowerCase().includes(query.toLowerCase())).slice(0, 8)
     : []
 
   return (
@@ -81,20 +97,12 @@ function CardSearchInput({ value, onChange, placeholder }: { value: string; onCh
         onFocus={() => setOpen(true)}
       />
       {open && matches.length > 0 && (
-        <div style={{
-          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
-          background: '#1e1835', border: '1px solid #3e325e', borderRadius: '4px',
-          marginTop: '2px', maxHeight: '220px', overflowY: 'auto',
-        }}>
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, background: '#1e1835', border: '1px solid #3e325e', borderRadius: '4px', marginTop: '2px', maxHeight: '220px', overflowY: 'auto' }}>
           {matches.map(name => (
             <div
               key={name}
               onMouseDown={() => { onChange(name); setQuery(name); setOpen(false) }}
-              style={{
-                padding: '7px 10px', fontFamily: 'var(--font-body)', fontSize: '0.82rem',
-                color: name === value ? '#b87aff' : '#bbb4d0', cursor: 'pointer',
-                background: name === value ? 'rgba(155,80,240,0.08)' : 'transparent',
-              }}
+              style={{ padding: '7px 10px', fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: name === value ? '#b87aff' : '#bbb4d0', cursor: 'pointer', background: name === value ? 'rgba(155,80,240,0.08)' : 'transparent' }}
               onMouseEnter={e => (e.currentTarget.style.background = '#282042')}
               onMouseLeave={e => (e.currentTarget.style.background = name === value ? 'rgba(155,80,240,0.08)' : 'transparent')}
             >
@@ -105,6 +113,18 @@ function CardSearchInput({ value, onChange, placeholder }: { value: string; onCh
       )}
     </div>
   )
+}
+
+function CardSearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const { data: cardRef = [] } = useCardReference()
+  const names = cardRef.filter(c => c.card_type !== 'Corporation' && c.card_type !== 'CEO').map(c => c.card_name).sort()
+  return <SearchInput value={value} onChange={onChange} placeholder={placeholder} names={names} />
+}
+
+function CorpSearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const { data: cardRef = [] } = useCardReference()
+  const names = cardRef.filter(c => c.card_type === 'Corporation').map(c => c.card_name).sort()
+  return <SearchInput value={value} onChange={onChange} placeholder={placeholder} names={names} />
 }
 
 function ColorSwatch({ hex, selected, onClick }: { hex: string; selected: boolean; onClick: () => void }) {
@@ -184,9 +204,18 @@ export default function PlayerProfileAdmin() {
       const { error } = await supabase.from('player_profiles').upsert({
         player_name: playerName,
         preferred_color: vals.preferred_color || null,
+        preferred_color_2: vals.preferred_color_2 || null,
+        preferred_color_3: vals.preferred_color_3 || null,
         trivia: vals.trivia || null,
         favorite_card: vals.favorite_card || null,
+        favorite_card_2: vals.favorite_card_2 || null,
+        favorite_card_3: vals.favorite_card_3 || null,
         most_tilting_card: vals.most_tilting_card || null,
+        most_tilting_card_2: vals.most_tilting_card_2 || null,
+        most_tilting_card_3: vals.most_tilting_card_3 || null,
+        favorite_corporation: vals.favorite_corporation || null,
+        favorite_corporation_2: vals.favorite_corporation_2 || null,
+        favorite_corporation_3: vals.favorite_corporation_3 || null,
         playing_style: vals.playing_style || null,
         rival: vals.rival || null,
       }, { onConflict: 'player_name' })
@@ -236,7 +265,7 @@ export default function PlayerProfileAdmin() {
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '680px' }}>
             <thead>
               <tr>
-                {['Player', 'Color', 'Playing Style', 'Rival', 'Fav Card', 'Tilting Card', ''].map(h => (
+                {['Player', 'Colors', 'Playing Style', 'Rival', 'Favorite Card', 'Most Frustrating Card', ''].map(h => (
                   <th key={h} style={thStyle}>{h}</th>
                 ))}
               </tr>
@@ -255,31 +284,37 @@ export default function PlayerProfileAdmin() {
                             {name}
                           </div>
 
-                          {/* Color swatches */}
-                          <div>
-                            <div style={labelStyle}>Preferred Color</div>
-                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                              {PLAYER_COLORS.map(c => (
-                                <ColorSwatch
-                                  key={c.hex}
-                                  hex={c.hex}
-                                  selected={vals.preferred_color === c.hex}
-                                  onClick={() => setVals(v => ({
-                                    ...v,
-                                    preferred_color: v.preferred_color === c.hex ? '' : c.hex,
-                                  }))}
-                                />
-                              ))}
-                              {vals.preferred_color && (
-                                <button
-                                  type="button"
-                                  onClick={() => setVals(v => ({ ...v, preferred_color: '' }))}
-                                  style={{ background: 'none', border: 'none', color: '#504270', cursor: 'pointer', fontSize: '0.7rem', fontFamily: 'var(--font-mono)', padding: '0 4px' }}
-                                >
-                                  clear
-                                </button>
-                              )}
-                            </div>
+                          {/* Color swatches — top 3 */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={labelStyle}>Preferred Colors (ranked)</div>
+                            {([
+                              { key: 'preferred_color',   rank: '1st choice' },
+                              { key: 'preferred_color_2', rank: '2nd choice' },
+                              { key: 'preferred_color_3', rank: '3rd choice' },
+                            ] as { key: keyof EditValues; rank: string }[]).map(({ key, rank }) => (
+                              <div key={key}>
+                                <div style={{ ...labelStyle, marginBottom: '6px', color: '#625c7c' }}>{rank}</div>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                  {PLAYER_COLORS.map(c => (
+                                    <ColorSwatch
+                                      key={c.hex}
+                                      hex={c.hex}
+                                      selected={vals[key] === c.hex}
+                                      onClick={() => setVals(v => ({ ...v, [key]: v[key] === c.hex ? '' : c.hex }))}
+                                    />
+                                  ))}
+                                  {vals[key] && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setVals(v => ({ ...v, [key]: '' }))}
+                                      style={{ background: 'none', border: 'none', color: '#504270', cursor: 'pointer', fontSize: '0.7rem', fontFamily: 'var(--font-mono)', padding: '0 4px' }}
+                                    >
+                                      clear
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
                           </div>
 
                           {/* Text fields grid */}
@@ -295,32 +330,30 @@ export default function PlayerProfileAdmin() {
                             </div>
                             <div>
                               <label style={labelStyle}>Rival</label>
-                              <select
-                                style={inputStyle}
+                              <SearchInput
                                 value={vals.rival}
-                                onChange={e => setVals(v => ({ ...v, rival: e.target.value }))}
-                              >
-                                <option value="">— none —</option>
-                                {allNames.filter((n: string) => n !== name).map((n: string) => (
-                                  <option key={n} value={n}>{n}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <div>
-                              <label style={labelStyle}>Favorite Card</label>
-                              <CardSearchInput
-                                value={vals.favorite_card}
-                                onChange={v => setVals(vals => ({ ...vals, favorite_card: v }))}
-                                placeholder="Search cards…"
+                                onChange={v => setVals(vals => ({ ...vals, rival: v }))}
+                                placeholder="Search players…"
+                                names={allNames.filter((n: string) => n !== name)}
                               />
                             </div>
-                            <div>
-                              <label style={labelStyle}>Most Tilting Card</label>
-                              <CardSearchInput
-                                value={vals.most_tilting_card}
-                                onChange={v => setVals(vals => ({ ...vals, most_tilting_card: v }))}
-                                placeholder="Search cards…"
-                              />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <label style={labelStyle}>Favorite Cards (top 3)</label>
+                              {(['favorite_card', 'favorite_card_2', 'favorite_card_3'] as const).map((key, i) => (
+                                <CardSearchInput key={key} value={vals[key]} onChange={v => setVals(vals => ({ ...vals, [key]: v }))} placeholder={`${i + 1}. Search cards…`} />
+                              ))}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <label style={labelStyle}>Most Frustrating Cards (top 3)</label>
+                              {(['most_tilting_card', 'most_tilting_card_2', 'most_tilting_card_3'] as const).map((key, i) => (
+                                <CardSearchInput key={key} value={vals[key]} onChange={v => setVals(vals => ({ ...vals, [key]: v }))} placeholder={`${i + 1}. Search cards…`} />
+                              ))}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <label style={labelStyle}>Favorite Corporations (top 3)</label>
+                              {(['favorite_corporation', 'favorite_corporation_2', 'favorite_corporation_3'] as const).map((key, i) => (
+                                <CorpSearchInput key={key} value={vals[key]} onChange={v => setVals(vals => ({ ...vals, [key]: v }))} placeholder={`${i + 1}. Search corporations…`} />
+                              ))}
                             </div>
                             <div style={{ gridColumn: '1 / -1' }}>
                               <label style={labelStyle}>Trivia</label>
@@ -390,9 +423,14 @@ export default function PlayerProfileAdmin() {
                   >
                     <td style={{ ...tdStyle, color: '#ece6ff', fontFamily: 'var(--font-display)', fontWeight: 600 }}>{name}</td>
                     <td style={tdStyle}>
-                      {p?.preferred_color
-                        ? <div style={{ width: 18, height: 18, borderRadius: '50%', background: p.preferred_color, border: '1px solid rgba(255,255,255,0.12)' }} title={PLAYER_COLORS.find(c => c.hex === p.preferred_color)?.name} />
-                        : dash}
+                      <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                        {[p?.preferred_color, p?.preferred_color_2, p?.preferred_color_3].map((col, i) =>
+                          col
+                            ? <div key={i} style={{ width: 16, height: 16, borderRadius: '50%', background: col, border: '1px solid rgba(255,255,255,0.12)' }} title={`${i + 1}. ${PLAYER_COLORS.find(c => c.hex === col)?.name ?? col}`} />
+                            : null
+                        )}
+                        {!p?.preferred_color && dash}
+                      </div>
                     </td>
                     <td style={tdStyle}>{p?.playing_style || dash}</td>
                     <td style={tdStyle}>{p?.rival || dash}</td>
