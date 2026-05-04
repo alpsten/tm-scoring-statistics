@@ -18,15 +18,11 @@ const NAV_ITEMS = [
   { to: '/ma',           label: 'Milestones/Awards'},
   { to: '/setup',        label: 'Setup'            },
   { to: '/notes',        label: 'Notes'            },
+  { to: '/scoresheet',   label: 'Score Sheet'      },
 ]
 
 const NAV_PILL = '/tm-scoring-statistics/misc/standard-project-blank.png'
 
-const PARAM_LABELS = [
-  { label: 'OXYGEN',      color: '#4a9e6b' },
-  { label: 'TEMPERATURE', color: '#e05535' },
-  { label: 'OCEANS',      color: '#2e8b8b' },
-]
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { user, signOut } = useAuth()
@@ -67,7 +63,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       }}
     >
       {/* Logo / title */}
-      <div style={{ padding: '52px 20px 20px', borderBottom: '1px solid var(--bd-sidebar)', position: 'relative' }}>
+      <div style={{ padding: '52px 20px 20px', borderBottom: '1px solid var(--bd-sidebar)', position: 'relative', textAlign: 'center' }}>
         {/* Mobile close button */}
         <button
           className="sidebar-close-btn"
@@ -79,9 +75,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--text-4)', textTransform: 'uppercase', marginBottom: '6px' }}>
           Mission log
         </div>
-        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1rem', color: 'var(--text-1)', lineHeight: 1.2 }}>
-          Terraforming<br />
-          <span style={{ color: '#e05535' }}>Mars</span>
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: '#e05535', lineHeight: 1.1, textTransform: 'uppercase' }}>
+          <div style={{ fontSize: '1.25rem' }}>Terraforming</div>
+          <div style={{ fontSize: '2.3rem', lineHeight: 0.95 }}>Mars</div>
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-4)', marginTop: '8px', letterSpacing: '0.05em' }}>
           STATISTICS v1.0
@@ -125,18 +121,6 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </NavLink>
         ))}
       </nav>
-
-      {/* Terraforming parameter decoration */}
-      <div style={{ padding: '16px 20px', borderTop: '1px solid var(--bd-sidebar)' }}>
-        {PARAM_LABELS.map(({ label, color }) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
-            <div className="pulse-mars" style={{ width: '5px', height: '5px', borderRadius: '50%', background: color, flexShrink: 0 }} />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.12em', color: 'var(--text-4)', textTransform: 'uppercase' }}>
-              {label}
-            </span>
-          </div>
-        ))}
-      </div>
 
       {/* View mode toggle */}
       <div style={{ padding: '12px 20px', borderTop: '1px solid var(--bd-sidebar)', borderBottom: '1px solid var(--bd-sidebar)' }}>

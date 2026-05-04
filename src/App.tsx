@@ -18,6 +18,8 @@ import MilestonesAwards from './pages/MilestonesAwards'
 import CEOs from './pages/CEOs'
 import Leaderboard from './pages/Leaderboard'
 import Notes from './pages/Notes'
+import ScoresheetHub from './pages/ScoresheetHub'
+import PrintScoresheet from './pages/PrintScoresheet'
 
 function CorpDetailRedirect() {
   const { name } = useParams<{ name: string }>()
@@ -52,8 +54,10 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter basename="/tm-scoring-statistics">
           <Routes>
-            {/* Full-page route — no sidebar */}
+            {/* Full-page routes — no sidebar */}
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/scoresheet/print" element={<PrintScoresheet />} />
+            <Route path="/scoresheet/base"  element={<PrintScoresheet />} />
 
             {/* Sidebar layout wraps all other routes via Outlet */}
             <Route element={<Layout />}>
@@ -72,6 +76,7 @@ export default function App() {
               <Route path="ma"               element={<MilestonesAwards />} />
               <Route path="leaderboard"      element={<Leaderboard />}      />
               <Route path="notes"            element={<Notes />}            />
+              <Route path="scoresheet"       element={<ScoresheetHub />}    />
 
               {/* Protected admin routes */}
               <Route path="admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
