@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
 import Tag from '../components/ui/Tag'
@@ -6,17 +6,30 @@ import { parseTags, parseCardName } from '../components/ui/tagUtils'
 import EmptyState from '../components/ui/EmptyState'
 import FilterPill from '../components/ui/FilterPill'
 import { useCardStats, useCardReference, useCorpStats, useCEOStats } from '../lib/hooks'
-import { TAG_ICONS, EXPANSION_ICONS, NO_TAG_ICON, NO_TAG } from '../lib/expansions'
+import { TAG_ICONS, EXPANSION_ICONS, RESOURCE_ICONS, PLACEMENT_ICONS, PLACEMENT_VP_TYPES, MULTIPLIER_VP_TYPES, TYPE_COLORS, NO_TAG_ICON, NO_TAG } from '../lib/expansions'
+import { parseListParam, writeListParam } from '../lib/filterUtils'
 
-const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
-  Automated:   { bg: 'rgba(74, 158, 107, 0.1)',  color: '#4a9e6b' },
-  Active:      { bg: 'rgba(91, 141, 217, 0.1)',  color: '#5b8dd9' },
-  Event:       { bg: 'rgba(224, 85, 53, 0.1)',   color: '#e05535' },
-  Corporation: { bg: 'rgba(201, 160, 48, 0.1)',  color: '#c9a030' },
-  Prelude:     { bg: 'rgba(220, 100, 150, 0.1)', color: '#d46496' },
-  CEO:         { bg: 'rgba(210, 120, 50, 0.1)',  color: '#d07832' },
-  'Global Event': { bg: 'rgba(160, 110, 190, 0.1)', color: '#a870c8' },
+const filterLabelStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '96px',
+  height: '34px',
+  padding: 0,
+  flexShrink: 0,
+  borderRadius: '5px',
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid var(--bd-panel)',
+  fontFamily: 'var(--font-mono)',
+  fontSize: '0.6rem',
+  fontWeight: 600,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: 'var(--text-4)',
+  whiteSpace: 'nowrap',
+  textAlign: 'center',
 }
+
 
 const VARIANT_STYLE: Record<string, { bg: string; color: string; border: string }> = {
   ares:  { bg: 'rgba(210, 80, 50, 0.12)',  color: '#d05032', border: 'rgba(210, 80, 50, 0.35)'  },
@@ -35,13 +48,9 @@ function VariantBadge({ variant }: { variant: string }) {
 const CARD_TYPES = ['Automated', 'Active', 'Event', 'Corporation', 'Prelude', 'CEO', 'Global Event'] as const
 type CardType = typeof CARD_TYPES[number]
 
-type SortKey = 'card_name' | 'times_played' | 'win_rate' | 'avg_vp_contribution'
-const SORT_KEYS: SortKey[] = ['card_name', 'times_played', 'win_rate', 'avg_vp_contribution']
+type SortKey = 'card_name' | 'times_played' | 'win_rate' | 'base_vp'
+const SORT_KEYS: SortKey[] = ['card_name', 'times_played', 'win_rate', 'base_vp']
 const CARDS_SCROLL_PREFIX = 'tm-cards-scroll:'
-
-function parseListParam(value: string | null) {
-  return value?.split(',').map(v => v.trim()).filter(Boolean) ?? []
-}
 
 function parseCardTypes(value: string | null): CardType[] {
   return parseListParam(value).filter((type): type is CardType => CARD_TYPES.includes(type as CardType))
@@ -51,22 +60,20 @@ function parseSortKey(value: string | null): SortKey {
   return SORT_KEYS.includes(value as SortKey) ? value as SortKey : 'card_name'
 }
 
-function writeListParam(params: URLSearchParams, key: string, values: string[]) {
-  if (values.length > 0) params.set(key, values.join(','))
-  else params.delete(key)
-}
-
 export default function Cards() {
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const search = searchParams.get('q') ?? ''
   const typeFilters = useMemo(() => parseCardTypes(searchParams.get('type')), [searchParams])
   const tagFilters = useMemo(() => parseListParam(searchParams.get('tag')), [searchParams])
-  const expansionFilter = searchParams.get('expansion') ?? ''
+  const expansionFilters = useMemo(() => parseListParam(searchParams.get('expansion')), [searchParams])
   const exactTagsParam = searchParams.get('exacttags')
   const exactTags: number | null = exactTagsParam ? Number(exactTagsParam) : null
   const sortKey = parseSortKey(searchParams.get('sort'))
   const sortDir: 'asc' | 'desc' = searchParams.get('dir') === 'desc' ? 'desc' : 'asc'
+  const vpFilter = searchParams.get('vp') ?? ''
+  const resVpFilter = searchParams.get('resvp') ?? ''
+  const resTypeFilter = searchParams.get('restype') ?? ''
   const scrollRestoredRef = useRef(false)
   const { data: cardStats, isLoading: statsLoading, error } = useCardStats()
   const { data: cardRef, isLoading: refLoading } = useCardReference()
@@ -121,14 +128,30 @@ export default function Cards() {
     (cardRef ?? []).flatMap(c => c.expansions ?? [])
   )].sort()
 
-  const expansionCards = expansionFilter
-    ? (cardRef ?? []).filter(c => (c.expansions ?? []).includes(expansionFilter))
+  const allBaseVPs = [...new Set(
+    (cardRef ?? []).map(c => c.base_vp).filter((v): v is number => v !== null)
+  )].sort((a, b) => a - b)
+
+  const allResVpPer = [...new Set(
+    (cardRef ?? []).map(c => c.resource_vp_per).filter((v): v is number => v !== null)
+  )].sort((a, b) => a - b)
+
+  const allResTypes = [...new Set(
+    (cardRef ?? []).map(c => c.resource_vp_type).filter((v): v is string => v !== null)
+  )].sort()
+  const allResourceTypes = allResTypes.filter(rt => !PLACEMENT_VP_TYPES.includes(rt) && !MULTIPLIER_VP_TYPES.includes(rt))
+  const allPlacementTypes = allResTypes.filter(rt => PLACEMENT_VP_TYPES.includes(rt))
+  const allMultiplierTypes = allResTypes.filter(rt => MULTIPLIER_VP_TYPES.includes(rt))
+
+  const expansionCards = expansionFilters.length > 0
+    ? (cardRef ?? []).filter(c => expansionFilters.some(e => (c.expansions ?? []).includes(e)))
     : []
   const expansionTypeBreakdown: Partial<Record<string, number>> = {}
   const expansionTagBreakdown: Record<string, number> = {}
   for (const c of expansionCards) {
     expansionTypeBreakdown[c.card_type] = (expansionTypeBreakdown[c.card_type] ?? 0) + 1
-    for (const tag of parseTags(c.tags)) {
+    const tags = parseTags(c.tags)
+    for (const tag of tags.length > 0 ? tags : [NO_TAG]) {
       expansionTagBreakdown[tag] = (expansionTagBreakdown[tag] ?? 0) + 1
     }
   }
@@ -144,20 +167,33 @@ export default function Cards() {
       const matchesTag = otherFilters.length > 0 && otherFilters.some(t => cardTags.includes(t))
       if (!matchesNoTag && !matchesTag) return false
     }
-    if (expansionFilter && !(c.expansions ?? []).includes(expansionFilter)) return false
+    if (expansionFilters.length > 0 && !expansionFilters.some(e => (c.expansions ?? []).includes(e))) return false
     if (exactTags !== null && parseTags(c.tags).length !== exactTags) return false
+    if (vpFilter) {
+      if (vpFilter === 'negative') { if (c.base_vp === null || c.base_vp >= 0) return false }
+      else if (vpFilter === 'positive') { if (c.base_vp === null || c.base_vp <= 0) return false }
+      else { const n = Number(vpFilter); if (Number.isNaN(n) || c.base_vp !== n) return false }
+    }
+    if (resVpFilter) { const n = Number(resVpFilter); if (c.resource_vp_per !== n) return false }
+    if (resTypeFilter) {
+      if (resTypeFilter === '__placement__') { if (!PLACEMENT_VP_TYPES.includes(c.resource_vp_type ?? '')) return false }
+      else if (resTypeFilter === '__multiplier__') { if (!MULTIPLIER_VP_TYPES.includes(c.resource_vp_type ?? '')) return false }
+      else { if (c.resource_vp_type !== resTypeFilter) return false }
+    }
     return true
   })
 
   const sorted = [...cards].sort((a, b) => {
     const mul = sortDir === 'asc' ? 1 : -1
     if (sortKey === 'card_name') return mul * a.card_name.localeCompare(b.card_name)
+    if (sortKey === 'base_vp') return mul * ((a.base_vp ?? -999) - (b.base_vp ?? -999))
     const aStats = statsMap[a.card_name.toLowerCase()]
     const bStats = statsMap[b.card_name.toLowerCase()]
-    return mul * ((aStats?.[sortKey] ?? 0) - (bStats?.[sortKey] ?? 0))
+    const sk = sortKey as 'times_played' | 'win_rate'
+    return mul * ((aStats?.[sk] ?? 0) - (bStats?.[sk] ?? 0))
   })
 
-  const hasFilters = !!search || typeFilters.length > 0 || tagFilters.length > 0 || !!expansionFilter || exactTags !== null
+  const hasFilters = !!search || typeFilters.length > 0 || tagFilters.length > 0 || expansionFilters.length > 0 || exactTags !== null || !!vpFilter || !!resVpFilter || !!resTypeFilter
 
   function handleSort(key: SortKey) {
     setSearchParams(prev => {
@@ -205,6 +241,9 @@ export default function Cards() {
       next.delete('tag')
       next.delete('expansion')
       next.delete('exacttags')
+      next.delete('vp')
+      next.delete('resvp')
+      next.delete('restype')
       return next
     }, { replace: true })
   }
@@ -218,11 +257,38 @@ export default function Cards() {
     }, { replace: true })
   }
 
-  function setExpansion(exp: string) {
+  function toggleExpansion(exp: string) {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev)
-      if (expansionFilter === exp) next.delete('expansion')
-      else next.set('expansion', exp)
+      const values = parseListParam(next.get('expansion'))
+      writeListParam(next, 'expansion', values.includes(exp) ? values.filter(e => e !== exp) : [...values, exp])
+      return next
+    }, { replace: true })
+  }
+
+  function setVpFilter(val: string) {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      if (vpFilter === val) next.delete('vp')
+      else next.set('vp', val)
+      return next
+    }, { replace: true })
+  }
+
+  function setResVpFilter(val: string) {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      if (resVpFilter === val) next.delete('resvp')
+      else next.set('resvp', val)
+      return next
+    }, { replace: true })
+  }
+
+  function setResTypeFilter(val: string) {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev)
+      if (resTypeFilter === val) next.delete('restype')
+      else next.set('restype', val)
       return next
     }, { replace: true })
   }
@@ -268,7 +334,7 @@ export default function Cards() {
 
         {/* Type pills */}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginRight: '2px' }}>Type</span>
+          <span style={filterLabelStyle}>Type</span>
           {CARD_TYPES.map(type => (
             <FilterPill
               key={type}
@@ -283,33 +349,26 @@ export default function Cards() {
         {/* Expansion pills */}
         {allExpansions.length > 0 && (
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginRight: '2px' }}>Expansion</span>
-            {allExpansions.map(exp => {
-              const active = expansionFilter === exp
-              return (
-                <button key={exp} onClick={() => setExpansion(exp)} title={exp} style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: '30px', height: '30px', borderRadius: '4px', cursor: 'pointer', transition: 'all 0.12s',
-                  background: active ? 'rgba(201,160,48,0.12)' : 'transparent',
-                  border: `1px solid ${active ? '#c9a030' : 'var(--bd-input)'}`,
-                  opacity: active ? 1 : 0.5,
-                  padding: 0,
-                }}>
-                  {EXPANSION_ICONS[exp]
-                    ? <img src={EXPANSION_ICONS[exp]} alt={exp} style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
-                    : <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: active ? '#c9a030' : 'var(--text-4)' }}>{exp.slice(0, 3).toUpperCase()}</span>
-                  }
-                </button>
-              )
-            })}
+            <span style={filterLabelStyle}>Expansion</span>
+            {allExpansions.map(exp => (
+              <FilterPill
+                key={exp}
+                label={exp.slice(0, 3).toUpperCase()}
+                tooltip={exp}
+                icon={EXPANSION_ICONS[exp]}
+                active={expansionFilters.includes(exp)}
+                color="#c9a030"
+                onClick={() => toggleExpansion(exp)}
+              />
+            ))}
           </div>
         )}
 
         {/* Expansion breakdown panel */}
-        {expansionFilter && expansionCards.length > 0 && (
+        {expansionFilters.length > 0 && expansionCards.length > 0 && (
           <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-4)' }}>
-              {expansionFilter} — {expansionCards.length} cards
+              {expansionFilters.join(' + ')} — {expansionCards.length} cards
             </span>
             <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap' }}>
               <div>
@@ -349,7 +408,7 @@ export default function Cards() {
         {/* Tag pills */}
         {allTags.length > 0 && (
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginRight: '2px' }}>Tag</span>
+            <span style={filterLabelStyle}>Tag</span>
             {allTags.map(tag => (
               <FilterPill
                 key={tag}
@@ -370,22 +429,105 @@ export default function Cards() {
 
         {/* Min tag count pills */}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginRight: '2px' }}>Min tags</span>
-          {[1, 2, 3, 4].map(n => {
-            const active = exactTags === n
-            return (
-              <button key={n} onClick={() => setExactTagsFilter(n)} style={{
-                padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', transition: 'all 0.12s',
-                fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700,
-                background: active ? 'rgba(91,141,217,0.12)' : 'transparent',
-                border: `1px solid ${active ? '#5b8dd9' : 'var(--bd-input)'}`,
-                color: active ? '#5b8dd9' : 'var(--text-4)',
-              }}>
-                {n}
-              </button>
-            )
-          })}
+          <span style={filterLabelStyle}>Min tags</span>
+          {[1, 2, 3, 4].map(n => (
+            <FilterPill
+              key={n}
+              label={String(n)}
+              tooltip={`Exactly ${n} tag${n > 1 ? 's' : ''}`}
+              active={exactTags === n}
+              color="#5b8dd9"
+              onClick={() => setExactTagsFilter(n)}
+            />
+          ))}
         </div>
+
+        {/* VP pills */}
+        {allBaseVPs.length > 0 && (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={filterLabelStyle}>VP</span>
+            {allBaseVPs.some(v => v < 0) && (
+              <FilterPill label="−" tooltip="All negative VP" active={vpFilter === 'negative'} color="#e05535" onClick={() => setVpFilter('negative')} />
+            )}
+            {allBaseVPs.map(v => (
+              <FilterPill
+                key={v}
+                label={v > 0 ? `+${v}` : `${v}`}
+                active={vpFilter === String(v)}
+                color={v > 0 ? '#4a9e6b' : v < 0 ? '#e05535' : '#888888'}
+                onClick={() => setVpFilter(String(v))}
+              />
+            ))}
+            {allBaseVPs.some(v => v > 0) && (
+              <FilterPill label="+" tooltip="All positive VP" active={vpFilter === 'positive'} color="#4a9e6b" onClick={() => setVpFilter('positive')} />
+            )}
+          </div>
+        )}
+
+        {/* Resource VP pills */}
+        {allResVpPer.length > 0 && (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={filterLabelStyle}>Resource VP</span>
+            {allResVpPer.map(n => (
+              <FilterPill
+                key={n}
+                label={`1/${n}`}
+                tooltip={`1 VP per ${n} resource${n > 1 ? 's' : ''}`}
+                active={resVpFilter === String(n)}
+                color="#c9a030"
+                onClick={() => setResVpFilter(String(n))}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Resource type pills */}
+        {allResourceTypes.length > 0 && (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={filterLabelStyle}>Resource</span>
+            {allResourceTypes.map(rt => (
+              <FilterPill
+                key={rt}
+                label={rt}
+                tooltip={rt}
+                icon={RESOURCE_ICONS[rt]}
+                active={resTypeFilter === rt}
+                color="#b87aff"
+                onClick={() => setResTypeFilter(rt)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Placement VP type pill */}
+        {allPlacementTypes.length > 0 && (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={filterLabelStyle}>Placement VP</span>
+            <FilterPill
+              icon={PLACEMENT_ICONS[allPlacementTypes[0]]}
+              tooltip={`Placement VP (${allPlacementTypes.join(', ')})`}
+              active={resTypeFilter === '__placement__'}
+              color="#5b8dd9"
+              onClick={() => setResTypeFilter('__placement__')}
+            />
+          </div>
+        )}
+
+        {/* Multiplier VP pills */}
+        {allMultiplierTypes.length > 0 && (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={filterLabelStyle}>Multiplier VP</span>
+            {allMultiplierTypes.map(rt => (
+              <FilterPill
+                key={rt}
+                label={rt}
+                active={resTypeFilter === rt}
+                color="#b87aff"
+                onClick={() => setResTypeFilter(rt)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {cards.length === 0 ? (
@@ -396,13 +538,14 @@ export default function Cards() {
             <thead>
               <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
                 {([
-                  { label: 'Card',     key: 'card_name'           as SortKey, align: 'left'   },
-                  { label: 'Type',     key: null,                              align: 'center' },
-                  { label: 'Tags',     key: null,                              align: 'center' },
-                  { label: 'Cost',     key: null,                              align: 'center' },
+                  { label: 'Card',      key: 'card_name'           as SortKey, align: 'left'   },
+                  { label: 'Type',      key: null,                              align: 'center' },
+                  { label: 'Tags',      key: null,                              align: 'center' },
+                  { label: 'Expansion', key: null,                              align: 'center' },
+                  { label: 'Cost',      key: null,                              align: 'center' },
                   { label: 'Played',   key: 'times_played'        as SortKey, align: 'center' },
-                  { label: 'Win Rate', key: 'win_rate'            as SortKey, align: 'center' },
-                  { label: 'Avg VP',   key: 'avg_vp_contribution' as SortKey, align: 'center' },
+                  { label: 'Win Rate', key: 'win_rate' as SortKey, align: 'center' },
+                  { label: 'VP',       key: 'base_vp'  as SortKey, align: 'center' },
                 ] as { label: string; key: SortKey | null; align: string }[]).map(({ label, key, align }) => {
                   const active = key && sortKey === key
                   return (
@@ -456,8 +599,17 @@ export default function Cards() {
                         ))}
                       </div>
                     </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                        {(card.expansions ?? []).map(exp => (
+                          EXPANSION_ICONS[exp]
+                            ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} style={{ width: '18px', height: '18px', objectFit: 'contain', opacity: 0.85 }} />
+                            : <span key={exp} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-4)' }}>{exp}</span>
+                        ))}
+                      </div>
+                    </td>
                     <td style={{ ...numTd, textAlign: 'center', color: card.mc_cost != null ? '#c9a030' : 'var(--text-5)' }}>
-                      {card.mc_cost != null ? `${card.mc_cost}` : '—'}
+                      {card.mc_cost != null ? `${card.mc_cost}` : '/'}
                     </td>
                     <td style={{ ...numTd, textAlign: 'center', color: stats ? 'var(--text-2)' : 'var(--text-5)' }}>
                       {stats ? stats.times_played : '—'}
@@ -472,8 +624,32 @@ export default function Cards() {
                         </>
                       ) : '—'}
                     </td>
-                    <td style={{ ...numTd, textAlign: 'center', color: stats ? '#c9a030' : 'var(--text-5)' }}>
-                      {stats ? Math.round(stats.avg_vp_contribution) : '—'}
+                    <td style={{ ...numTd, textAlign: 'center' }}>
+                      {card.base_vp !== null ? (
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.83rem', fontWeight: 700, color: card.base_vp > 0 ? '#4a9e6b' : card.base_vp < 0 ? '#e05535' : 'var(--text-4)' }}>
+                          {card.base_vp}
+                        </span>
+                      ) : card.resource_vp_per !== null ? (
+                        PLACEMENT_VP_TYPES.includes(card.resource_vp_type ?? '') ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '5px', background: 'rgba(91,141,217,0.1)', border: '1px solid rgba(91,141,217,0.3)', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 700, color: '#5b8dd9' }}>
+                            1/{card.resource_vp_per}
+                            {card.resource_vp_type && (PLACEMENT_ICONS[card.resource_vp_type]
+                              ? <img src={PLACEMENT_ICONS[card.resource_vp_type]} alt={card.resource_vp_type} title={card.resource_vp_type} style={{ width: '13px', height: '13px', objectFit: 'contain' }} />
+                              : <span style={{ fontSize: '0.65rem', color: 'rgba(91,141,217,0.7)' }}>{card.resource_vp_type}</span>
+                            )}
+                          </span>
+                        ) : (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '5px', background: 'rgba(201,160,48,0.1)', border: '1px solid rgba(201,160,48,0.3)', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 700, color: '#c9a030' }}>
+                            1/{card.resource_vp_per}
+                            {card.resource_vp_type && (RESOURCE_ICONS[card.resource_vp_type]
+                              ? <img src={RESOURCE_ICONS[card.resource_vp_type]} alt={card.resource_vp_type} title={card.resource_vp_type} style={{ width: '13px', height: '13px', objectFit: 'contain' }} />
+                              : <span style={{ fontSize: '0.65rem', color: 'rgba(201,160,48,0.7)' }}>{card.resource_vp_type}</span>
+                            )}
+                          </span>
+                        )
+                      ) : (
+                        <span style={{ color: 'var(--text-5)' }}>/</span>
+                      )}
                     </td>
                   </tr>
                 )

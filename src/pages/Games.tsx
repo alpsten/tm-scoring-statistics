@@ -19,11 +19,10 @@ export default function Games() {
   if (error) return <div style={loadingStyle}>Failed to load data.</div>
 
   const games = data ?? []
-  const normalizeExp = (e: string) => e === 'Venus' ? 'Venus Next' : e
 
   const filtered = games.filter(g => {
     if (mapFilters.length > 0 && !mapFilters.includes(g.map_name ?? '')) return false
-    if (expansionFilters.length > 0 && !expansionFilters.some(e => g.expansions.map(normalizeExp).includes(e))) return false
+    if (expansionFilters.length > 0 && !expansionFilters.some(e => g.expansions.includes(e))) return false
     if (search) {
       const q = search.toLowerCase()
       const matchesPlayer = g.player_results.some(r => r.player_name.toLowerCase().includes(q))
@@ -35,12 +34,6 @@ export default function Games() {
 
   const hasFilters = !!search || mapFilters.length > 0 || expansionFilters.length > 0
 
-
-  function expDisplayName(n: string) {
-    if (n === 'Venus') return 'Venus Next'
-    if (n === 'Moon') return 'The Moon'
-    return n
-  }
 
   function toggleMap(map: string) {
     setMapFilters(prev => prev.includes(map) ? prev.filter(m => m !== map) : [...prev, map])
@@ -114,7 +107,7 @@ export default function Games() {
             {ALL_EXPANSIONS.map(exp => {
               const active = expansionFilters.includes(exp)
               return (
-                <button key={exp} onClick={() => toggleExpansion(exp)} title={expDisplayName(exp)} style={{
+                <button key={exp} onClick={() => toggleExpansion(exp)} title={exp} style={{
                   padding: '4px 6px',
                   background: active ? 'rgba(91,141,217,0.12)' : 'transparent',
                   border: `1px solid ${active ? '#5b8dd9' : 'var(--bd-input)'}`,
@@ -123,8 +116,8 @@ export default function Games() {
                   opacity: active ? 1 : 0.5,
                 }}>
                   {EXPANSION_ICONS[exp]
-                    ? <img src={EXPANSION_ICONS[exp]} alt={expDisplayName(exp)} style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
-                    : <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: active ? '#5b8dd9' : 'var(--text-4)', padding: '0 4px' }}>{expDisplayName(exp)}</span>
+                    ? <img src={EXPANSION_ICONS[exp]} alt={exp} style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+                    : <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: active ? '#5b8dd9' : 'var(--text-4)', padding: '0 4px' }}>{exp}</span>
                   }
                 </button>
               )
@@ -170,12 +163,12 @@ export default function Games() {
                 {game.expansions.length > 0 && (
                   <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '10px', paddingBottom: '10px', borderBottom: '1px solid var(--bd-panel)', alignItems: 'center' }}>
                     {game.expansions.map(exp => {
-                      const icon = EXPANSION_ICONS[exp] ?? EXPANSION_ICONS[normalizeExp(exp)]
+                      const icon = EXPANSION_ICONS[exp]
                       return icon ? (
                         <img key={exp} src={icon} alt={exp} title={exp} style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
                       ) : (
                         <span key={exp} style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', padding: '2px 8px', borderRadius: '3px', background: 'rgba(46,139,139,0.08)', color: '#2e8b8b', border: '1px solid rgba(46,139,139,0.2)' }}>
-                          {expDisplayName(exp)}
+                          {exp}
                         </span>
                       )
                     })}

@@ -6,7 +6,7 @@ import Tag from '../../components/ui/Tag'
 import { parseTags } from '../../components/ui/tagUtils'
 import { useCardReference } from '../../lib/hooks'
 import { supabase } from '../../lib/supabase'
-import { EXPANSION_ICONS, TAG_ICONS, NO_TAG_ICON, NO_TAG } from '../../lib/expansions'
+import { EXPANSION_ICONS, TAG_ICONS, NO_TAG_ICON, NO_TAG, PLACEMENT_VP_TYPES, MULTIPLIER_VP_TYPES, TYPE_COLORS, CARD_EXPANSIONS } from '../../lib/expansions'
 import type { CardReference } from '../../types/database'
 
 type CardType = CardReference['card_type']
@@ -14,20 +14,6 @@ type EditableCardType = CardType | ''
 
 const CARD_TYPES: CardType[] = ['Automated', 'Active', 'Event', 'Corporation', 'Prelude', 'CEO', 'Global Event']
 
-const EXPANSIONS_LIST = [
-  'Base', 'Corporate Era', 'Prelude', 'Prelude 2',
-  'Venus Next', 'Colonies', 'Turmoil', 'Ares', 'CEO', 'Moon', 'Pathfinders', 'Promos',
-]
-
-const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
-  Automated:   { bg: 'rgba(74, 158, 107, 0.1)',  color: '#4a9e6b' },
-  Active:      { bg: 'rgba(91, 141, 217, 0.1)',  color: '#5b8dd9' },
-  Event:       { bg: 'rgba(224, 85, 53, 0.1)',   color: '#e05535' },
-  Corporation: { bg: 'rgba(201, 160, 48, 0.1)',  color: '#c9a030' },
-  Prelude:     { bg: 'rgba(220, 100, 150, 0.1)', color: '#d46496' },
-  CEO:         { bg: 'rgba(210, 120, 50, 0.1)',  color: '#d07832' },
-  'Global Event': { bg: 'rgba(160, 110, 190, 0.1)', color: '#a870c8' },
-}
 
 const TAG_COLORS: Record<string, { bg: string; color: string }> = {
   'Animal':   { bg: 'rgba(74, 158, 107, 0.12)',  color: '#4a9e6b' },
@@ -45,6 +31,7 @@ const TAG_COLORS: Record<string, { bg: string; color: string }> = {
   'Moon':     { bg: 'rgba(140, 148, 176, 0.12)', color: '#8c94b0' },
   'Mars':     { bg: 'rgba(196, 88, 52, 0.12)',   color: '#c45834' },
   'Planet':   { bg: 'rgba(92, 172, 110, 0.12)',  color: '#5cac6e' },
+  'Wild':     { bg: 'rgba(150, 130, 200, 0.12)', color: '#9682c8' },
 }
 
 const ALL_TAGS = [
@@ -52,11 +39,14 @@ const ALL_TAGS = [
   'Jovian', 'Mars', 'Microbe', 'Moon', 'Plant', 'Planet', 'Power', 'Science', 'Space', 'Venus', 'Wild',
 ]
 
-const DEFAULT_VP_TYPES = [
-  'Animal', 'Asteroid', 'Camp', 'Cathedral', 'City-tile', 'Colony', 'Cube', 'Data', 'Delegates', 'Fighter',
-  'Floater', 'Hydroelectric', 'Jovian-tag', 'Microbe', 'Mining-tile', 'Moon-tag', 'Ocean-tile', 'Orbitals',
-  'Preservation', 'Road-tile', 'Robot', 'Science', 'Seeds', 'Syndicate Fleets', 'Venusian Habitat', 'Venus-tag',
+const DEFAULT_RESOURCE_VP_TYPES = [
+  'Animal', 'Asteroid', 'Camp', 'Cube', 'Data', 'Delegates', 'Fighter',
+  'Floater', 'Hydroelectric', 'Microbe', 'Orbitals',
+  'Preservation', 'Robot', 'Science', 'Seeds', 'Syndicate Fleets', 'Venusian Habitat',
 ]
+
+// Legacy resource_vp_type values that map to the Multiplier category after renaming
+const LEGACY_MULTIPLIER_TYPES = new Set(['Jovian-tag', 'Moon-tag', 'Venus-tag'])
 
 const BASE_VP_OPTIONS = [-2, -1, 0, 1, 2, 3, 4]
 
@@ -140,7 +130,7 @@ function cardTextToEditSections(card: CardReference) {
 
 // ─── Inline edit form ─────────────────────────────────────────────────────────
 
-function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew, vpTypes }: {
+function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
   values: EditValues
   onChange: (v: EditValues) => void
   saving: boolean
@@ -148,7 +138,6 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew, vpT
   onSave: () => void
   onCancel: () => void
   isNew?: boolean
-  vpTypes: string[]
 }) {
   const set = (k: keyof EditValues) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -161,6 +150,23 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew, vpT
   const [showEffect2, setShowEffect2] = useState(() => !!values.effect_text_2)
   const [showAction, setShowAction] = useState(() => !!values.action_text)
   const [showAction2, setShowAction2] = useState(() => !!values.action_text_2)
+  const [vpMode, setVpModeRaw] = useState<'none' | 'base' | 'resource' | 'placement' | 'multiplier'>(() => {
+    if (values.resource_vp_type) {
+      if (PLACEMENT_VP_TYPES.includes(values.resource_vp_type)) return 'placement'
+      if (MULTIPLIER_VP_TYPES.includes(values.resource_vp_type) || LEGACY_MULTIPLIER_TYPES.has(values.resource_vp_type)) return 'multiplier'
+      return 'resource'
+    }
+    if (values.base_vp) return 'base'
+    return 'none'
+  })
+  const setVpMode = (mode: typeof vpMode) => {
+    setVpModeRaw(mode)
+    if (mode === 'none') onChange({ ...values, base_vp: '', resource_vp_type: '', resource_vp_per: '' })
+    else if (mode === 'base') onChange({ ...values, resource_vp_type: '', resource_vp_per: '' })
+    else if (mode === 'resource') onChange({ ...values, base_vp: '', resource_vp_type: DEFAULT_RESOURCE_VP_TYPES.includes(values.resource_vp_type) ? values.resource_vp_type : '' })
+    else if (mode === 'multiplier') onChange({ ...values, base_vp: '', resource_vp_type: MULTIPLIER_VP_TYPES.includes(values.resource_vp_type) ? values.resource_vp_type : '' })
+    else onChange({ ...values, base_vp: '', resource_vp_type: PLACEMENT_VP_TYPES.includes(values.resource_vp_type) ? values.resource_vp_type : (PLACEMENT_VP_TYPES[0] ?? '') })
+  }
 
   const textArea = (
     key: keyof Pick<EditValues, 'card_text' | 'resources' | 'effect_text' | 'effect_text_2' | 'action_text' | 'action_text_2' | 'flavour_text'>,
@@ -202,7 +208,7 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew, vpT
         <div style={{ flex: '2 1 220px' }}>
           <label style={labelStyle}>Expansions</label>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 31px)', gap: '5px' }}>
-            {EXPANSIONS_LIST.map(e => {
+            {CARD_EXPANSIONS.map(e => {
               const active = values.expansions.includes(e)
               return (
                 <button
@@ -224,41 +230,86 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew, vpT
         </div>
       </div>
 
-      {/* Row 2: Resource/Card VP type, Resources per VP (conditional), Base VP */}
+      {/* Row 2: VP category picker */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div style={{ flex: '1 1 150px' }}>
-          <label style={labelStyle}>
-            Resource/Card VP type{' '}
-            <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: '#504270' }}>(e.g. Floater, Animal)</span>
-          </label>
-          <input
-            list="vp-type-list"
-            value={values.resource_vp_type}
-            onChange={set('resource_vp_type')}
-            placeholder="e.g. Floater, Ocean-tile…"
-            style={inputStyle}
-          />
-          <datalist id="vp-type-list">
-            {vpTypes.map(r => <option key={r} value={r} />)}
-          </datalist>
+        <div style={{ flex: '0 0 140px' }}>
+          <label style={labelStyle}>VP Category</label>
+          <select value={vpMode} onChange={e => setVpMode(e.target.value as typeof vpMode)} style={inputStyle}>
+            <option value="none">— None</option>
+            <option value="base">Base VP</option>
+            <option value="resource">Resource VP</option>
+            <option value="placement">Placement VP</option>
+            <option value="multiplier">Multiplier VP</option>
+          </select>
         </div>
-        {values.resource_vp_type && (
-          <div style={{ flex: '0 0 160px' }}>
-            <label style={labelStyle}>Resources per VP</label>
-            <select value={values.resource_vp_per} onChange={set('resource_vp_per')} style={inputStyle}>
+
+        {vpMode === 'base' && (
+          <div style={{ flex: '0 0 110px' }}>
+            <label style={labelStyle}>VP Value</label>
+            <select value={values.base_vp} onChange={set('base_vp')} style={inputStyle}>
               <option value="">—</option>
-              {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n === 1 ? '1/1' : `1/${n}`}</option>)}
+              {BASE_VP_OPTIONS.map(n => <option key={n} value={n}>{n > 0 ? `+${n}` : n} VP</option>)}
             </select>
           </div>
         )}
-        {!values.resource_vp_type && (
-          <div style={{ flex: '0 0 90px' }}>
-            <label style={labelStyle}>Base VP</label>
-            <select value={values.base_vp} onChange={set('base_vp')} style={inputStyle}>
-              <option value="">—</option>
-              {BASE_VP_OPTIONS.map(n => <option key={n} value={n}>{n} VP</option>)}
-            </select>
-          </div>
+
+        {vpMode === 'resource' && (
+          <>
+            <div style={{ flex: '1 1 140px' }}>
+              <label style={labelStyle}>Resource Type</label>
+              <select value={values.resource_vp_type} onChange={set('resource_vp_type')} style={inputStyle}>
+                <option value="">—</option>
+                {[...new Set([...DEFAULT_RESOURCE_VP_TYPES, ...(values.resource_vp_type && !PLACEMENT_VP_TYPES.includes(values.resource_vp_type) ? [values.resource_vp_type] : [])])].sort().map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ flex: '0 0 140px' }}>
+              <label style={labelStyle}>Resources per VP</label>
+              <select value={values.resource_vp_per} onChange={set('resource_vp_per')} style={inputStyle}>
+                <option value="">—</option>
+                {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n === 1 ? '1/1' : `1/${n}`}</option>)}
+              </select>
+            </div>
+          </>
+        )}
+
+        {vpMode === 'placement' && (
+          <>
+            <div style={{ flex: '1 1 140px' }}>
+              <label style={labelStyle}>Placement Type</label>
+              <select value={values.resource_vp_type} onChange={set('resource_vp_type')} style={inputStyle}>
+                <option value="">—</option>
+                {PLACEMENT_VP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: '0 0 140px' }}>
+              <label style={labelStyle}>Tiles per VP</label>
+              <select value={values.resource_vp_per} onChange={set('resource_vp_per')} style={inputStyle}>
+                <option value="">—</option>
+                {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n === 1 ? '1/1' : `1/${n}`}</option>)}
+              </select>
+            </div>
+          </>
+        )}
+
+        {vpMode === 'multiplier' && (
+          <>
+            <div style={{ flex: '1 1 140px' }}>
+              <label style={labelStyle}>Multiplier</label>
+              <select value={values.resource_vp_type} onChange={set('resource_vp_type')} style={inputStyle}>
+                <option value="">—</option>
+                {MULTIPLIER_VP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: '0 0 140px' }}>
+              <label style={labelStyle}>Per VP</label>
+              <select value={values.resource_vp_per} onChange={set('resource_vp_per')} style={inputStyle}>
+                <option value="">—</option>
+                {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n === 1 ? '1/1' : `1/${n}`}</option>)}
+              </select>
+            </div>
+          </>
         )}
       </div>
 
@@ -487,11 +538,6 @@ export default function CardReferenceAdmin() {
 
   const allTags = [...new Set((cards ?? []).flatMap(c => parseTags(c.tags)))].sort()
   const allExpansions = [...new Set((cards ?? []).flatMap(c => c.expansions))].sort()
-  const vpTypes = [...new Set([
-    ...DEFAULT_VP_TYPES,
-    ...(cards ?? []).map(c => c.resource_vp_type).filter((v): v is string => !!v),
-  ])].sort()
-
   const filtered = (cards ?? []).filter(c => {
     if (search && !c.card_name.toLowerCase().includes(search.toLowerCase())) return false
     if (typeFilters.length > 0 && !typeFilters.includes(c.card_type)) return false
@@ -725,7 +771,6 @@ export default function CardReferenceAdmin() {
             onSave={saveEdit}
             onCancel={cancelEdit}
             isNew
-            vpTypes={vpTypes}
           />
         </div>
       )}
@@ -735,7 +780,7 @@ export default function CardReferenceAdmin() {
         <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid #282042' }}>
-              {['Card', 'Type', 'Tags', 'Expansion', 'MC', 'Base VP', 'Resource VP', ''].map((h, i) => (
+              {['Card', 'Type', 'Tags', 'Expansion', 'MC', 'Base VP', 'VP (Resource / Placement)', ''].map((h, i) => (
                 <th key={i} style={{ padding: '10px 16px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
                   {h}
                 </th>
@@ -757,7 +802,6 @@ export default function CardReferenceAdmin() {
                       error={saveError}
                       onSave={saveEdit}
                       onCancel={cancelEdit}
-                      vpTypes={vpTypes}
                     />
                   </td>
                 ) : (
@@ -787,17 +831,23 @@ export default function CardReferenceAdmin() {
                       </div>
                     </td>
                     <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: card.mc_cost != null ? '#ece6ff' : '#3e325e' }}>
-                      {card.mc_cost != null ? `${card.mc_cost}` : '—'}
+                      {card.mc_cost != null ? `${card.mc_cost}` : '/'}
                     </td>
                     <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#c9a030' }}>
                       {card.base_vp != null ? `${card.base_vp} VP` : '—'}
                     </td>
-                    <td style={{ padding: '11px 16px', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#8e87a8' }}>
+                    <td style={{ padding: '11px 16px', fontFamily: 'var(--font-body)', fontSize: '0.78rem' }}>
                       {card.resource_vp_type
-                        ? card.resource_vp_per
-                          ? `1/${card.resource_vp_per} ${card.resource_vp_type}`
-                          : card.resource_vp_type
-                        : '—'}
+                        ? (() => {
+                            const isPlacement = PLACEMENT_VP_TYPES.includes(card.resource_vp_type)
+                            const label = card.resource_vp_per ? `1/${card.resource_vp_per} ${card.resource_vp_type}` : card.resource_vp_type
+                            return (
+                              <span style={{ color: isPlacement ? '#5b8dd9' : '#c9a030' }}>
+                                {isPlacement ? '⬡ ' : '◆ '}{label}
+                              </span>
+                            )
+                          })()
+                        : <span style={{ color: '#3e325e' }}>—</span>}
                     </td>
                     <td style={{ padding: '11px 16px' }}>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>

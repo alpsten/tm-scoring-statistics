@@ -7,7 +7,7 @@ import { z } from 'zod'
 import PageHeader from '../../components/ui/PageHeader'
 import { supabase } from '../../lib/supabase'
 import { usePlayerStats, useCardReference, useGame, useGameMilestones, useGameAwards } from '../../lib/hooks'
-import { EXPANSION_ICONS } from '../../lib/expansions'
+import { EXPANSION_ICONS, ALL_EXPANSIONS } from '../../lib/expansions'
 
 // ─── Shared styles (defined before Combobox so it can reference them) ─────────
 
@@ -140,7 +140,7 @@ const MAPS = [
   'Amazonis Planitia', 'Terra Cimmeria', 'Vastitas Borealis', 'Utopia Planitia',
   'Vastitas Borealis Nova', 'Hollandia',
 ]
-const EXPANSIONS = ['Prelude', 'Prelude 2', 'Venus Next', 'Colonies', 'Turmoil', 'Ares', 'Moon', 'Pathfinders', 'CEO', 'Promos']
+const EXPANSIONS = ALL_EXPANSIONS
 const COLONY_TILES = [
   'Callisto', 'Ceres', 'Enceladus', 'Europa', 'Ganymede',
   'Io', 'Luna', 'Miranda', 'Pluto', 'Titan', 'Triton',
@@ -226,7 +226,7 @@ export default function AddGame() {
   const [expansions, setExpansions] = useState<string[]>([])
   const [colonies, setColonies]     = useState<string[]>([])
 
-  const hasMoon        = expansions.includes('Moon')
+  const hasMoon        = expansions.includes('The Moon')
   const hasPathfinders = expansions.includes('Pathfinders')
   const hasVenusNext   = expansions.includes('Venus Next')
   const hasCEO         = expansions.includes('CEO')

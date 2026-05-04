@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { normalizeExpansion } from './expansions'
 import type { GameWithResults, PlayerStats, CorporationStats, CardStats, CardReference, PlayerProfile } from '../types/database'
 
 // ── Raw shape returned by Supabase nested selects ─────────────────────────────
@@ -57,7 +58,7 @@ interface RawGame {
 function mapGame(raw: RawGame): GameWithResults {
   return {
     ...raw,
-    expansions: raw.game_expansions.map(e => e.expansion_name),
+    expansions: raw.game_expansions.map(e => normalizeExpansion(e.expansion_name)),
     colonies: raw.game_colonies.map(c => c.colony_name),
     parameter_contributions: raw.parameter_contributions ?? [],
     player_results: raw.player_results.map(r => ({
@@ -461,7 +462,7 @@ export async function fetchCardReference(): Promise<CardReference[]> {
   if (error) throw error
   return (data as any[]).map(c => ({
     ...c,
-    expansions: (c.card_expansions ?? []).map((e: { expansion: string }) => e.expansion),
+    expansions: (c.card_expansions ?? []).map((e: { expansion: string }) => normalizeExpansion(e.expansion)),
   })) as CardReference[]
 }
 

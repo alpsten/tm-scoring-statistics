@@ -1,36 +1,40 @@
 interface FilterPillProps {
   label?: string
-  icon?: string        // optional image src
+  tooltip?: string
+  icon?: string
   active: boolean
-  color?: string       // accent color when active (hex)
+  color?: string
   onClick: () => void
 }
 
-export default function FilterPill({ label, icon, active, color = '#888888', onClick }: FilterPillProps) {
-  const activeBg = `${color}1e`  // ~12% opacity
+export default function FilterPill({ label, tooltip, icon, active, color = '#888888', onClick }: FilterPillProps) {
+  const activeBg = color + '1e'
   return (
     <button
       onClick={onClick}
-      title={label}
+      title={tooltip ?? label}
       style={{
-        padding: icon ? '4px' : '3px 11px',
+        height: '34px',
+        width: icon ? '34px' : undefined,
+        padding: icon ? 0 : '0 10px',
+        minWidth: '34px',
         background: active ? activeBg : 'transparent',
         border: `1px solid ${active ? color : 'var(--bd-secondary)'}`,
-        borderRadius: icon ? '6px' : '12px',
+        borderRadius: '5px',
         cursor: 'pointer',
         transition: 'all 0.12s',
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        opacity: active ? 1 : 0.55,
-        fontFamily: 'var(--font-body)',
-        fontSize: '0.75rem',
-        color: active ? color : 'var(--text-4)',
+        opacity: active ? 1 : 0.6,
+        flexShrink: 0,
       }}
     >
       {icon
-        ? <img src={icon} alt={label ?? ''} style={{ width: '20px', height: '20px', objectFit: 'contain', display: 'block' }} />
-        : <>{active ? '✓ ' : ''}{label}</>
+        ? <img src={icon} alt={tooltip ?? label ?? ''} style={{ width: '20px', height: '20px', objectFit: 'contain', display: 'block' }} />
+        : <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', fontWeight: 700, color: active ? color : 'var(--text-4)', letterSpacing: 0, userSelect: 'none', lineHeight: 1, whiteSpace: 'nowrap' }}>
+            {label}
+          </span>
       }
     </button>
   )

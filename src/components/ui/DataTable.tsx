@@ -67,7 +67,7 @@ export default function DataTable<T>({
                 }}
               >
                 {col.label}
-                {col.sortable && (
+                {col.sortable && onSort && (
                   sortKey === col.key
                     ? <span style={{ color: 'var(--sort-active)', marginLeft: '3px' }}>{sortDir === 'asc' ? '▲' : '▼'}</span>
                     : <span style={{ color: 'var(--bd-secondary)', marginLeft: '3px' }}>⇅</span>
