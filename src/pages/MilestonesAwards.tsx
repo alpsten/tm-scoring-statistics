@@ -34,7 +34,7 @@ function RankTable({ rows, nameLabel }: { rows: RankRow[]; nameLabel: string }) 
   }
 
   const thStyle: React.CSSProperties = {
-    padding: '8px 14px',
+    padding: '10px 16px',
     textAlign: 'left',
     fontFamily: 'var(--font-mono)',
     fontSize: '0.62rem',
@@ -66,16 +66,16 @@ function RankTable({ rows, nameLabel }: { rows: RankRow[]; nameLabel: string }) 
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-row-hover)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-row)')}
             >
-              <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-4)' }}>
+              <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-4)' }}>
                 {i + 1}
               </td>
-              <td style={{ padding: '9px 14px', fontFamily: 'var(--font-body)', fontSize: '0.87rem', color: 'var(--text-1)' }}>
+              <td style={{ padding: '12px 16px', fontFamily: 'var(--font-body)', fontSize: '0.87rem', color: 'var(--text-1)' }}>
                 {row.name}
               </td>
-              <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#b87aff', textAlign: 'right' }}>
+              <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#b87aff', textAlign: 'right' }}>
                 {row.count}
               </td>
-              <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-4)', textAlign: 'right' }}>
+              <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-4)', textAlign: 'right' }}>
                 {pct(row.total)}%
               </td>
             </tr>
@@ -166,27 +166,27 @@ export default function MilestonesAwards() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '28px', marginBottom: '28px' }}>
         {/* Milestones */}
         <div>
-          <SectionHeading effect>Milestones — most claimed</SectionHeading>
+          <SectionHeading effect style={{ marginBottom: '-60px' }}>Milestones — most claimed</SectionHeading>
           {panel(<RankTable rows={milestoneRanked} nameLabel="Milestone" />)}
         </div>
 
         {/* Awards */}
         <div>
-          <SectionHeading effect>Awards — most funded</SectionHeading>
+          <SectionHeading effect style={{ marginBottom: '-60px' }}>Awards — most funded</SectionHeading>
           {panel(<RankTable rows={awardRanked} nameLabel="Award" />)}
         </div>
       </div>
 
       {/* Per-player breakdown */}
       <div>
-        <SectionHeading effect>Per-player activity</SectionHeading>
+        <SectionHeading effect style={{ marginBottom: '-60px' }}>Per-player activity</SectionHeading>
         {panel(
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
                 {['Player', 'Milestones', 'Awards', 'Total'].map((h, i) => (
                   <th key={h} style={{
-                    padding: '8px 14px',
+                    padding: '10px 16px',
                     textAlign: i === 0 ? 'left' : 'right',
                     fontFamily: 'var(--font-mono)',
                     fontSize: '0.62rem',
@@ -207,10 +207,10 @@ export default function MilestonesAwards() {
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-row-hover)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-row)')}
                 >
-                  <td style={{ padding: '9px 14px', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.87rem', color: 'var(--text-1)' }}>{p.name}</td>
-                  <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#4a9e6b', textAlign: 'right' }}>{p.milestones}</td>
-                  <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#c9a030', textAlign: 'right' }}>{p.awards}</td>
-                  <td style={{ padding: '9px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#b87aff', textAlign: 'right' }}>{p.milestones + p.awards}</td>
+                  <td style={{ padding: '12px 16px', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.87rem', color: 'var(--text-1)' }}>{p.name}</td>
+                  <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#4a9e6b', textAlign: 'right' }}>{p.milestones}</td>
+                  <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#c9a030', textAlign: 'right' }}>{p.awards}</td>
+                  <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#b87aff', textAlign: 'right' }}>{p.milestones + p.awards}</td>
                 </tr>
               ))}
             </tbody>

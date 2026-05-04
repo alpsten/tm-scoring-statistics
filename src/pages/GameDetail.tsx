@@ -4,7 +4,7 @@ import { getCorps } from '../types/database'
 import { useQueryClient } from '@tanstack/react-query'
 import { useGame, useGameByNumber, deleteGame, useGameCards, useGameMilestones, useGameAwards, useCardReference } from '../lib/hooks'
 import { useAuth } from '../context/useAuth'
-import { EXPANSION_ICONS } from '../lib/expansions'
+import { EXPANSION_ICONS, TYPE_COLORS } from '../lib/expansions'
 import Tag from '../components/ui/Tag'
 import { parseTags } from '../components/ui/tagUtils'
 import SectionHeading from '../components/ui/SectionHeading'
@@ -64,19 +64,7 @@ export default function GameDetail() {
   const sorted = [...game.player_results].sort((a, b) => a.position - b.position)
   const winner = sorted[0]
   const gameNum = game?.game_number ?? null
-  const expDisplayName = (n: string) => n === 'Venus' ? 'Venus Next' : n
-
   const cardRefMap = Object.fromEntries(cardRef.map(c => [c.card_name.toLowerCase(), c]))
-
-  const TYPE_COLORS: Record<string, { bg: string; color: string }> = {
-    Automated:   { bg: 'rgba(74,158,107,0.1)',  color: '#4a9e6b' },
-    Active:      { bg: 'rgba(91,141,217,0.1)',  color: '#5b8dd9' },
-    Event:       { bg: 'rgba(224,85,53,0.1)',   color: '#e05535' },
-    Corporation: { bg: 'rgba(201,160,48,0.1)',  color: '#c9a030' },
-    Prelude:     { bg: 'rgba(220,100,150,0.1)', color: '#d46496' },
-    CEO:         { bg: 'rgba(210,120,50,0.1)',  color: '#d07832' },
-    'Global Event': { bg: 'rgba(160,110,190,0.1)', color: '#a870c8' },
-  }
 
   const GEN_COLORS = ['#707070', '#3bbfbf', '#b87aff', '#c9a030', '#e05535', '#4a9e6b', '#9b50f0', '#2e8b8b']
   const genColor = (gen: number) => GEN_COLORS[(gen - 1) % GEN_COLORS.length]
@@ -180,7 +168,7 @@ export default function GameDetail() {
                 <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
               ) : (
                 <span key={exp} style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '3px', background: 'rgba(46,139,139,0.1)', color: '#3bbfbf', border: '1px solid rgba(46,139,139,0.25)' }}>
-                  {expDisplayName(exp)}
+                  {exp}
                 </span>
               ))}
             </div>
@@ -210,7 +198,7 @@ export default function GameDetail() {
           {gameMilestones.length > 0 && (
             <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '14px 16px' }}>
               <div style={metaLabelStyle}>Milestones</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px' }}>
                 {[...gameMilestones]
                   .sort((a, b) => {
                     if (a.claimed_order !== null && b.claimed_order !== null) return a.claimed_order - b.claimed_order
@@ -228,7 +216,7 @@ export default function GameDetail() {
                         {m.player_name ? (
                           <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#c9a030' }}>{m.player_name}</span>
                         ) : (
-                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)' }}>—</span>
+                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', fontStyle: 'italic' }}>Not claimed</span>
                         )}
                       </div>
                     </div>
@@ -241,52 +229,55 @@ export default function GameDetail() {
             <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '14px 16px' }}>
               <div style={metaLabelStyle}>Awards</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
-                {gameAwards.map(a => (
-                  <div key={a.award_name}>
-                    {/* Award name */}
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-1)', marginBottom: '4px' }}>{a.award_name}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '8px', borderLeft: '2px solid var(--bd-panel)' }}>
-                      {/* Funder */}
-                      {a.funder_name && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-4)', minWidth: '16px' }}>
-                            {a.funded_order === 1 ? 'Funded first' : a.funded_order === 2 ? 'Funded second' : a.funded_order === 3 ? 'Funded third' : 'Funded by'}
-                          </span>
-                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)' }}>{a.funder_name}</span>
-                        </div>
-                      )}
-                      {/* Winner(s) */}
-                      {(a.winner_name || a.winner_name_2) && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-4)', minWidth: '16px' }}>1st</span>
-                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#c9a030' }}>{a.winner_name}</span>
-                          {a.winner_name_2 && (
-                            <>
-                              <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.6rem', color: 'var(--text-4)' }}>tie</span>
-                              <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#c9a030' }}>{a.winner_name_2}</span>
-                            </>
+                {gameAwards.map(a => {
+                  const hasData = !!(a.funder_name || a.winner_name || a.second_name)
+                  return (
+                    <div key={a.award_name}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: hasData ? '4px' : 0 }}>
+                        <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-1)' }}>{a.award_name}</span>
+                        {!hasData && (
+                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', fontStyle: 'italic' }}>Not claimed</span>
+                        )}
+                      </div>
+                      {hasData && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '8px', borderLeft: '2px solid var(--bd-panel)' }}>
+                          {a.funder_name && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-4)', minWidth: '16px' }}>
+                                {a.funded_order === 1 ? 'Funded first' : a.funded_order === 2 ? 'Funded second' : a.funded_order === 3 ? 'Funded third' : 'Funded by'}
+                              </span>
+                              <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)' }}>{a.funder_name}</span>
+                            </div>
+                          )}
+                          {(a.winner_name || a.winner_name_2) && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-4)', minWidth: '16px' }}>1st</span>
+                              <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#c9a030' }}>{a.winner_name}</span>
+                              {a.winner_name_2 && (
+                                <>
+                                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.6rem', color: 'var(--text-4)' }}>tie</span>
+                                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#c9a030' }}>{a.winner_name_2}</span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                          {(a.second_name || a.second_name_2) && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-4)', minWidth: '16px' }}>2nd</span>
+                              <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-3)' }}>{a.second_name}</span>
+                              {a.second_name_2 && (
+                                <>
+                                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.6rem', color: 'var(--text-4)' }}>tie</span>
+                                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-3)' }}>{a.second_name_2}</span>
+                                </>
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
-                      {/* Second place */}
-                      {(a.second_name || a.second_name_2) && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-4)', minWidth: '16px' }}>2nd</span>
-                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-3)' }}>{a.second_name}</span>
-                          {a.second_name_2 && (
-                            <>
-                              <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.6rem', color: 'var(--text-4)' }}>tie</span>
-                              <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-3)' }}>{a.second_name_2}</span>
-                            </>
-                          )}
-                        </div>
-                      )}
-                      {!a.funder_name && !a.winner_name && !a.second_name && (
-                        <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)' }}>—</span>
                       )}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
@@ -373,7 +364,7 @@ export default function GameDetail() {
       {game.parameter_contributions.length > 0 && (() => {
         const params = game.parameter_contributions
         const hasVenus = params.some(p => p.venus_steps > 0)
-        const hasMoon = game.expansions.some(e => e === 'Moon' || e === 'The Moon')
+        const hasMoon = game.expansions.includes('The Moon')
         const paramCols: { key: keyof typeof params[0]; label: string; short: string; color: string }[] = [
           { key: 'temperature_steps', label: 'Temperature', short: 'TEMP', color: '#e05535' },
           { key: 'oxygen_steps',      label: 'Oxygen',      short: 'OX',   color: '#4a9e6b' },
