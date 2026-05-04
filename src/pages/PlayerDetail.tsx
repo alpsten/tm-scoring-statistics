@@ -11,7 +11,7 @@ import { CARD_NAME_CORRECTIONS } from '../lib/logParser'
 import { getCorps } from '../types/database'
 import Tag from '../components/ui/Tag'
 import { parseTags } from '../components/ui/tagUtils'
-import { EXPANSION_ICONS } from '../lib/expansions'
+import { EXPANSION_ICONS, NO_TAG, UNOFFICIAL_EXPANSIONS, PROJECT_CARD_TYPES, TYPE_COLORS } from '../lib/expansions'
 
 export default function PlayerDetail() {
   const rawName = useParams<{ name: string }>().name
@@ -24,9 +24,12 @@ export default function PlayerDetail() {
     return () => window.removeEventListener('resize', handler)
   }, [])
   const [openYears, setOpenYears] = useState<Set<string>>(new Set())
-  const [collapsedCardSections, setCollapsedCardSections] = useState<Set<string>>(new Set(['Green cards', 'Blue cards', 'Red cards']))
+  const [collapsedCardSections, setCollapsedCardSections] = useState<Set<string>>(new Set(['Prelude cards', 'Automated cards', 'Active cards', 'Event cards']))
   const [allCorpsOpen, setAllCorpsOpen] = useState(false)
   const [chartYear, setChartYear] = useState<string>('All')
+  const [cardSortKey, setCardSortKey] = useState('times_played')
+  const [cardSortDir, setCardSortDir] = useState<'asc' | 'desc'>('desc')
+  const [officialOnly, setOfficialOnly] = useState(true)
   const { data: games, isLoading: gamesLoading } = useGames()
   const { data: playerStats, isLoading: statsLoading } = usePlayerStats()
   const { data: profiles = [] } = usePlayerProfiles()
@@ -58,6 +61,24 @@ export default function PlayerDetail() {
 
   const myResults = playerGames.map(g => g.player_results.find(r => r.player_name === name)!)
   const totalVP = myResults.reduce((sum, r) => sum + r.total_vp, 0)
+
+  // Win streak (playerGames is newest-first, so iterate reversed for chronological)
+  let longestStreak = 0, tempStreak = 0
+  for (let i = myResults.length - 1; i >= 0; i--) {
+    if (myResults[i].position === 1) { tempStreak++; if (tempStreak > longestStreak) longestStreak = tempStreak }
+    else tempStreak = 0
+  }
+  let currentStreak = 0
+  for (const r of myResults) { if (r.position === 1) currentStreak++; else break }
+
+  // Win rate by player count
+  const winRateByCount: Record<number, { wins: number; games: number }> = {}
+  for (let i = 0; i < playerGames.length; i++) {
+    const pc = playerGames[i].player_count
+    if (!winRateByCount[pc]) winRateByCount[pc] = { wins: 0, games: 0 }
+    winRateByCount[pc].games++
+    if (myResults[i].position === 1) winRateByCount[pc].wins++
+  }
 
   type GameRecord = { value: number; gameNumber: number | null }
   const findBest = (fn: (r: typeof myResults[0]) => number | null): GameRecord | null => {
@@ -115,7 +136,162 @@ export default function PlayerDetail() {
   })
 
   const cardRefMap = Object.fromEntries(cardRef.map(c => [c.card_name, c]))
+
+  const isOfficial = (exps: string[]) => !exps.some(e => UNOFFICIAL_EXPANSIONS.has(e))
+
+  const activeCardRef = officialOnly ? cardRef.filter(c => isOfficial(c.expansions)) : cardRef
+  const activePlayerCards = officialOnly
+    ? playerCards.filter(c => {
+        const ref = cardRefMap[CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name]
+        return !ref || isOfficial(ref.expansions)
+      })
+    : playerCards
+
+  const PROJECT_TYPES = new Set<string>(PROJECT_CARD_TYPES)
+
+  // --- Tags on Project Cards (Automated + Active + Event pool only) ---
+  const playerProjectTagPlays: Record<string, number> = {}
+  let playerProjectTotalPlays = 0
+  for (const c of activePlayerCards) {
+    const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
+    const ref = cardRefMap[canonical]
+    if (!ref || !PROJECT_TYPES.has(ref.card_type)) continue
+    playerProjectTotalPlays += c.times_played
+    const tags = parseTags(ref.tags ?? null)
+    for (const tag of tags.length > 0 ? tags : [NO_TAG]) {
+      playerProjectTagPlays[tag] = (playerProjectTagPlays[tag] ?? 0) + c.times_played
+    }
+  }
+  const poolProjectTagCount: Record<string, number> = {}
+  let poolProjectTotalCards = 0
+  for (const c of activeCardRef) {
+    if (!PROJECT_TYPES.has(c.card_type)) continue
+    poolProjectTotalCards++
+    const tags = parseTags(c.tags ?? null)
+    for (const tag of tags.length > 0 ? tags : [NO_TAG]) {
+      poolProjectTagCount[tag] = (poolProjectTagCount[tag] ?? 0) + 1
+    }
+  }
+  const topTags = playerProjectTotalPlays > 0 && poolProjectTotalCards > 0
+    ? Object.entries(playerProjectTagPlays)
+        .filter(([tag]) => (poolProjectTagCount[tag] ?? 0) > 0)
+        .map(([tag, plays]) => ({
+          tag, plays,
+          affinity: (plays / playerProjectTotalPlays) / (poolProjectTagCount[tag] / poolProjectTotalCards),
+        }))
+        .sort((a, b) => b.affinity - a.affinity)
+    : []
+
+  // --- Card Types (project card pool only) ---
+  const playerTypePlays: Record<string, number> = {}
+  for (const c of activePlayerCards) {
+    const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
+    const ctype = cardRefMap[canonical]?.card_type
+    if (ctype && PROJECT_TYPES.has(ctype)) {
+      playerTypePlays[ctype] = (playerTypePlays[ctype] ?? 0) + c.times_played
+    }
+  }
+  const poolTypeCount: Record<string, number> = {}
+  for (const c of activeCardRef) {
+    if (PROJECT_TYPES.has(c.card_type)) {
+      poolTypeCount[c.card_type] = (poolTypeCount[c.card_type] ?? 0) + 1
+    }
+  }
+  const topCardTypes = playerProjectTotalPlays > 0 && poolProjectTotalCards > 0
+    ? PROJECT_CARD_TYPES
+        .filter(t => (playerTypePlays[t] ?? 0) > 0)
+        .map(t => ({
+          type: t,
+          plays: playerTypePlays[t] ?? 0,
+          affinity: ((playerTypePlays[t] ?? 0) / playerProjectTotalPlays) / ((poolTypeCount[t] ?? 1) / poolProjectTotalCards),
+        }))
+        .sort((a, b) => b.affinity - a.affinity)
+    : []
+
+  // --- Corporations (corporation pool only) ---
+  const playerCorpTagCounts: Record<string, number> = {}
+  let corpTotalPlays = 0
+  for (const game of playerGames) {
+    const result = game.player_results.find(r => r.player_name === name)!
+    for (const corp of getCorps(result)) {
+      const canonical = CARD_NAME_CORRECTIONS[corp] ?? corp
+      const ref = cardRefMap[canonical]
+      if (officialOnly && ref && !isOfficial(ref.expansions)) continue
+      corpTotalPlays++
+      const corpTags = parseTags(ref?.tags ?? null)
+      for (const tag of corpTags.length > 0 ? corpTags : [NO_TAG]) {
+        playerCorpTagCounts[tag] = (playerCorpTagCounts[tag] ?? 0) + 1
+      }
+    }
+  }
+  const poolCorpTagCount: Record<string, number> = {}
+  let poolCorpTotal = 0
+  for (const c of activeCardRef) {
+    if (c.card_type !== 'Corporation') continue
+    poolCorpTotal++
+    const corpTags = parseTags(c.tags ?? null)
+    for (const tag of corpTags.length > 0 ? corpTags : [NO_TAG]) {
+      poolCorpTagCount[tag] = (poolCorpTagCount[tag] ?? 0) + 1
+    }
+  }
+  const topCorpTags = corpTotalPlays > 0 && poolCorpTotal > 0
+    ? Object.entries(playerCorpTagCounts)
+        .filter(([tag]) => (poolCorpTagCount[tag] ?? 0) > 0)
+        .map(([tag, plays]) => ({
+          tag, plays,
+          affinity: (plays / corpTotalPlays) / (poolCorpTagCount[tag] / poolCorpTotal),
+        }))
+        .sort((a, b) => b.affinity - a.affinity)
+        .slice(0, 3)
+    : []
+
+  // --- Preludes (prelude pool only) ---
+  const playerPreludeTagCounts: Record<string, number> = {}
+  let preludeTotalPlays = 0
+  for (const c of activePlayerCards) {
+    const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
+    if (cardRefMap[canonical]?.card_type !== 'Prelude') continue
+    preludeTotalPlays += c.times_played
+    const preludeTags = parseTags(cardRefMap[canonical]?.tags ?? null)
+    for (const tag of preludeTags.length > 0 ? preludeTags : [NO_TAG]) {
+      playerPreludeTagCounts[tag] = (playerPreludeTagCounts[tag] ?? 0) + c.times_played
+    }
+  }
+  const poolPreludeTagCount: Record<string, number> = {}
+  let poolPreludeTotal = 0
+  for (const c of activeCardRef) {
+    if (c.card_type !== 'Prelude') continue
+    poolPreludeTotal++
+    const preludeTags = parseTags(c.tags ?? null)
+    for (const tag of preludeTags.length > 0 ? preludeTags : [NO_TAG]) {
+      poolPreludeTagCount[tag] = (poolPreludeTagCount[tag] ?? 0) + 1
+    }
+  }
+  const topPreludeTags = preludeTotalPlays > 0 && poolPreludeTotal > 0
+    ? Object.entries(playerPreludeTagCounts)
+        .filter(([tag]) => (poolPreludeTagCount[tag] ?? 0) > 0)
+        .map(([tag, plays]) => ({
+          tag, plays,
+          affinity: (plays / preludeTotalPlays) / (poolPreludeTagCount[tag] / poolPreludeTotal),
+        }))
+        .sort((a, b) => b.affinity - a.affinity)
+        .slice(0, 3)
+    : []
   const globalWinRateMap = Object.fromEntries(globalCardStats.map(s => [s.card_name, s.win_rate]))
+
+  const handleCardSort = (key: string) => {
+    if (key === cardSortKey) setCardSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setCardSortKey(key); setCardSortDir('desc') }
+  }
+  const sortCards = (cards: typeof playerCards) => [...cards].sort((a, b) => {
+    const cA = CARD_NAME_CORRECTIONS[a.card_name] ?? a.card_name
+    const cB = CARD_NAME_CORRECTIONS[b.card_name] ?? b.card_name
+    let vA: number, vB: number
+    if (cardSortKey === 'win_rate') { vA = globalWinRateMap[cA] ?? -1; vB = globalWinRateMap[cB] ?? -1 }
+    else if (cardSortKey === 'base_vp') { vA = cardRefMap[cA]?.base_vp ?? -1; vB = cardRefMap[cB]?.base_vp ?? -1 }
+    else { vA = a.times_played; vB = b.times_played }
+    return cardSortDir === 'asc' ? vA - vB : vB - vA
+  })
 
   const cardColumns: DataTableColumn<typeof playerCards[0]>[] = [
     {
@@ -131,22 +307,24 @@ export default function PlayerDetail() {
         )
       },
     },
-    { key: 'times_played', label: 'Played', align: 'center', tdStyle: { fontSize: '0.82rem' } },
+    { key: 'times_played', label: 'Played', align: 'center', sortable: true, tdStyle: { fontSize: '0.82rem' } },
     {
-      key: 'card_name' as any,
+      key: 'base_vp',
       label: 'VP',
       align: 'center',
+      sortable: true,
       tdStyle: { fontSize: '0.82rem' },
       render: c => {
         const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
         const base_vp = cardRefMap[canonical]?.base_vp
-        return <span style={{ color: base_vp != null ? '#c9a030' : 'var(--text-5)' }}>{base_vp ?? '—'}</span>
+        return <span style={{ color: base_vp != null ? '#c9a030' : 'var(--text-5)' }}>{base_vp ?? '/'}</span>
       },
     },
     {
-      key: 'card_name' as any,
+      key: 'win_rate',
       label: 'Win Rate',
       align: 'center',
+      sortable: true,
       tdStyle: { fontSize: '0.82rem' },
       render: c => {
         const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
@@ -156,19 +334,7 @@ export default function PlayerDetail() {
       },
     },
     {
-      key: 'card_name' as any,
-      label: 'Cost',
-      align: 'center',
-      tdStyle: { fontSize: '0.82rem' },
-      render: c => {
-        const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
-        const ref = cardRefMap[canonical]
-        if (!ref || ref.mc_cost == null) return <span style={{ color: 'var(--text-5)' }}>—</span>
-        return <span style={{ color: '#c9a030' }}>{ref.mc_cost}</span>
-      },
-    },
-    {
-      key: 'card_name' as any,
+      key: 'tags',
       label: 'Tags',
       align: 'center',
       tdStyle: { fontSize: '0.82rem' },
@@ -184,7 +350,7 @@ export default function PlayerDetail() {
       },
     },
     {
-      key: 'card_name' as any,
+      key: 'expansion',
       label: 'Expansion',
       align: 'center',
       tdStyle: { fontSize: '0.82rem' },
@@ -370,40 +536,73 @@ export default function PlayerDetail() {
 
       <SectionHeading>Personal Achievements</SectionHeading>
 
-      {/* Panel 1: Win stats */}
-      <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '4px 16px', marginBottom: '16px' }}>
-        {([
-          {
-            label: 'Wins',
-            node: (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 700 }}>
-                <span style={{ color: 'var(--text-1)' }}>{stats.wins} wins of {stats.games_played} games</span>
-                <span style={{ color: stats.win_rate >= 60 ? '#4a9e6b' : stats.win_rate >= 40 ? '#c9a030' : '#e05535', fontWeight: 400 }}> ({Math.round(stats.win_rate)}% Win Rate)</span>
+      {/* Panel 1: Win stats — 2-column grid */}
+      <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', marginBottom: '16px' }}>
+        {(() => {
+          const statLabel = (text: string) => (
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>{text}</span>
+          )
+          const statRow = (label: string, node: React.ReactNode, last: boolean) => (
+            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: last ? 'none' : '1px solid var(--bd-panel)' }}>
+              {statLabel(label)}
+              {node}
+            </div>
+          )
+          const left = [
+            statRow('Wins', (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-3)' }}>
+                {stats.wins} wins of {stats.games_played} games
               </span>
-            ),
-          },
-          {
-            label: 'Average Score Per Game',
-            node: (
+            ), false),
+            statRow('Overall Win Rate', (
+              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: stats.win_rate >= 60 ? '#4a9e6b' : stats.win_rate >= 40 ? '#c9a030' : '#e05535' }}>
+                {Math.round(stats.win_rate)}%
+              </span>
+            ), false),
+            statRow('Win Rate by Player Count', (
+              <span style={{ display: 'inline-flex', gap: '14px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem' }}>
+                {Object.entries(winRateByCount).sort(([a], [b]) => Number(a) - Number(b)).map(([count, { wins, games }]) => {
+                  const wr = wins / games * 100
+                  const wrColor = wr >= 60 ? '#4a9e6b' : wr >= 40 ? '#c9a030' : '#e05535'
+                  return (
+                    <span key={count}>
+                      <span style={{ fontWeight: 700, color: '#5b8dd9' }}>{count}P </span>
+                      <span style={{ fontWeight: 700, color: wrColor }}>{Math.round(wr)}%</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}> (<span style={{ color: wrColor }}>{wins}</span>/{games})</span>
+                    </span>
+                  )
+                })}
+              </span>
+            ), true),
+          ]
+          const right = [
+            statRow('Win Streak', (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
+                <span style={{ fontWeight: 700, color: '#c9a030' }}>{longestStreak} games in a row</span>
+                {currentStreak > 0 && <>
+                  <span style={{ color: 'var(--text-5)', margin: '0 8px' }}>·</span>
+                  <span style={{ fontWeight: 700, color: '#4a9e6b' }}>Current {currentStreak} in a row</span>
+                </>}
+              </span>
+            ), false),
+            statRow('Average Score Per Game', (
               <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#c9a030' }}>
-                {Math.round(stats.avg_score)} <span style={{ fontSize: '0.95rem', fontWeight: 700 }}>VP</span>
+                {Math.round(stats.avg_score)} VP
               </span>
-            ),
-          },
-          {
-            label: 'Total VP Gained',
-            node: (
+            ), false),
+            statRow('Total VP Gained', (
               <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#c9a030' }}>
-                {totalVP.toLocaleString()} <span style={{ fontSize: '0.95rem', fontWeight: 700 }}>VP</span>
+                {totalVP.toLocaleString()} VP
               </span>
-            ),
-          },
-        ]).map((row, i, arr) => (
-          <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: i < arr.length - 1 ? '1px solid var(--bd-panel)' : 'none' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>{row.label}</span>
-            {row.node}
-          </div>
-        ))}
+            ), true),
+          ]
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+              <div style={{ borderRight: '1px solid var(--bd-panel)' }}>{left}</div>
+              <div>{right}</div>
+            </div>
+          )
+        })()}
       </div>
 
       {/* Panel 2: Per-game records grid */}
@@ -535,15 +734,25 @@ export default function PlayerDetail() {
       {/* Head-to-head */}
       {(() => {
         // Build per-opponent records from shared games
-        const records: Record<string, { games: number; wins: number; losses: number; scoreDiffs: number[] }> = {}
+        const records: Record<string, { games: number; wins: number; losses: number; draws: number; scoreDiffs: number[] }> = {}
         for (const game of playerGames) {
           const myResult = game.player_results.find(r => r.player_name === name)!
           for (const opp of game.player_results) {
             if (opp.player_name === name) continue
-            if (!records[opp.player_name]) records[opp.player_name] = { games: 0, wins: 0, losses: 0, scoreDiffs: [] }
+            if (!records[opp.player_name]) records[opp.player_name] = { games: 0, wins: 0, losses: 0, draws: 0, scoreDiffs: [] }
             records[opp.player_name].games++
-            if (myResult.position === 1) records[opp.player_name].wins++
-            else if (opp.position === 1) records[opp.player_name].losses++
+            if (myResult.position === 1 && opp.position === 1) {
+              // tied on VP — tiebreaker is MegaCredits
+              const myMC = myResult.mc ?? 0
+              const oppMC = opp.mc ?? 0
+              if (myMC > oppMC) records[opp.player_name].wins++
+              else if (oppMC > myMC) records[opp.player_name].losses++
+              else records[opp.player_name].draws++
+            } else if (myResult.position === 1) {
+              records[opp.player_name].wins++
+            } else if (opp.position === 1) {
+              records[opp.player_name].losses++
+            }
             records[opp.player_name].scoreDiffs.push(myResult.total_vp - opp.total_vp)
           }
         }
@@ -565,13 +774,16 @@ export default function PlayerDetail() {
                         {opp}
                       </Link>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#5b8dd9' }}>
-                        {rec.games}G
+                        {rec.games} Games
                       </span>
                     </div>
                     {/* W / L bar */}
                     <div style={{ display: 'flex', height: '4px', borderRadius: '2px', overflow: 'hidden', marginBottom: '10px', background: 'var(--bd-panel)' }}>
                       {rec.wins > 0 && (
                         <div style={{ width: `${winRate}%`, background: '#4a9e6b', transition: 'width 0.3s' }} />
+                      )}
+                      {rec.draws > 0 && (
+                        <div style={{ width: `${(rec.draws / rec.games) * 100}%`, background: '#707070', transition: 'width 0.3s' }} />
                       )}
                       {rec.losses > 0 && (
                         <div style={{ width: `${(rec.losses / rec.games) * 100}%`, background: '#e05535', transition: 'width 0.3s' }} />
@@ -581,10 +793,8 @@ export default function PlayerDetail() {
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#4a9e6b' }}>{rec.wins}W</span>
                         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#e05535' }}>{rec.losses}L</span>
-                        {rec.games - rec.wins - rec.losses > 0 && (
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--text-4)' }}>
-                            {rec.games - rec.wins - rec.losses}—
-                          </span>
+                        {rec.draws > 0 && (
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--text-4)' }}>{rec.draws}D</span>
                         )}
                       </div>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: avgDiff > 0 ? '#4a9e6b' : avgDiff < 0 ? '#e05535' : '#707070' }}>
@@ -689,12 +899,12 @@ export default function PlayerDetail() {
 
       {/* Cards played */}
       {playerCards.length > 0 && (() => {
-        const typeMap = Object.fromEntries(cardRef.map(c => [c.card_name, c.card_type]))
         const top10 = [...playerCards].sort((a, b) => b.times_played - a.times_played).slice(0, 10)
         const sections: { label: string; color: string; bg: string; border: string; types: string[] }[] = [
-          { label: 'Green cards', color: '#4a9e6b', bg: 'rgba(74,158,107,0.08)',  border: 'rgba(74,158,107,0.3)',  types: ['Automated'] },
-          { label: 'Blue cards',  color: '#5b8dd9', bg: 'rgba(91,141,217,0.08)',  border: 'rgba(91,141,217,0.3)',  types: ['Active'] },
-          { label: 'Red cards',   color: '#e05535', bg: 'rgba(224,85,53,0.08)',   border: 'rgba(224,85,53,0.3)',   types: ['Event'] },
+          { label: 'Prelude cards',    color: '#d9689a', bg: 'rgba(217,104,154,0.08)', border: 'rgba(217,104,154,0.3)', types: ['Prelude'] },
+          { label: 'Automated cards',  color: '#4a9e6b', bg: 'rgba(74,158,107,0.08)',  border: 'rgba(74,158,107,0.3)',  types: ['Automated'] },
+          { label: 'Active cards',     color: '#5b8dd9', bg: 'rgba(91,141,217,0.08)',  border: 'rgba(91,141,217,0.3)',  types: ['Active'] },
+          { label: 'Event cards',      color: '#e05535', bg: 'rgba(224,85,53,0.08)',   border: 'rgba(224,85,53,0.3)',   types: ['Event'] },
         ]
         const toggleSection = (label: string) =>
           setCollapsedCardSections(prev => { const s = new Set(prev); s.has(label) ? s.delete(label) : s.add(label); return s })
@@ -708,14 +918,14 @@ export default function PlayerDetail() {
                 <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: '8px' }}>
                   Top 10 Most Played
                 </div>
-                <DataTable compact columns={cardColumns} rows={top10} rowKey={c => c.card_name} />
+                <DataTable compact columns={cardColumns} rows={sortCards(top10)} rowKey={c => c.card_name} sortKey={cardSortKey} sortDir={cardSortDir} onSort={handleCardSort} />
               </div>
 
               {/* Colour sections — collapsed by default */}
               {sections.map(({ label, color, bg, border, types }) => {
                 const rows = playerCards.filter(c => {
                   const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
-                  return types.includes(typeMap[canonical] ?? '')
+                  return types.includes(cardRefMap[canonical]?.card_type ?? '')
                 }).sort((a, b) => b.times_played - a.times_played)
                 if (rows.length === 0) return null
                 const collapsed = collapsedCardSections.has(label)
@@ -730,7 +940,7 @@ export default function PlayerDetail() {
                     </button>
                     {!collapsed && (
                       <div style={{ border: `1px solid ${border}`, borderTop: 'none', borderRadius: '0 0 6px 6px', overflow: 'hidden' }}>
-                        <DataTable compact columns={cardColumns} rows={rows} rowKey={c => c.card_name} />
+                        <DataTable compact columns={cardColumns} rows={sortCards(rows)} rowKey={c => c.card_name} sortKey={cardSortKey} sortDir={cardSortDir} onSort={handleCardSort} />
                       </div>
                     )}
                   </div>
@@ -740,6 +950,111 @@ export default function PlayerDetail() {
           </div>
         )
       })()}
+
+      {/* Favourites */}
+      {(topTags.length > 0 || topCorpTags.length > 0 || topPreludeTags.length > 0 || topCardTypes.length > 0) && (
+        <div style={{ marginBottom: '28px' }}>
+          <SectionHeading>Favourites</SectionHeading>
+          <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden' }}>
+
+            {/* Toggle — left aligned */}
+            <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--bd-panel)', display: 'flex', gap: '4px' }}>
+              {([['Official-Cards', true], ['Unofficial-Fan-Cards', false]] as const).map(([label, val]) => {
+                const active = officialOnly === val
+                return (
+                  <button key={label} onClick={() => setOfficialOnly(val)} style={{ padding: '3px 10px', borderRadius: '4px', border: `1px solid ${active ? '#5b8dd9' : 'var(--bd-secondary)'}`, background: active ? 'rgba(91,141,217,0.12)' : 'transparent', color: active ? '#5b8dd9' : 'var(--text-4)', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.12s' }}>
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Tags on Project Cards — full width, 5 per column */}
+            {topTags.length > 0 && (
+              <div style={{ padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>Tags on Project Cards</div>
+                <div style={{ display: 'flex', gap: '0', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  {Array.from({ length: Math.ceil(topTags.length / 5) }, (_, col) => (
+                    <div key={col} style={{ display: 'flex', alignItems: 'stretch' }}>
+                      {col > 0 && <div style={{ width: '1px', background: 'var(--bd-panel)', margin: '0 31px', alignSelf: 'stretch' }} />}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '165px' }}>
+                        {topTags.slice(col * 5, col * 5 + 5).map(({ tag, plays, affinity }, i) => {
+                          const rank = col * 5 + i + 1
+                          return (
+                            <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-5)', minWidth: '18px', textAlign: 'right' }}>{rank}.</span>
+                              <Tag name={tag} />
+                              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-2)' }}>{affinity.toFixed(2)}×</span>
+                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-5)' }}>({plays})</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Corporations + Preludes row */}
+            {(topCorpTags.length > 0 || topPreludeTags.length > 0) && (
+              <div style={{ borderTop: '1px solid var(--bd-panel)', padding: '10px 16px', display: 'flex', gap: '0', alignItems: 'stretch' }}>
+                {topCorpTags.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '165px' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>Corporations</div>
+                    {topCorpTags.map(({ tag, plays, affinity }, i) => (
+                      <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-5)', minWidth: '18px', textAlign: 'right' }}>{i + 1}.</span>
+                        <Tag name={tag} />
+                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-2)' }}>{affinity.toFixed(2)}×</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-5)' }}>({plays})</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {topPreludeTags.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'stretch', flexShrink: 0 }}>
+                    {topCorpTags.length > 0 && <div style={{ width: '1px', background: 'var(--bd-panel)', margin: '0 31px', alignSelf: 'stretch' }} />}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>Preludes</div>
+                      {topPreludeTags.map(({ tag, plays, affinity }, i) => (
+                        <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-5)', minWidth: '18px', textAlign: 'right' }}>{i + 1}.</span>
+                          <Tag name={tag} />
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-2)' }}>{affinity.toFixed(2)}×</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-5)' }}>({plays})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Card Type — vertical list */}
+            {topCardTypes.length > 0 && (
+              <div style={{ borderTop: '1px solid var(--bd-panel)', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>Card Type</div>
+                {topCardTypes.map(({ type, plays, affinity }, i) => (
+                  <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-5)', minWidth: '18px', textAlign: 'right' }}>{i + 1}.</span>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', fontWeight: 600, color: TYPE_COLORS[type]?.color, minWidth: '80px' }}>{type}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-2)' }}>{affinity.toFixed(2)}×</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-5)' }}>({plays})</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Footer */}
+            <div style={{ borderTop: '1px solid var(--bd-panel)', padding: '8px 16px' }}>
+              <span style={{ fontFamily: 'var(--font-body)', color: 'var(--text-5)', fontStyle: 'italic', lineHeight: 1.6, fontSize: '0.78rem' }}>
+                All sections are ranked by affinity. How much more often you play a tag or type compared to its share of the relevant card pool. Tags and Card Type are calculated from project cards (Automated, Active, Event) only. Corporations and Preludes each use their own separate pools. Toggle to exclude fan-expansion cards (Ares, CEO, The Moon, Pathfinders).<br /><br />For example, if 10% of all project cards have the Jovian tag but 25% of your plays involve Jovian cards, your affinity is 2.50×. Likewise, if Automated cards make up 40% of the pool but 60% of your plays are Automated, your affinity is 1.50×. A score above 1.0× indicates a genuine preference beyond what random card selection would produce.
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Games played */}
       <div>
