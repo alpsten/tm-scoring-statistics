@@ -276,6 +276,22 @@ Then push to your fork and enable GitHub Pages in your repository settings, poin
 
 ---
 
+## Importing from the online TM app
+
+If your group plays on [terraforming-mars.herokuapp.com](https://terraforming-mars.herokuapp.com), you can import game data directly from the game log instead of entering it manually.
+
+**How it works:**
+
+1. After a game ends, open the game log in the online app — it contains a full play-by-play of every card played, milestone claimed, and award funded
+2. Copy the entire log text
+3. In the admin panel, go to **Parse Log** and paste it in
+4. The parser extracts players, cards played per generation, milestones, and awards and shows you a preview before saving
+5. You still fill in the score breakdown (VP totals) manually on the Add Game screen — the log does not contain final scores
+
+The parser handles known encoding issues and card name differences between the online app and the card reference. Some milestone variants require a manual disambiguation step since the log output is ambiguous.
+
+---
+
 ## Pages
 
 ### Public
@@ -305,6 +321,16 @@ Then push to your fork and enable GitHub Pages in your repository settings, poin
 | `/admin/cards/reference` | Card reference | Add and edit the card library |
 | `/admin/parse-log` | Parse log | Import game data from a log format |
 | `/admin/player-profile` | Player profiles | Edit player names and profile info |
+
+---
+
+## Assets and intellectual property
+
+The source code in this repository is released under the MIT license — see `LICENSE` for details.
+
+Some visual assets used in the app (icons, frames, and graphical elements) are derived from or inspired by the Terraforming Mars board game and the open-source community project [terraforming-mars/terraforming-mars](https://github.com/terraforming-mars/terraforming-mars). These assets are **not** covered by the MIT license and remain the property of their respective owners.
+
+This project is non-commercial and fan-made. It is not affiliated with FryxGames in any way.
 
 ---
 
