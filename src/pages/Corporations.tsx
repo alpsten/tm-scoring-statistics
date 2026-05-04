@@ -13,8 +13,8 @@ const PIE_COLORS = ['#9b50f0','#e05535','#2e8b8b','#c9a030','#4a9e6b','#b87aff',
 export default function Corporations() {
   const { data, isLoading, error } = useCorpStats()
   const { data: mergerData } = useMergerStats()
-  const [sortKey, setSortKey] = useState<SortKey>('avg_score')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [sortKey, setSortKey] = useState<SortKey>('corporation')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<string[]>([])
 
