@@ -128,6 +128,12 @@ function cardTextToEditSections(card: CardReference) {
   }
 }
 
+const labelClass = 'block font-body text-[0.68rem] font-medium tracking-[0.06em] uppercase text-[#625c7c] mb-[5px]'
+const inputClass = 'w-full h-[34px] px-2.5 bg-[#171228] border border-[#3e325e] rounded text-[#ece6ff] font-body text-[0.83rem] outline-none box-border'
+const textareaClass = 'w-full px-2.5 py-2 bg-[#171228] border border-[#3e325e] rounded text-[#ece6ff] font-body text-[0.83rem] outline-none resize-y'
+const addBtnClass = 'px-2 py-[2px] bg-transparent border border-[#3e325e] rounded-[3px] text-[#625c7c] font-body text-[0.68rem] cursor-pointer hover:border-[#625c7c] transition-colors'
+const removeBtnClass = 'px-[7px] py-[1px] bg-transparent border border-[#3e325e] rounded-[3px] text-[#625c7c] font-body text-[0.68rem] cursor-pointer hover:border-[#625c7c] transition-colors'
+
 // ─── Inline edit form ─────────────────────────────────────────────────────────
 
 function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
@@ -174,40 +180,40 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
     placeholder: string,
     rows = 3,
   ) => (
-    <div style={{ flex: '1 1 260px' }}>
-      <label style={labelStyle}>{label}</label>
+    <div className="flex-[1_1_260px]">
+      <label className={labelClass}>{label}</label>
       <textarea
         value={values[key]}
         onChange={set(key)}
         placeholder={placeholder}
         rows={rows}
-        style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties}
+        className={textareaClass}
       />
     </div>
   )
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '780px' }}>
+    <div className="flex flex-col gap-2.5 max-w-[780px]">
       {/* Row 1: Card name, Type, MC Cost, Expansions */}
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div style={{ flex: '2 1 200px' }}>
-          <label style={labelStyle}>Card name *</label>
-          <input value={values.card_name} onChange={set('card_name')} placeholder="Card name" style={inputStyle} />
+      <div className="flex gap-2.5 flex-wrap items-end">
+        <div className="flex-[2_1_200px]">
+          <label className={labelClass}>Card name *</label>
+          <input value={values.card_name} onChange={set('card_name')} placeholder="Card name" className={inputClass} />
         </div>
-        <div style={{ flex: '1 1 130px' }}>
-          <label style={labelStyle}>Type</label>
-          <select value={values.card_type} onChange={set('card_type')} style={inputStyle}>
+        <div className="flex-[1_1_130px]">
+          <label className={labelClass}>Type</label>
+          <select value={values.card_type} onChange={set('card_type')} className={inputClass}>
             <option value="">—</option>
             {CARD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
-        <div style={{ flex: '0 0 80px' }}>
-          <label style={labelStyle}>MC Cost</label>
-          <input type="number" min={0} max={50} value={values.mc_cost} onChange={set('mc_cost')} placeholder="—" style={inputStyle} />
+        <div className="w-20 shrink-0">
+          <label className={labelClass}>MC Cost</label>
+          <input type="number" min={0} max={50} value={values.mc_cost} onChange={set('mc_cost')} placeholder="—" className={inputClass} />
         </div>
-        <div style={{ flex: '2 1 220px' }}>
-          <label style={labelStyle}>Expansions</label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 31px)', gap: '5px' }}>
+        <div className="flex-[2_1_220px]">
+          <label className={labelClass}>Expansions</label>
+          <div className="grid gap-[5px]" style={{ gridTemplateColumns: 'repeat(6, 31px)' }}>
             {CARD_EXPANSIONS.map(e => {
               const active = values.expansions.includes(e)
               return (
@@ -216,13 +222,13 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
                   type="button"
                   onClick={() => onChange({ ...values, expansions: active ? values.expansions.filter(x => x !== e) : [...values.expansions, e] })}
                   title={e}
-                  style={{ width: '31px', height: '31px', padding: '4px', background: active ? 'rgba(46,139,139,0.12)' : 'transparent', border: `1px solid ${active ? '#2e8b8b' : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: active ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
+                  className={`w-[31px] h-[31px] p-1 border rounded-[6px] cursor-pointer transition-all inline-flex items-center justify-center relative ${active ? 'bg-[rgba(46,139,139,0.12)] border-[#2e8b8b] opacity-100' : 'bg-transparent border-[#3e325e] opacity-45'}`}
                 >
                   {EXPANSION_ICONS[e]
-                    ? <img src={EXPANSION_ICONS[e]} alt={e} style={{ width: '21px', height: '21px', objectFit: 'contain', display: 'block' }} />
-                    : <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: active ? '#3bbfbf' : '#625c7c', lineHeight: 1 }}>{e.slice(0, 2).toUpperCase()}</span>
+                    ? <img src={EXPANSION_ICONS[e]} alt={e} className="w-[21px] h-[21px] object-contain block" />
+                    : <span className={`font-body text-[0.65rem] leading-none ${active ? 'text-[#3bbfbf]' : 'text-[#625c7c]'}`}>{e.slice(0, 2).toUpperCase()}</span>
                   }
-                  {active && <span style={selectedDotStyle} />}
+                  {active && <span className="absolute right-[3px] bottom-[3px] w-1.5 h-1.5 rounded-full bg-[#3bbfbf] shadow-[0_0_0_1px_#171228]" />}
                 </button>
               )
             })}
@@ -231,10 +237,10 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
       </div>
 
       {/* Row 2: VP category picker */}
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div style={{ flex: '0 0 140px' }}>
-          <label style={labelStyle}>VP Category</label>
-          <select value={vpMode} onChange={e => setVpMode(e.target.value as typeof vpMode)} style={inputStyle}>
+      <div className="flex gap-2.5 flex-wrap items-end">
+        <div className="w-[140px] shrink-0">
+          <label className={labelClass}>VP Category</label>
+          <select value={vpMode} onChange={e => setVpMode(e.target.value as typeof vpMode)} className={inputClass}>
             <option value="none">— None</option>
             <option value="base">Base VP</option>
             <option value="resource">Resource VP</option>
@@ -244,9 +250,9 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
         </div>
 
         {vpMode === 'base' && (
-          <div style={{ flex: '0 0 110px' }}>
-            <label style={labelStyle}>VP Value</label>
-            <select value={values.base_vp} onChange={set('base_vp')} style={inputStyle}>
+          <div className="w-[110px] shrink-0">
+            <label className={labelClass}>VP Value</label>
+            <select value={values.base_vp} onChange={set('base_vp')} className={inputClass}>
               <option value="">—</option>
               {BASE_VP_OPTIONS.map(n => <option key={n} value={n}>{n > 0 ? `+${n}` : n} VP</option>)}
             </select>
@@ -255,18 +261,18 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
 
         {vpMode === 'resource' && (
           <>
-            <div style={{ flex: '1 1 140px' }}>
-              <label style={labelStyle}>Resource Type</label>
-              <select value={values.resource_vp_type} onChange={set('resource_vp_type')} style={inputStyle}>
+            <div className="flex-[1_1_140px]">
+              <label className={labelClass}>Resource Type</label>
+              <select value={values.resource_vp_type} onChange={set('resource_vp_type')} className={inputClass}>
                 <option value="">—</option>
                 {[...new Set([...DEFAULT_RESOURCE_VP_TYPES, ...(values.resource_vp_type && !PLACEMENT_VP_TYPES.includes(values.resource_vp_type) ? [values.resource_vp_type] : [])])].sort().map(t => (
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
             </div>
-            <div style={{ flex: '0 0 140px' }}>
-              <label style={labelStyle}>Resources per VP</label>
-              <select value={values.resource_vp_per} onChange={set('resource_vp_per')} style={inputStyle}>
+            <div className="w-[140px] shrink-0">
+              <label className={labelClass}>Resources per VP</label>
+              <select value={values.resource_vp_per} onChange={set('resource_vp_per')} className={inputClass}>
                 <option value="">—</option>
                 {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n === 1 ? '1/1' : `1/${n}`}</option>)}
               </select>
@@ -276,16 +282,16 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
 
         {vpMode === 'placement' && (
           <>
-            <div style={{ flex: '1 1 140px' }}>
-              <label style={labelStyle}>Placement Type</label>
-              <select value={values.resource_vp_type} onChange={set('resource_vp_type')} style={inputStyle}>
+            <div className="flex-[1_1_140px]">
+              <label className={labelClass}>Placement Type</label>
+              <select value={values.resource_vp_type} onChange={set('resource_vp_type')} className={inputClass}>
                 <option value="">—</option>
                 {PLACEMENT_VP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
-            <div style={{ flex: '0 0 140px' }}>
-              <label style={labelStyle}>Tiles per VP</label>
-              <select value={values.resource_vp_per} onChange={set('resource_vp_per')} style={inputStyle}>
+            <div className="w-[140px] shrink-0">
+              <label className={labelClass}>Tiles per VP</label>
+              <select value={values.resource_vp_per} onChange={set('resource_vp_per')} className={inputClass}>
                 <option value="">—</option>
                 {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n === 1 ? '1/1' : `1/${n}`}</option>)}
               </select>
@@ -295,16 +301,16 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
 
         {vpMode === 'multiplier' && (
           <>
-            <div style={{ flex: '1 1 140px' }}>
-              <label style={labelStyle}>Multiplier</label>
-              <select value={values.resource_vp_type} onChange={set('resource_vp_type')} style={inputStyle}>
+            <div className="flex-[1_1_140px]">
+              <label className={labelClass}>Multiplier</label>
+              <select value={values.resource_vp_type} onChange={set('resource_vp_type')} className={inputClass}>
                 <option value="">—</option>
                 {MULTIPLIER_VP_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
-            <div style={{ flex: '0 0 140px' }}>
-              <label style={labelStyle}>Per VP</label>
-              <select value={values.resource_vp_per} onChange={set('resource_vp_per')} style={inputStyle}>
+            <div className="w-[140px] shrink-0">
+              <label className={labelClass}>Per VP</label>
+              <select value={values.resource_vp_per} onChange={set('resource_vp_per')} className={inputClass}>
                 <option value="">—</option>
                 {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n === 1 ? '1/1' : `1/${n}`}</option>)}
               </select>
@@ -315,8 +321,8 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
 
       {/* Tags */}
       <div>
-        <label style={labelStyle}>Tags</label>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        <label className={labelClass}>Tags</label>
+        <div className="flex gap-1.5 flex-wrap">
           {ALL_TAGS.map(tag => {
             const current = parseTags(values.tags)
             const count = current.filter(t => t === tag).length
@@ -330,14 +336,15 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
                   onChange({ ...values, tags: next.join(', '), noTagExplicit: false })
                 }}
                 title={tag}
-                style={{ width: '31px', height: '31px', padding: '4px', background: count > 0 ? colors.bg : 'transparent', border: `1px solid ${count > 0 ? colors.color : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: count > 0 ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
+                className="w-[31px] h-[31px] p-1 rounded-[6px] cursor-pointer transition-all inline-flex items-center justify-center relative"
+                style={{ background: count > 0 ? colors.bg : 'transparent', border: `1px solid ${count > 0 ? colors.color : '#3e325e'}`, opacity: count > 0 ? 1 : 0.45 }}
               >
                 {TAG_ICONS[tag]
-                  ? <img src={TAG_ICONS[tag]} alt={tag} style={{ width: '21px', height: '21px', objectFit: 'contain', display: 'block' }} />
-                  : <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: count > 0 ? colors.color : '#625c7c', lineHeight: 1 }}>{tag.slice(0, 2).toUpperCase()}</span>
+                  ? <img src={TAG_ICONS[tag]} alt={tag} className="w-[21px] h-[21px] object-contain block" />
+                  : <span className="font-body text-[0.65rem] leading-none" style={{ color: count > 0 ? colors.color : '#625c7c' }}>{tag.slice(0, 2).toUpperCase()}</span>
                 }
-                {count === 1 && <span style={selectedDotStyle} />}
-                {count === 2 && <span style={countBadgeStyle}>2</span>}
+                {count === 1 && <span className="absolute right-[3px] bottom-[3px] w-1.5 h-1.5 rounded-full bg-[#3bbfbf] shadow-[0_0_0_1px_#171228]" />}
+                {count === 2 && <span className="absolute right-0.5 bottom-0.5 min-w-3 h-3 px-[2px] rounded-[6px] bg-[#3bbfbf] text-[#111] font-mono text-[0.52rem] font-bold leading-3 text-center">2</span>}
               </button>
             )
           })}
@@ -345,15 +352,16 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
             type="button"
             title="No tag"
             onClick={() => onChange({ ...values, tags: '', noTagExplicit: true })}
-            style={{ width: '31px', height: '31px', padding: '4px', background: values.noTagExplicit ? 'rgba(100,100,100,0.12)' : 'transparent', border: `1px solid ${values.noTagExplicit ? '#8e87a8' : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: values.noTagExplicit ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+            className="w-[31px] h-[31px] p-1 rounded-[6px] cursor-pointer transition-all inline-flex items-center justify-center"
+            style={{ background: values.noTagExplicit ? 'rgba(100,100,100,0.12)' : 'transparent', border: `1px solid ${values.noTagExplicit ? '#8e87a8' : '#3e325e'}`, opacity: values.noTagExplicit ? 1 : 0.45 }}
           >
-            <img src={NO_TAG_ICON} alt="No tag" style={{ width: '21px', height: '21px', objectFit: 'contain', display: 'block' }} />
+            <img src={NO_TAG_ICON} alt="No tag" className="w-[21px] h-[21px] object-contain block" />
           </button>
         </div>
       </div>
 
       {/* Card type-specific fields */}
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+      <div className="flex gap-2.5 flex-wrap">
         {isSimple && (
           <>
             {textArea('card_text', 'Gain resources', 'Resources gained…')}
@@ -367,61 +375,61 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
             {textArea('resources', 'Resource icons', '1:megacredit, 2:steel, 3:titanium, 4:plant, 5:energy, 6:heat')}
 
             {/* Effect */}
-            <div style={{ flex: '1 1 260px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="flex-[1_1_260px] flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
                 {!showEffect && (
-                  <button type="button" onClick={() => setShowEffect(true)} style={addBtnStyle}>+ Add effect</button>
+                  <button type="button" onClick={() => setShowEffect(true)} className={addBtnClass}>+ Add effect</button>
                 )}
                 {showEffect && !showEffect2 && (
-                  <button type="button" onClick={() => setShowEffect2(true)} style={addBtnStyle}>+ Add another effect</button>
+                  <button type="button" onClick={() => setShowEffect2(true)} className={addBtnClass}>+ Add another effect</button>
                 )}
               </div>
               {showEffect && (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#625c7c' }}>Effect</span>
-                    <button type="button" onClick={() => { setShowEffect(false); setShowEffect2(false); onChange({ ...values, effect_text: '', effect_text_2: '' }) }} style={removeBtnStyle}>× Remove</button>
+                  <div className="flex justify-between items-center">
+                    <span className="font-body text-[0.68rem] text-[#625c7c]">Effect</span>
+                    <button type="button" onClick={() => { setShowEffect(false); setShowEffect2(false); onChange({ ...values, effect_text: '', effect_text_2: '' }) }} className={removeBtnClass}>× Remove</button>
                   </div>
-                  <textarea value={values.effect_text} onChange={set('effect_text')} placeholder="Effect text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                  <textarea value={values.effect_text} onChange={set('effect_text')} placeholder="Effect text…" rows={3} className={textareaClass} />
                 </>
               )}
               {showEffect2 && (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#625c7c' }}>Effect 2</span>
-                    <button type="button" onClick={() => { setShowEffect2(false); onChange({ ...values, effect_text_2: '' }) }} style={removeBtnStyle}>× Remove</button>
+                  <div className="flex justify-between items-center">
+                    <span className="font-body text-[0.68rem] text-[#625c7c]">Effect 2</span>
+                    <button type="button" onClick={() => { setShowEffect2(false); onChange({ ...values, effect_text_2: '' }) }} className={removeBtnClass}>× Remove</button>
                   </div>
-                  <textarea value={values.effect_text_2} onChange={set('effect_text_2')} placeholder="Second effect text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                  <textarea value={values.effect_text_2} onChange={set('effect_text_2')} placeholder="Second effect text…" rows={3} className={textareaClass} />
                 </>
               )}
             </div>
 
             {/* Action */}
-            <div style={{ flex: '1 1 260px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="flex-[1_1_260px] flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
                 {!showAction && (
-                  <button type="button" onClick={() => setShowAction(true)} style={addBtnStyle}>+ Add action</button>
+                  <button type="button" onClick={() => setShowAction(true)} className={addBtnClass}>+ Add action</button>
                 )}
                 {showAction && !showAction2 && (
-                  <button type="button" onClick={() => setShowAction2(true)} style={addBtnStyle}>+ Add another action</button>
+                  <button type="button" onClick={() => setShowAction2(true)} className={addBtnClass}>+ Add another action</button>
                 )}
               </div>
               {showAction && (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#625c7c' }}>Action</span>
-                    <button type="button" onClick={() => { setShowAction(false); setShowAction2(false); onChange({ ...values, action_text: '', action_text_2: '' }) }} style={removeBtnStyle}>× Remove</button>
+                  <div className="flex justify-between items-center">
+                    <span className="font-body text-[0.68rem] text-[#625c7c]">Action</span>
+                    <button type="button" onClick={() => { setShowAction(false); setShowAction2(false); onChange({ ...values, action_text: '', action_text_2: '' }) }} className={removeBtnClass}>× Remove</button>
                   </div>
-                  <textarea value={values.action_text} onChange={set('action_text')} placeholder="Action text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                  <textarea value={values.action_text} onChange={set('action_text')} placeholder="Action text…" rows={3} className={textareaClass} />
                 </>
               )}
               {showAction2 && (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#625c7c' }}>Action 2 (OR)</span>
-                    <button type="button" onClick={() => { setShowAction2(false); onChange({ ...values, action_text_2: '' }) }} style={removeBtnStyle}>× Remove</button>
+                  <div className="flex justify-between items-center">
+                    <span className="font-body text-[0.68rem] text-[#625c7c]">Action 2 (OR)</span>
+                    <button type="button" onClick={() => { setShowAction2(false); onChange({ ...values, action_text_2: '' }) }} className={removeBtnClass}>× Remove</button>
                   </div>
-                  <textarea value={values.action_text_2} onChange={set('action_text_2')} placeholder="Second action text (shown with OR)…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                  <textarea value={values.action_text_2} onChange={set('action_text_2')} placeholder="Second action text (shown with OR)…" rows={3} className={textareaClass} />
                 </>
               )}
             </div>
@@ -435,61 +443,61 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
             {textArea('resources', 'Resource icons', '1:megacredit, 2:steel, 3:titanium, 4:plant, 5:energy, 6:heat')}
 
             {/* Effect */}
-            <div style={{ flex: '1 1 260px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="flex-[1_1_260px] flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
                 {!showEffect && (
-                  <button type="button" onClick={() => setShowEffect(true)} style={addBtnStyle}>+ Add effect</button>
+                  <button type="button" onClick={() => setShowEffect(true)} className={addBtnClass}>+ Add effect</button>
                 )}
                 {showEffect && !showEffect2 && (
-                  <button type="button" onClick={() => setShowEffect2(true)} style={addBtnStyle}>+ Add another effect</button>
+                  <button type="button" onClick={() => setShowEffect2(true)} className={addBtnClass}>+ Add another effect</button>
                 )}
               </div>
               {showEffect && (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#625c7c' }}>Effect</span>
-                    <button type="button" onClick={() => { setShowEffect(false); setShowEffect2(false); onChange({ ...values, effect_text: '', effect_text_2: '' }) }} style={removeBtnStyle}>× Remove</button>
+                  <div className="flex justify-between items-center">
+                    <span className="font-body text-[0.68rem] text-[#625c7c]">Effect</span>
+                    <button type="button" onClick={() => { setShowEffect(false); setShowEffect2(false); onChange({ ...values, effect_text: '', effect_text_2: '' }) }} className={removeBtnClass}>× Remove</button>
                   </div>
-                  <textarea value={values.effect_text} onChange={set('effect_text')} placeholder="Effect text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                  <textarea value={values.effect_text} onChange={set('effect_text')} placeholder="Effect text…" rows={3} className={textareaClass} />
                 </>
               )}
               {showEffect2 && (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#625c7c' }}>Effect 2</span>
-                    <button type="button" onClick={() => { setShowEffect2(false); onChange({ ...values, effect_text_2: '' }) }} style={removeBtnStyle}>× Remove</button>
+                  <div className="flex justify-between items-center">
+                    <span className="font-body text-[0.68rem] text-[#625c7c]">Effect 2</span>
+                    <button type="button" onClick={() => { setShowEffect2(false); onChange({ ...values, effect_text_2: '' }) }} className={removeBtnClass}>× Remove</button>
                   </div>
-                  <textarea value={values.effect_text_2} onChange={set('effect_text_2')} placeholder="Second effect text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                  <textarea value={values.effect_text_2} onChange={set('effect_text_2')} placeholder="Second effect text…" rows={3} className={textareaClass} />
                 </>
               )}
             </div>
 
             {/* Action */}
-            <div style={{ flex: '1 1 260px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="flex-[1_1_260px] flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
                 {!showAction && (
-                  <button type="button" onClick={() => setShowAction(true)} style={addBtnStyle}>+ Add action</button>
+                  <button type="button" onClick={() => setShowAction(true)} className={addBtnClass}>+ Add action</button>
                 )}
                 {showAction && !showAction2 && (
-                  <button type="button" onClick={() => setShowAction2(true)} style={addBtnStyle}>+ Add another action</button>
+                  <button type="button" onClick={() => setShowAction2(true)} className={addBtnClass}>+ Add another action</button>
                 )}
               </div>
               {showAction && (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#625c7c' }}>Action</span>
-                    <button type="button" onClick={() => { setShowAction(false); setShowAction2(false); onChange({ ...values, action_text: '', action_text_2: '' }) }} style={removeBtnStyle}>× Remove</button>
+                  <div className="flex justify-between items-center">
+                    <span className="font-body text-[0.68rem] text-[#625c7c]">Action</span>
+                    <button type="button" onClick={() => { setShowAction(false); setShowAction2(false); onChange({ ...values, action_text: '', action_text_2: '' }) }} className={removeBtnClass}>× Remove</button>
                   </div>
-                  <textarea value={values.action_text} onChange={set('action_text')} placeholder="Action text…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                  <textarea value={values.action_text} onChange={set('action_text')} placeholder="Action text…" rows={3} className={textareaClass} />
                 </>
               )}
               {showAction2 && (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#625c7c' }}>Action 2 (OR)</span>
-                    <button type="button" onClick={() => { setShowAction2(false); onChange({ ...values, action_text_2: '' }) }} style={removeBtnStyle}>× Remove</button>
+                  <div className="flex justify-between items-center">
+                    <span className="font-body text-[0.68rem] text-[#625c7c]">Action 2 (OR)</span>
+                    <button type="button" onClick={() => { setShowAction2(false); onChange({ ...values, action_text_2: '' }) }} className={removeBtnClass}>× Remove</button>
                   </div>
-                  <textarea value={values.action_text_2} onChange={set('action_text_2')} placeholder="Second action text (shown with OR)…" rows={3} style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical' } as React.CSSProperties} />
+                  <textarea value={values.action_text_2} onChange={set('action_text_2')} placeholder="Second action text (shown with OR)…" rows={3} className={textareaClass} />
                 </>
               )}
             </div>
@@ -505,14 +513,14 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-        <button onClick={onSave} disabled={saving} style={{ padding: '6px 18px', background: '#9b50f0', border: 'none', borderRadius: '4px', color: '#fff', fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer' }}>
+      <div className="flex gap-2 items-center">
+        <button onClick={onSave} disabled={saving} className="px-[18px] py-1.5 bg-[#9b50f0] border-none rounded text-white font-body text-[0.82rem] font-semibold cursor-pointer disabled:cursor-not-allowed disabled:opacity-60">
           {saving ? 'Saving…' : isNew ? 'Add card' : 'Save'}
         </button>
-        <button onClick={onCancel} style={{ padding: '6px 14px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.82rem', cursor: 'pointer' }}>
+        <button onClick={onCancel} className="px-3.5 py-1.5 bg-transparent border border-[#3e325e] rounded text-[#625c7c] font-body text-[0.82rem] cursor-pointer hover:border-[#625c7c] transition-colors">
           Cancel
         </button>
-        {error && <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#e05535' }}>Error: {error}</span>}
+        {error && <span className="font-body text-[0.78rem] text-mars-500">Error: {error}</span>}
       </div>
     </div>
   )
@@ -534,7 +542,7 @@ export default function CardReferenceAdmin() {
   const [saveError, setSaveError]         = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
-  if (isLoading) return <div style={loadingStyle}>Loading…</div>
+  if (isLoading) return <div className="py-8 px-9 text-[#625c7c] font-body">Loading…</div>
 
   const allTags = [...new Set((cards ?? []).flatMap(c => parseTags(c.tags)))].sort()
   const allExpansions = [...new Set((cards ?? []).flatMap(c => c.expansions))].sort()
@@ -663,9 +671,9 @@ export default function CardReferenceAdmin() {
   const hasFilters = !!search || typeFilters.length > 0 || tagFilters.length > 0 || expansionFilters.length > 0
 
   return (
-    <div className="page-enter" style={{ padding: '32px 36px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <Link to="/admin" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', textDecoration: 'none' }}>← Admin</Link>
+    <div className="page-enter py-8 px-9 min-h-full bg-[#0c0e12]">
+      <div className="mb-6">
+        <Link to="/admin" className="font-body text-[0.78rem] text-[#625c7c] no-underline">← Admin</Link>
       </div>
       <PageHeader
         title="Card reference"
@@ -673,20 +681,20 @@ export default function CardReferenceAdmin() {
       />
 
       {/* Filter bar */}
-      <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div className="mb-5 flex flex-col gap-2.5">
         {/* Search + Add + Clear */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="flex gap-2.5 items-center flex-wrap">
           <input
             type="text"
             placeholder="Search cards…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ width: '220px', height: '34px', padding: '0 12px', background: '#1e1835', border: '1px solid #3e325e', borderRadius: '4px', color: '#ece6ff', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none' }}
+            className="w-[220px] h-[34px] px-3 bg-[#282042] border border-[#3e325e] rounded text-[#ece6ff] font-body text-[0.83rem] outline-none"
           />
           {hasFilters && (
             <button
               onClick={() => { setSearch(''); setTypeFilters([]); setTagFilters([]); setExpansionFilters([]) }}
-              style={{ height: '34px', padding: '0 12px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.78rem', cursor: 'pointer' }}
+              className="h-[34px] px-3 bg-transparent border border-[#3e325e] rounded text-[#625c7c] font-body text-[0.78rem] cursor-pointer hover:border-[#625c7c] transition-colors"
             >
               Clear all
             </button>
@@ -694,20 +702,25 @@ export default function CardReferenceAdmin() {
           <button
             onClick={startAdd}
             disabled={editingId === 'new'}
-            style={{ height: '34px', padding: '0 16px', background: 'rgba(155,80,240,0.12)', border: '1px solid rgba(155,80,240,0.4)', borderRadius: '4px', color: '#b87aff', fontFamily: 'var(--font-body)', fontSize: '0.83rem', cursor: editingId === 'new' ? 'not-allowed' : 'pointer', marginLeft: 'auto' }}
+            className="h-[34px] px-4 bg-violet-500/12 border border-violet-500/40 rounded text-[#b87aff] font-body text-[0.83rem] cursor-pointer disabled:cursor-not-allowed ml-auto"
           >
             + Add card
           </button>
         </div>
 
         {/* Type pills */}
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginRight: '2px' }}>Type</span>
+        <div className="flex gap-1.5 flex-wrap items-center">
+          <span className="font-body text-[0.68rem] font-semibold tracking-[0.08em] uppercase text-[#504270] mr-0.5">Type</span>
           {CARD_TYPES.map(type => {
             const active = typeFilters.includes(type)
             const colors = TYPE_COLORS[type]
             return (
-              <button key={type} onClick={() => toggleType(type)} style={{ padding: '3px 11px', background: active ? colors.bg : 'transparent', border: `1px solid ${active ? colors.color : '#3e325e'}`, borderRadius: '12px', cursor: 'pointer', transition: 'all 0.12s', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: active ? colors.color : '#625c7c' }}>
+              <button
+                key={type}
+                onClick={() => toggleType(type)}
+                className="px-[11px] py-[3px] rounded-[12px] cursor-pointer transition-all font-body text-[0.75rem]"
+                style={{ background: active ? colors.bg : 'transparent', border: `1px solid ${active ? colors.color : '#3e325e'}`, color: active ? colors.color : '#625c7c' }}
+              >
                 {active ? '✓ ' : ''}{type}
               </button>
             )
@@ -716,39 +729,55 @@ export default function CardReferenceAdmin() {
 
         {/* Tag pills */}
         {allTags.length > 0 && (
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginRight: '2px' }}>Tag</span>
+          <div className="flex gap-1.5 flex-wrap items-center">
+            <span className="font-body text-[0.68rem] font-semibold tracking-[0.08em] uppercase text-[#504270] mr-0.5">Tag</span>
             {allTags.map(tag => {
               const active = tagFilters.includes(tag)
               const icon = TAG_ICONS[tag]
               const colors = TAG_COLORS[tag] ?? { bg: 'rgba(100,100,100,0.12)', color: '#8e87a8' }
               return (
-                <button key={tag} onClick={() => toggleTag(tag)} title={tag} style={{ padding: '4px', background: active ? colors.bg : 'transparent', border: `1px solid ${active ? colors.color : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: active ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  title={tag}
+                  className="p-1 rounded-[6px] cursor-pointer transition-all inline-flex items-center justify-center"
+                  style={{ background: active ? colors.bg : 'transparent', border: `1px solid ${active ? colors.color : '#3e325e'}`, opacity: active ? 1 : 0.45 }}
+                >
                   {icon
-                    ? <img src={icon} alt={tag} style={{ width: '20px', height: '20px', objectFit: 'contain', display: 'block' }} />
-                    : <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: active ? colors.color : '#625c7c', padding: '0 7px' }}>{tag}</span>
+                    ? <img src={icon} alt={tag} className="w-5 h-5 object-contain block" />
+                    : <span className="font-body text-[0.75rem] px-[7px]" style={{ color: active ? colors.color : '#625c7c' }}>{tag}</span>
                   }
                 </button>
               )
             })}
-            <button onClick={() => toggleTag(NO_TAG)} title="No tag" style={{ padding: '4px', background: tagFilters.includes(NO_TAG) ? 'rgba(100,100,100,0.12)' : 'transparent', border: `1px solid ${tagFilters.includes(NO_TAG) ? '#8e87a8' : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: tagFilters.includes(NO_TAG) ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src={NO_TAG_ICON} alt="No tag" style={{ width: '20px', height: '20px', objectFit: 'contain', display: 'block' }} />
+            <button
+              onClick={() => toggleTag(NO_TAG)}
+              title="No tag"
+              className="p-1 rounded-[6px] cursor-pointer transition-all inline-flex items-center justify-center"
+              style={{ background: tagFilters.includes(NO_TAG) ? 'rgba(100,100,100,0.12)' : 'transparent', border: `1px solid ${tagFilters.includes(NO_TAG) ? '#8e87a8' : '#3e325e'}`, opacity: tagFilters.includes(NO_TAG) ? 1 : 0.45 }}
+            >
+              <img src={NO_TAG_ICON} alt="No tag" className="w-5 h-5 object-contain block" />
             </button>
           </div>
         )}
 
         {/* Expansion pills */}
         {allExpansions.length > 0 && (
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270', marginRight: '2px' }}>Expansion</span>
+          <div className="flex gap-1.5 flex-wrap items-center">
+            <span className="font-body text-[0.68rem] font-semibold tracking-[0.08em] uppercase text-[#504270] mr-0.5">Expansion</span>
             {allExpansions.map(exp => {
               const active = expansionFilters.includes(exp)
               const icon = EXPANSION_ICONS[exp]
               return (
-                <button key={exp} onClick={() => toggleExpansion(exp)} title={exp} style={{ width: '31px', height: '31px', padding: '4px', background: active ? 'rgba(46,139,139,0.12)' : 'transparent', border: `1px solid ${active ? '#2e8b8b' : '#3e325e'}`, borderRadius: '6px', cursor: 'pointer', transition: 'all 0.12s', opacity: active ? 1 : 0.45, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+                <button
+                  key={exp}
+                  onClick={() => toggleExpansion(exp)}
+                  title={exp}
+                  className={`w-[31px] h-[31px] p-1 border rounded-[6px] cursor-pointer transition-all inline-flex items-center justify-center box-border ${active ? 'bg-[rgba(46,139,139,0.12)] border-[#2e8b8b] opacity-100' : 'bg-transparent border-[#3e325e] opacity-45'}`}
+                >
                   {icon
-                    ? <img src={icon} alt={exp} style={{ width: '20px', height: '20px', objectFit: 'contain', display: 'block' }} />
-                    : <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: active ? '#3bbfbf' : '#625c7c', padding: '0 7px' }}>{exp}</span>
+                    ? <img src={icon} alt={exp} className="w-5 h-5 object-contain block" />
+                    : <span className={`font-body text-[0.75rem] px-[7px] ${active ? 'text-[#3bbfbf]' : 'text-[#625c7c]'}`}>{exp}</span>
                   }
                 </button>
               )
@@ -759,8 +788,8 @@ export default function CardReferenceAdmin() {
 
       {/* New card form */}
       {editingId === 'new' && (
-        <div style={{ background: '#1e1835', border: '1px solid rgba(155,80,240,0.3)', borderRadius: '6px', padding: '20px', marginBottom: '16px' }}>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#b87aff', marginBottom: '14px' }}>
+        <div className="bg-[#282042] border border-violet-500/30 rounded-[6px] p-5 mb-4">
+          <div className="font-body text-[0.68rem] font-semibold tracking-[0.08em] uppercase text-[#b87aff] mb-3.5">
             New card
           </div>
           <EditRow
@@ -776,12 +805,12 @@ export default function CardReferenceAdmin() {
       )}
 
       {/* Table */}
-      <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
+      <div className="bg-[#282042] border border-[#3e325e] rounded-[6px] overflow-auto">
+        <table className="w-full border-collapse min-w-[700px]">
           <thead>
-            <tr style={{ borderBottom: '1px solid #282042' }}>
+            <tr className="border-b border-[#3e325e]">
               {['Card', 'Type', 'Tags', 'Expansion', 'MC', 'Base VP', 'VP (Resource / Placement)', ''].map((h, i) => (
-                <th key={i} style={{ padding: '10px 16px', textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#504270' }}>
+                <th key={i} className="px-4 py-2.5 text-left font-body text-[0.68rem] font-semibold tracking-[0.08em] uppercase text-[#504270]">
                   {h}
                 </th>
               ))}
@@ -791,10 +820,10 @@ export default function CardReferenceAdmin() {
             {filtered.map((card, i) => (
               <tr
                 key={card.id}
-                style={{ borderBottom: i < filtered.length - 1 ? '1px solid #282042' : 'none', background: editingId === card.id ? 'rgba(155,80,240,0.04)' : 'transparent' }}
+                className={`${i < filtered.length - 1 ? 'border-b border-[#3e325e]' : ''} ${editingId === card.id ? 'bg-violet-500/4' : ''}`}
               >
                 {editingId === card.id ? (
-                  <td colSpan={8} style={{ padding: '16px' }}>
+                  <td colSpan={8} className="p-4">
                     <EditRow
                       values={editValues}
                       onChange={setEditValues}
@@ -806,37 +835,37 @@ export default function CardReferenceAdmin() {
                   </td>
                 ) : (
                   <>
-                    <td style={{ padding: '11px 16px', fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: '#ece6ff', fontWeight: 500 }}>
+                    <td className="px-4 py-[11px] font-body text-[0.85rem] text-[#ece6ff] font-medium">
                       {card.card_name}
                     </td>
-                    <td style={{ padding: '11px 16px' }}>
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', fontWeight: 500, padding: '2px 7px', borderRadius: '3px', background: TYPE_COLORS[card.card_type]?.bg, color: TYPE_COLORS[card.card_type]?.color, whiteSpace: 'nowrap' }}>
+                    <td className="px-4 py-[11px]">
+                      <span className="font-body text-[0.7rem] font-medium px-[7px] py-[2px] rounded-[3px] whitespace-nowrap" style={{ background: TYPE_COLORS[card.card_type]?.bg, color: TYPE_COLORS[card.card_type]?.color }}>
                         {card.card_type}
                       </span>
                     </td>
-                    <td style={{ padding: '11px 16px' }}>
-                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                    <td className="px-4 py-[11px]">
+                      <div className="flex gap-1 flex-wrap">
                         {parseTags(card.tags).map((tag, i) => <Tag key={`${tag}-${i}`} name={tag} />)}
                       </div>
                     </td>
-                    <td style={{ padding: '11px 16px', fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#8e87a8' }}>
-                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                    <td className="px-4 py-[11px]">
+                      <div className="flex gap-1 flex-wrap">
                         {card.expansions.length > 0
                           ? card.expansions.map(exp => EXPANSION_ICONS[exp]
-                              ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-                              : <span key={exp} style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#8e87a8' }}>{exp}</span>
+                              ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} className="w-[18px] h-[18px] object-contain" />
+                              : <span key={exp} className="font-body text-[0.75rem] text-[#8e87a8]">{exp}</span>
                             )
-                          : <span style={{ color: '#504270' }}>—</span>
+                          : <span className="text-[#504270]">—</span>
                         }
                       </div>
                     </td>
-                    <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: card.mc_cost != null ? '#ece6ff' : '#3e325e' }}>
+                    <td className={`px-4 py-[11px] font-mono text-[0.8rem] ${card.mc_cost != null ? 'text-[#ece6ff]' : 'text-[#3e325e]'}`}>
                       {card.mc_cost != null ? `${card.mc_cost}` : '/'}
                     </td>
-                    <td style={{ padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#c9a030' }}>
+                    <td className="px-4 py-[11px] font-mono text-[0.8rem] text-[#c9a030]">
                       {card.base_vp != null ? `${card.base_vp} VP` : '—'}
                     </td>
-                    <td style={{ padding: '11px 16px', fontFamily: 'var(--font-body)', fontSize: '0.78rem' }}>
+                    <td className="px-4 py-[11px] font-body text-[0.78rem]">
                       {card.resource_vp_type
                         ? (() => {
                             const isPlacement = PLACEMENT_VP_TYPES.includes(card.resource_vp_type)
@@ -847,20 +876,20 @@ export default function CardReferenceAdmin() {
                               </span>
                             )
                           })()
-                        : <span style={{ color: '#3e325e' }}>—</span>}
+                        : <span className="text-[#3e325e]">—</span>}
                     </td>
-                    <td style={{ padding: '11px 16px' }}>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                    <td className="px-4 py-[11px]">
+                      <div className="flex gap-1.5 justify-end items-center">
                         {deleteConfirmId === card.id ? (
                           <>
-                            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#e05535' }}>Delete?</span>
-                            <button onClick={() => deleteCard(card.id)} style={{ padding: '4px 12px', background: 'rgba(224,85,53,0.12)', border: '1px solid rgba(224,85,53,0.4)', borderRadius: '4px', color: '#e05535', fontFamily: 'var(--font-body)', fontSize: '0.75rem', cursor: 'pointer' }}>Yes</button>
-                            <button onClick={() => setDeleteConfirmId(null)} style={{ padding: '4px 10px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.75rem', cursor: 'pointer' }}>No</button>
+                            <span className="font-body text-[0.75rem] text-mars-500">Delete?</span>
+                            <button onClick={() => deleteCard(card.id)} className="px-3 py-1 bg-mars-500/12 border border-mars-500/40 rounded text-mars-500 font-body text-[0.75rem] cursor-pointer">Yes</button>
+                            <button onClick={() => setDeleteConfirmId(null)} className="px-2.5 py-1 bg-transparent border border-[#3e325e] rounded text-[#625c7c] font-body text-[0.75rem] cursor-pointer hover:border-[#625c7c] transition-colors">No</button>
                           </>
                         ) : (
                           <>
-                            <button onClick={() => startEdit(card)} style={editBtnStyle}>Edit</button>
-                            <button onClick={() => setDeleteConfirmId(card.id)} style={deleteBtnStyle}>Delete</button>
+                            <button onClick={() => startEdit(card)} className="px-3 py-1 bg-violet-500/8 border border-violet-500/30 rounded text-[#b87aff] font-body text-[0.75rem] cursor-pointer hover:bg-violet-500/12 transition-colors">Edit</button>
+                            <button onClick={() => setDeleteConfirmId(card.id)} className="px-2.5 py-1 bg-transparent border border-[#3e325e] rounded text-[#625c7c] font-body text-[0.75rem] cursor-pointer hover:border-[#625c7c] transition-colors">Delete</button>
                           </>
                         )}
                       </div>
@@ -875,15 +904,3 @@ export default function CardReferenceAdmin() {
     </div>
   )
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const loadingStyle: React.CSSProperties = { padding: '32px 36px', color: '#625c7c', fontFamily: 'var(--font-body)' }
-const labelStyle: React.CSSProperties = { display: 'block', fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '5px' }
-const inputStyle: React.CSSProperties = { width: '100%', height: '34px', padding: '0 10px', background: '#171228', border: '1px solid #3e325e', borderRadius: '4px', color: '#ece6ff', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none', boxSizing: 'border-box' }
-const selectedDotStyle: React.CSSProperties = { position: 'absolute', right: '3px', bottom: '3px', width: '6px', height: '6px', borderRadius: '50%', background: '#3bbfbf', boxShadow: '0 0 0 1px #171228' }
-const countBadgeStyle: React.CSSProperties = { position: 'absolute', right: '2px', bottom: '2px', minWidth: '12px', height: '12px', padding: '0 2px', borderRadius: '6px', background: '#3bbfbf', color: '#111', fontFamily: 'var(--font-mono)', fontSize: '0.52rem', fontWeight: 700, lineHeight: '12px', textAlign: 'center' }
-const editBtnStyle: React.CSSProperties = { padding: '4px 12px', background: 'rgba(155,80,240,0.08)', border: '1px solid rgba(155,80,240,0.3)', borderRadius: '4px', color: '#b87aff', fontFamily: 'var(--font-body)', fontSize: '0.75rem', cursor: 'pointer' }
-const deleteBtnStyle: React.CSSProperties = { padding: '4px 10px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.75rem', cursor: 'pointer' }
-const addBtnStyle: React.CSSProperties = { padding: '2px 8px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '3px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.68rem', cursor: 'pointer' }
-const removeBtnStyle: React.CSSProperties = { padding: '1px 7px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '3px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.68rem', cursor: 'pointer' }

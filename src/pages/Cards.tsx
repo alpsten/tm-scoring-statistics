@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
+import { SkeletonHeader, SkeletonTable } from '../components/ui/PageSkeleton'
 import Tag from '../components/ui/Tag'
 import { parseTags, parseCardName } from '../components/ui/tagUtils'
 import EmptyState from '../components/ui/EmptyState'
@@ -8,28 +9,9 @@ import FilterPill from '../components/ui/FilterPill'
 import { useCardStats, useCardReference, useCorpStats, useCEOStats } from '../lib/hooks'
 import { TAG_ICONS, EXPANSION_ICONS, RESOURCE_ICONS, PLACEMENT_ICONS, PLACEMENT_VP_TYPES, MULTIPLIER_VP_TYPES, TYPE_COLORS, NO_TAG_ICON, NO_TAG } from '../lib/expansions'
 import { parseListParam, writeListParam } from '../lib/filterUtils'
-
-const filterLabelStyle: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: '96px',
-  height: '34px',
-  padding: 0,
-  flexShrink: 0,
-  borderRadius: '5px',
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid var(--bd-panel)',
-  fontFamily: 'var(--font-mono)',
-  fontSize: '0.6rem',
-  fontWeight: 600,
-  letterSpacing: '0.06em',
-  textTransform: 'uppercase',
-  color: 'var(--text-4)',
-  whiteSpace: 'nowrap',
-  textAlign: 'center',
-}
-
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 const VARIANT_STYLE: Record<string, { bg: string; color: string; border: string }> = {
   ares:  { bg: 'rgba(210, 80, 50, 0.12)',  color: '#d05032', border: 'rgba(210, 80, 50, 0.35)'  },
@@ -39,7 +21,10 @@ const VARIANT_STYLE: Record<string, { bg: string; color: string; border: string 
 function VariantBadge({ variant }: { variant: string }) {
   const s = VARIANT_STYLE[variant] ?? { bg: 'rgba(100,100,100,0.1)', color: '#888', border: 'rgba(100,100,100,0.3)' }
   return (
-    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '1px 5px', borderRadius: '3px', background: s.bg, color: s.color, border: `1px solid ${s.border}`, flexShrink: 0 }}>
+    <span
+      className="font-mono text-[0.6rem] font-bold tracking-[0.06em] uppercase px-[5px] py-[1px] rounded-[3px] shrink-0"
+      style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
+    >
       {variant}
     </span>
   )
@@ -59,6 +44,8 @@ function parseCardTypes(value: string | null): CardType[] {
 function parseSortKey(value: string | null): SortKey {
   return SORT_KEYS.includes(value as SortKey) ? value as SortKey : 'card_name'
 }
+
+const filterLabel = 'inline-flex items-center justify-center w-24 h-[34px] px-0 shrink-0 rounded-[5px] bg-card border border-border font-mono text-[0.6rem] font-semibold tracking-[0.06em] uppercase text-[var(--text-4)] whitespace-nowrap text-center'
 
 export default function Cards() {
   const location = useLocation()
@@ -85,17 +72,21 @@ export default function Cards() {
 
   useEffect(() => {
     if (isLoading || scrollRestoredRef.current) return
-
     const saved = sessionStorage.getItem(scrollKey)
-    if (saved) {
-      window.requestAnimationFrame(() => window.scrollTo(0, Number(saved)))
-    }
-
+    if (saved) window.requestAnimationFrame(() => window.scrollTo(0, Number(saved)))
     scrollRestoredRef.current = true
   }, [isLoading, scrollKey])
 
-  if (isLoading) return <div style={loadingStyle}>Loading…</div>
-  if (error) return <div style={loadingStyle}>Failed to load card stats: {String((error as Error)?.message ?? error)}</div>
+  if (isLoading) return (
+    <div className="page-enter py-8 px-9">
+      <SkeletonHeader />
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-[34px] w-20 bg-card border border-border rounded-[5px] animate-pulse" />)}
+      </div>
+      <SkeletonTable rows={10} cols={6} />
+    </div>
+  )
+  if (error) return <div className="py-8 px-9 font-body text-[var(--text-4)]">Failed to load card stats: {String((error as Error)?.message ?? error)}</div>
 
   const tagMap: Record<string, string | null> = {}
   const typeMap: Record<string, string> = {}
@@ -116,36 +107,21 @@ export default function Cards() {
     statsMap[s.ceo_name.toLowerCase()] = { times_played: s.times_played, win_rate: s.win_rate, win_count: s.wins, avg_vp_contribution: 0 }
   }
 
-  const allTags = [...new Set(
-    Object.values(tagMap).flatMap(t => parseTags(t))
-  )].sort()
+  const allTags = [...new Set(Object.values(tagMap).flatMap(t => parseTags(t)))].sort()
 
   const expansionMap: Record<string, string[]> = {}
   for (const c of cardRef ?? []) {
     expansionMap[c.card_name.toLowerCase()] = c.expansions ?? []
   }
-  const allExpansions = [...new Set(
-    (cardRef ?? []).flatMap(c => c.expansions ?? [])
-  )].sort()
-
-  const allBaseVPs = [...new Set(
-    (cardRef ?? []).map(c => c.base_vp).filter((v): v is number => v !== null)
-  )].sort((a, b) => a - b)
-
-  const allResVpPer = [...new Set(
-    (cardRef ?? []).map(c => c.resource_vp_per).filter((v): v is number => v !== null)
-  )].sort((a, b) => a - b)
-
-  const allResTypes = [...new Set(
-    (cardRef ?? []).map(c => c.resource_vp_type).filter((v): v is string => v !== null)
-  )].sort()
+  const allExpansions = [...new Set((cardRef ?? []).flatMap(c => c.expansions ?? []))].sort()
+  const allBaseVPs = [...new Set((cardRef ?? []).map(c => c.base_vp).filter((v): v is number => v !== null))].sort((a, b) => a - b)
+  const allResVpPer = [...new Set((cardRef ?? []).map(c => c.resource_vp_per).filter((v): v is number => v !== null))].sort((a, b) => a - b)
+  const allResTypes = [...new Set((cardRef ?? []).map(c => c.resource_vp_type).filter((v): v is string => v !== null))].sort()
   const allResourceTypes = allResTypes.filter(rt => !PLACEMENT_VP_TYPES.includes(rt) && !MULTIPLIER_VP_TYPES.includes(rt))
   const allPlacementTypes = allResTypes.filter(rt => PLACEMENT_VP_TYPES.includes(rt))
   const allMultiplierTypes = allResTypes.filter(rt => MULTIPLIER_VP_TYPES.includes(rt))
 
-  const expansionCards = expansionFilters.length > 0
-    ? (cardRef ?? []).filter(c => expansionFilters.some(e => (c.expansions ?? []).includes(e)))
-    : []
+  const expansionCards = expansionFilters.length > 0 ? (cardRef ?? []).filter(c => expansionFilters.some(e => (c.expansions ?? []).includes(e))) : []
   const expansionTypeBreakdown: Partial<Record<string, number>> = {}
   const expansionTagBreakdown: Record<string, number> = {}
   for (const c of expansionCards) {
@@ -199,10 +175,7 @@ export default function Cards() {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev)
       if (sortKey === key) next.set('dir', sortDir === 'asc' ? 'desc' : 'asc')
-      else {
-        next.set('sort', key)
-        next.set('dir', 'desc')
-      }
+      else { next.set('sort', key); next.set('dir', 'desc') }
       return next
     }, { replace: true })
   }
@@ -210,8 +183,7 @@ export default function Cards() {
   function updateSearch(value: string) {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev)
-      if (value) next.set('q', value)
-      else next.delete('q')
+      if (value) next.set('q', value); else next.delete('q')
       return next
     }, { replace: true })
   }
@@ -236,14 +208,7 @@ export default function Cards() {
   function clearFilters() {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev)
-      next.delete('q')
-      next.delete('type')
-      next.delete('tag')
-      next.delete('expansion')
-      next.delete('exacttags')
-      next.delete('vp')
-      next.delete('resvp')
-      next.delete('restype')
+      ;['q', 'type', 'tag', 'expansion', 'exacttags', 'vp', 'resvp', 'restype'].forEach(k => next.delete(k))
       return next
     }, { replace: true })
   }
@@ -251,8 +216,7 @@ export default function Cards() {
   function setExactTagsFilter(n: number) {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev)
-      if (exactTags === n) next.delete('exacttags')
-      else next.set('exacttags', String(n))
+      if (exactTags === n) next.delete('exacttags'); else next.set('exacttags', String(n))
       return next
     }, { replace: true })
   }
@@ -269,8 +233,7 @@ export default function Cards() {
   function setVpFilter(val: string) {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev)
-      if (vpFilter === val) next.delete('vp')
-      else next.set('vp', val)
+      if (vpFilter === val) next.delete('vp'); else next.set('vp', val)
       return next
     }, { replace: true })
   }
@@ -278,8 +241,7 @@ export default function Cards() {
   function setResVpFilter(val: string) {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev)
-      if (resVpFilter === val) next.delete('resvp')
-      else next.set('resvp', val)
+      if (resVpFilter === val) next.delete('resvp'); else next.set('resvp', val)
       return next
     }, { replace: true })
   }
@@ -287,8 +249,7 @@ export default function Cards() {
   function setResTypeFilter(val: string) {
     setSearchParams(prev => {
       const next = new URLSearchParams(prev)
-      if (resTypeFilter === val) next.delete('restype')
-      else next.set('restype', val)
+      if (resTypeFilter === val) next.delete('restype'); else next.set('restype', val)
       return next
     }, { replace: true })
   }
@@ -298,43 +259,32 @@ export default function Cards() {
   }
 
   return (
-    <div className="page-enter" style={{ padding: '32px 36px' }}>
+    <div className="page-enter py-8 px-9">
       <PageHeader
         title="Cards"
         subtitle={hasFilters ? `${cards.length} of ${cardRef?.length ?? 0} cards` : `${cardRef?.length ?? 0} cards in reference`}
       />
 
-      <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div className="mb-5 flex flex-col gap-2.5">
         {/* Search + clear */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <input
+        <div className="flex gap-2.5 items-center flex-wrap">
+          <Input
             type="text"
             placeholder="Search cards…"
             value={search}
             onChange={e => updateSearch(e.target.value)}
-            style={{
-              width: '240px', height: '34px', padding: '0 12px',
-              background: 'var(--bg-input)', border: '1px solid var(--bd-input)', borderRadius: '4px',
-              color: 'var(--text-1)', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none',
-            }}
+            className="w-[240px] h-[34px] text-[0.83rem]"
           />
           {hasFilters && (
-            <button
-              onClick={clearFilters}
-              style={{
-                height: '34px', padding: '0 12px',
-                background: 'transparent', border: '1px solid var(--bd-input)', borderRadius: '4px',
-                color: 'var(--text-4)', fontFamily: 'var(--font-body)', fontSize: '0.78rem', cursor: 'pointer',
-              }}
-            >
+            <Button variant="outline" size="sm" onClick={clearFilters} className="h-[34px] text-[0.78rem] text-[var(--text-4)]">
               Clear all
-            </button>
+            </Button>
           )}
         </div>
 
         {/* Type pills */}
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={filterLabelStyle}>Type</span>
+        <div className="flex gap-1.5 flex-wrap items-center">
+          <span className={filterLabel}>Type</span>
           {CARD_TYPES.map(type => (
             <FilterPill
               key={type}
@@ -348,8 +298,8 @@ export default function Cards() {
 
         {/* Expansion pills */}
         {allExpansions.length > 0 && (
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={filterLabelStyle}>Expansion</span>
+          <div className="flex gap-1.5 flex-wrap items-center">
+            <span className={filterLabel}>Expansion</span>
             {allExpansions.map(exp => (
               <FilterPill
                 key={exp}
@@ -366,38 +316,38 @@ export default function Cards() {
 
         {/* Expansion breakdown panel */}
         {expansionFilters.length > 0 && expansionCards.length > 0 && (
-          <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-4)' }}>
+          <div className="bg-card border border-border rounded-[6px] px-[18px] py-3.5 flex flex-col gap-2.5">
+            <span className="font-mono text-[0.65rem] tracking-[0.1em] uppercase text-[var(--text-4)]">
               {expansionFilters.join(' + ')} — {expansionCards.length} cards
             </span>
-            <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap' }}>
+            <div className="flex gap-[18px] flex-wrap">
               <div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '6px' }}>By type</div>
-                <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                <div className="font-body text-[0.62rem] font-semibold tracking-[0.08em] uppercase text-[var(--text-4)] mb-1.5">By type</div>
+                <div className="flex gap-[5px] flex-wrap">
                   {Object.entries(expansionTypeBreakdown).sort((a, b) => b[1]! - a[1]!).map(([type, count]) => {
                     const col = TYPE_COLORS[type]
                     return (
-                      <span key={type} style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '3px', background: col?.bg ?? 'rgba(255,255,255,0.05)', color: col?.color ?? 'var(--text-2)', whiteSpace: 'nowrap' }}>
-                        {type} <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{count}</span>
+                      <span key={type} className="font-body text-[0.72rem] px-2 py-[2px] rounded-[3px] whitespace-nowrap" style={{ background: col?.bg ?? 'rgba(255,255,255,0.05)', color: col?.color ?? 'var(--text-2)' }}>
+                        {type} <span className="font-mono font-bold">{count}</span>
                       </span>
                     )
                   })}
                 </div>
               </div>
               <div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '6px' }}>By tag</div>
-                <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <div className="font-body text-[0.62rem] font-semibold tracking-[0.08em] uppercase text-[var(--text-4)] mb-1.5">By tag</div>
+                <div className="flex gap-[5px] flex-wrap items-center">
                   {Object.entries(expansionTagBreakdown).sort((a, b) => b[1] - a[1]).map(([tag, count]) => (
-                    <span key={tag} title={tag} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 6px', borderRadius: '3px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--bd-panel)', whiteSpace: 'nowrap' }}>
+                    <span key={tag} title={tag} className="flex items-center gap-1 px-1.5 py-[3px] rounded-[3px] bg-secondary border border-border whitespace-nowrap">
                       {TAG_ICONS[tag]
-                        ? <img src={TAG_ICONS[tag]} alt={tag} style={{ width: '14px', height: '14px', objectFit: 'contain' }} />
-                        : <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: 'var(--text-3)' }}>{tag.slice(0, 3)}</span>
+                        ? <img src={TAG_ICONS[tag]} alt={tag} className="w-3.5 h-3.5 object-contain" />
+                        : <span className="font-body text-[0.65rem] text-[var(--text-3)]">{tag.slice(0, 3)}</span>
                       }
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-2)' }}>{count}</span>
+                      <span className="font-mono font-bold text-[0.72rem] text-secondary-foreground">{count}</span>
                     </span>
                   ))}
                   {Object.keys(expansionTagBreakdown).length === 0 && (
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)' }}>No tags</span>
+                    <span className="font-body text-[0.72rem] text-[var(--text-4)]">No tags</span>
                   )}
                 </div>
               </div>
@@ -407,56 +357,32 @@ export default function Cards() {
 
         {/* Tag pills */}
         {allTags.length > 0 && (
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={filterLabelStyle}>Tag</span>
+          <div className="flex gap-1.5 flex-wrap items-center">
+            <span className={filterLabel}>Tag</span>
             {allTags.map(tag => (
-              <FilterPill
-                key={tag}
-                label={tag}
-                icon={TAG_ICONS[tag]}
-                active={tagFilters.includes(tag)}
-                onClick={() => toggleTag(tag)}
-              />
+              <FilterPill key={tag} label={tag} icon={TAG_ICONS[tag]} active={tagFilters.includes(tag)} onClick={() => toggleTag(tag)} />
             ))}
-            <FilterPill
-              label="No tag"
-              icon={NO_TAG_ICON}
-              active={tagFilters.includes(NO_TAG)}
-              onClick={() => toggleTag(NO_TAG)}
-            />
+            <FilterPill label="No tag" icon={NO_TAG_ICON} active={tagFilters.includes(NO_TAG)} onClick={() => toggleTag(NO_TAG)} />
           </div>
         )}
 
-        {/* Min tag count pills */}
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={filterLabelStyle}>Min tags</span>
+        {/* Exact tag count pills */}
+        <div className="flex gap-1.5 flex-wrap items-center">
+          <span className={filterLabel}>Min tags</span>
           {[1, 2, 3, 4].map(n => (
-            <FilterPill
-              key={n}
-              label={String(n)}
-              tooltip={`Exactly ${n} tag${n > 1 ? 's' : ''}`}
-              active={exactTags === n}
-              color="#5b8dd9"
-              onClick={() => setExactTagsFilter(n)}
-            />
+            <FilterPill key={n} label={String(n)} tooltip={`Exactly ${n} tag${n > 1 ? 's' : ''}`} active={exactTags === n} color="#5b8dd9" onClick={() => setExactTagsFilter(n)} />
           ))}
         </div>
 
         {/* VP pills */}
         {allBaseVPs.length > 0 && (
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={filterLabelStyle}>VP</span>
+          <div className="flex gap-1.5 flex-wrap items-center">
+            <span className={filterLabel}>VP</span>
             {allBaseVPs.some(v => v < 0) && (
               <FilterPill label="−" tooltip="All negative VP" active={vpFilter === 'negative'} color="#e05535" onClick={() => setVpFilter('negative')} />
             )}
             {allBaseVPs.map(v => (
-              <FilterPill
-                key={v}
-                label={v > 0 ? `+${v}` : `${v}`}
-                active={vpFilter === String(v)}
-                color={v > 0 ? '#4a9e6b' : v < 0 ? '#e05535' : '#888888'}
-                onClick={() => setVpFilter(String(v))}
-              />
+              <FilterPill key={v} label={v > 0 ? `+${v}` : `${v}`} active={vpFilter === String(v)} color={v > 0 ? '#4a9e6b' : v < 0 ? '#e05535' : '#888888'} onClick={() => setVpFilter(String(v))} />
             ))}
             {allBaseVPs.some(v => v > 0) && (
               <FilterPill label="+" tooltip="All positive VP" active={vpFilter === 'positive'} color="#4a9e6b" onClick={() => setVpFilter('positive')} />
@@ -466,43 +392,28 @@ export default function Cards() {
 
         {/* Resource VP pills */}
         {allResVpPer.length > 0 && (
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={filterLabelStyle}>Resource VP</span>
+          <div className="flex gap-1.5 flex-wrap items-center">
+            <span className={filterLabel}>Resource VP</span>
             {allResVpPer.map(n => (
-              <FilterPill
-                key={n}
-                label={`1/${n}`}
-                tooltip={`1 VP per ${n} resource${n > 1 ? 's' : ''}`}
-                active={resVpFilter === String(n)}
-                color="#c9a030"
-                onClick={() => setResVpFilter(String(n))}
-              />
+              <FilterPill key={n} label={`1/${n}`} tooltip={`1 VP per ${n} resource${n > 1 ? 's' : ''}`} active={resVpFilter === String(n)} color="#c9a030" onClick={() => setResVpFilter(String(n))} />
             ))}
           </div>
         )}
 
         {/* Resource type pills */}
         {allResourceTypes.length > 0 && (
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={filterLabelStyle}>Resource</span>
+          <div className="flex gap-1.5 flex-wrap items-center">
+            <span className={filterLabel}>Resource</span>
             {allResourceTypes.map(rt => (
-              <FilterPill
-                key={rt}
-                label={rt}
-                tooltip={rt}
-                icon={RESOURCE_ICONS[rt]}
-                active={resTypeFilter === rt}
-                color="#b87aff"
-                onClick={() => setResTypeFilter(rt)}
-              />
+              <FilterPill key={rt} label={rt} tooltip={rt} icon={RESOURCE_ICONS[rt]} active={resTypeFilter === rt} color="#b87aff" onClick={() => setResTypeFilter(rt)} />
             ))}
           </div>
         )}
 
-        {/* Placement VP type pill */}
+        {/* Placement VP pills */}
         {allPlacementTypes.length > 0 && (
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={filterLabelStyle}>Placement VP</span>
+          <div className="flex gap-1.5 flex-wrap items-center">
+            <span className={filterLabel}>Placement VP</span>
             <FilterPill
               icon={PLACEMENT_ICONS[allPlacementTypes[0]]}
               tooltip={`Placement VP (${allPlacementTypes.join(', ')})`}
@@ -515,16 +426,10 @@ export default function Cards() {
 
         {/* Multiplier VP pills */}
         {allMultiplierTypes.length > 0 && (
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={filterLabelStyle}>Multiplier VP</span>
+          <div className="flex gap-1.5 flex-wrap items-center">
+            <span className={filterLabel}>Multiplier VP</span>
             {allMultiplierTypes.map(rt => (
-              <FilterPill
-                key={rt}
-                label={rt}
-                active={resTypeFilter === rt}
-                color="#b87aff"
-                onClick={() => setResTypeFilter(rt)}
-              />
+              <FilterPill key={rt} label={rt} active={resTypeFilter === rt} color="#b87aff" onClick={() => setResTypeFilter(rt)} />
             ))}
           </div>
         )}
@@ -533,34 +438,31 @@ export default function Cards() {
       {cards.length === 0 ? (
         <EmptyState message="No cards match the current filters." />
       ) : (
-        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="bg-card border border-border rounded-[6px] overflow-hidden">
+          <table className="w-full border-collapse">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
+              <tr className="border-b border-border">
                 {([
-                  { label: 'Card',      key: 'card_name'           as SortKey, align: 'left'   },
-                  { label: 'Type',      key: null,                              align: 'center' },
-                  { label: 'Tags',      key: null,                              align: 'center' },
-                  { label: 'Expansion', key: null,                              align: 'center' },
-                  { label: 'Cost',      key: null,                              align: 'center' },
-                  { label: 'Played',   key: 'times_played'        as SortKey, align: 'center' },
-                  { label: 'Win Rate', key: 'win_rate' as SortKey, align: 'center' },
-                  { label: 'VP',       key: 'base_vp'  as SortKey, align: 'center' },
+                  { label: 'Card',      key: 'card_name'    as SortKey, align: 'left'   },
+                  { label: 'Type',      key: null,                       align: 'center' },
+                  { label: 'Tags',      key: null,                       align: 'center' },
+                  { label: 'Expansion', key: null,                       align: 'center' },
+                  { label: 'Cost',      key: null,                       align: 'center' },
+                  { label: 'Played',    key: 'times_played' as SortKey, align: 'center' },
+                  { label: 'Win Rate',  key: 'win_rate'     as SortKey, align: 'center' },
+                  { label: 'VP',        key: 'base_vp'      as SortKey, align: 'center' },
                 ] as { label: string; key: SortKey | null; align: string }[]).map(({ label, key, align }) => {
                   const active = key && sortKey === key
                   return (
                     <th
                       key={label}
                       onClick={key ? () => handleSort(key) : undefined}
-                      style={{
-                        padding: '11px 16px', textAlign: align as 'left' | 'center',
-                        fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600,
-                        letterSpacing: '0.08em', textTransform: 'uppercase',
-                        color: active ? 'var(--sort-active)' : 'var(--text-4)',
-                        cursor: key ? 'pointer' : 'default',
-                        userSelect: 'none',
-                        whiteSpace: 'nowrap',
-                      }}
+                      className={cn(
+                        'px-4 py-[11px] font-body text-[0.68rem] font-semibold tracking-[0.08em] uppercase select-none whitespace-nowrap',
+                        align === 'center' ? 'text-center' : 'text-left',
+                        key ? 'cursor-pointer' : 'cursor-default',
+                        active ? 'text-[#5b8dd9]' : 'text-[var(--text-4)]'
+                      )}
                     >
                       {label}{active ? (sortDir === 'desc' ? ' ↓' : ' ↑') : ''}
                     </th>
@@ -576,79 +478,81 @@ export default function Cards() {
                 return (
                   <tr
                     key={card.card_name}
-                    style={{ borderBottom: i < cards.length - 1 ? '1px solid var(--bd-panel)' : 'none', transition: 'background 0.1s', background: 'var(--bg-row)' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-row-hover)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-row)')}
+                    className={cn('hover:bg-accent transition-colors', i < cards.length - 1 && 'border-b border-border')}
                   >
-                    <td style={{ padding: '12px 16px', textAlign: 'left' }}>
-                      <Link to={`/cards/${encodeURIComponent(card.card_name)}`} onClick={rememberScroll} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: '0.85rem', color: 'var(--text-1)', textDecoration: 'none' }}>
+                    <td className="px-4 py-3 text-left">
+                      <Link
+                        to={`/cards/${encodeURIComponent(card.card_name)}`}
+                        onClick={rememberScroll}
+                        className="inline-flex items-center gap-1.5 font-body font-normal text-[0.85rem] text-foreground no-underline hover:text-mars-400 transition-colors"
+                      >
                         {(() => { const { baseName, variant } = parseCardName(card.card_name); return <><span>{baseName}</span>{variant && <VariantBadge variant={variant} />}</> })()}
                       </Link>
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                    <td className="px-4 py-3 text-center">
                       {typeStyle && (
-                        <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', fontWeight: 500, padding: '2px 7px', borderRadius: '3px', background: typeStyle.bg, color: typeStyle.color, whiteSpace: 'nowrap' }}>
+                        <span className="font-body text-[0.7rem] font-normal px-[7px] py-[2px] rounded-[3px] whitespace-nowrap" style={{ background: typeStyle.bg, color: typeStyle.color }}>
                           {type}
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex gap-1 flex-wrap justify-center">
                         {parseTags(card.tags).map((tag, i) => (
                           <Tag key={`${tag}-${i}`} name={tag} />
                         ))}
                       </div>
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex gap-1 flex-wrap justify-center">
                         {(card.expansions ?? []).map(exp => (
                           EXPANSION_ICONS[exp]
-                            ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} style={{ width: '18px', height: '18px', objectFit: 'contain', opacity: 0.85 }} />
-                            : <span key={exp} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-4)' }}>{exp}</span>
+                            ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} className="w-[18px] h-[18px] object-contain opacity-85" />
+                            : <span key={exp} className="font-mono text-[0.6rem] text-[var(--text-4)]">{exp}</span>
                         ))}
                       </div>
                     </td>
-                    <td style={{ ...numTd, textAlign: 'center', color: card.mc_cost != null ? '#c9a030' : 'var(--text-5)' }}>
+                    <td className={cn('px-4 py-3 text-center font-mono text-[0.83rem]', card.mc_cost != null ? 'text-score-400' : 'text-[var(--text-5)]')}>
                       {card.mc_cost != null ? `${card.mc_cost}` : '/'}
                     </td>
-                    <td style={{ ...numTd, textAlign: 'center', color: stats ? 'var(--text-2)' : 'var(--text-5)' }}>
+                    <td className={cn('px-4 py-3 text-center font-mono text-[0.83rem]', stats ? 'text-secondary-foreground' : 'text-[var(--text-5)]')}>
                       {stats ? stats.times_played : '—'}
                     </td>
-                    <td style={{ ...numTd, textAlign: 'center', color: stats ? (stats.win_rate >= 50 ? '#4a9e6b' : stats.win_rate > 33 ? '#c9a030' : '#e05535') : 'var(--text-5)' }}>
+                    <td className="px-4 py-3 text-center font-mono text-[0.83rem]">
                       {stats ? (
-                        <>
+                        <span className={stats.win_rate >= 50 ? 'text-win-500' : stats.win_rate > 33 ? 'text-score-400' : 'text-mars-500'}>
                           {Math.round(stats.win_rate)}%
-                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: 'var(--text-4)', marginLeft: '4px' }}>
+                          <span className="font-body text-[0.65rem] text-[var(--text-4)] ml-1">
                             ({stats.win_count}/{stats.times_played})
                           </span>
-                        </>
-                      ) : '—'}
+                        </span>
+                      ) : <span className="text-[var(--text-5)]">—</span>}
                     </td>
-                    <td style={{ ...numTd, textAlign: 'center' }}>
+                    <td className="px-4 py-3 text-center">
                       {card.base_vp !== null ? (
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.83rem', fontWeight: 700, color: card.base_vp > 0 ? '#4a9e6b' : card.base_vp < 0 ? '#e05535' : 'var(--text-4)' }}>
+                        <span className={cn('font-mono text-[0.83rem] font-bold', card.base_vp > 0 ? 'text-score-400' : card.base_vp < 0 ? 'text-mars-500' : 'text-[var(--text-4)]')}>
                           {card.base_vp}
                         </span>
                       ) : card.resource_vp_per !== null ? (
                         PLACEMENT_VP_TYPES.includes(card.resource_vp_type ?? '') ? (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '5px', background: 'rgba(91,141,217,0.1)', border: '1px solid rgba(91,141,217,0.3)', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 700, color: '#5b8dd9' }}>
+                          <span className="inline-flex items-center gap-1 px-2 py-[3px] rounded-[5px] bg-[rgba(91,141,217,0.1)] border border-[rgba(91,141,217,0.3)] font-mono text-[0.72rem] font-bold text-[#5b8dd9]">
                             1/{card.resource_vp_per}
                             {card.resource_vp_type && (PLACEMENT_ICONS[card.resource_vp_type]
-                              ? <img src={PLACEMENT_ICONS[card.resource_vp_type]} alt={card.resource_vp_type} title={card.resource_vp_type} style={{ width: '13px', height: '13px', objectFit: 'contain' }} />
-                              : <span style={{ fontSize: '0.65rem', color: 'rgba(91,141,217,0.7)' }}>{card.resource_vp_type}</span>
+                              ? <img src={PLACEMENT_ICONS[card.resource_vp_type]} alt={card.resource_vp_type} title={card.resource_vp_type} className="w-3.5 h-3.5 object-contain" />
+                              : <span className="text-[0.65rem] text-[rgba(91,141,217,0.7)]">{card.resource_vp_type}</span>
                             )}
                           </span>
                         ) : (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '5px', background: 'rgba(201,160,48,0.1)', border: '1px solid rgba(201,160,48,0.3)', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 700, color: '#c9a030' }}>
+                          <span className="inline-flex items-center gap-1 px-2 py-[3px] rounded-[5px] bg-[rgba(201,160,48,0.1)] border border-[rgba(201,160,48,0.3)] font-mono text-[0.72rem] font-bold text-score-400">
                             1/{card.resource_vp_per}
                             {card.resource_vp_type && (RESOURCE_ICONS[card.resource_vp_type]
-                              ? <img src={RESOURCE_ICONS[card.resource_vp_type]} alt={card.resource_vp_type} title={card.resource_vp_type} style={{ width: '13px', height: '13px', objectFit: 'contain' }} />
-                              : <span style={{ fontSize: '0.65rem', color: 'rgba(201,160,48,0.7)' }}>{card.resource_vp_type}</span>
+                              ? <img src={RESOURCE_ICONS[card.resource_vp_type]} alt={card.resource_vp_type} title={card.resource_vp_type} className="w-3.5 h-3.5 object-contain" />
+                              : <span className="text-[0.65rem] text-[rgba(201,160,48,0.7)]">{card.resource_vp_type}</span>
                             )}
                           </span>
                         )
                       ) : (
-                        <span style={{ color: 'var(--text-5)' }}>/</span>
+                        <span className="text-[var(--text-5)]">/</span>
                       )}
                     </td>
                   </tr>
@@ -659,12 +563,9 @@ export default function Cards() {
         </div>
       )}
 
-      <p style={{ marginTop: '14px', fontFamily: 'var(--font-body)', fontSize: '0.73rem', color: 'var(--text-4)', fontStyle: 'italic' }}>
+      <p className="mt-3.5 font-body text-[0.73rem] text-[var(--text-4)] italic">
         Win rate reflects the player's game result when this card was played, not the card's direct contribution to winning.
       </p>
     </div>
   )
 }
-
-const loadingStyle: React.CSSProperties = { padding: '32px 36px', color: 'var(--text-4)', fontFamily: 'var(--font-body)' }
-const numTd: React.CSSProperties = { padding: '12px 16px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.83rem', color: 'var(--text-2)' }

@@ -68,6 +68,9 @@ function toEdit(p?: PlayerProfile): EditValues {
   }
 }
 
+const inputClass = 'w-full bg-[#110d1e] border border-[#3e325e] rounded text-[#ece6ff] px-2.5 py-[7px] font-body text-[0.82rem] outline-none focus:border-violet-500/60 transition-colors'
+const labelClass = 'block font-mono text-[0.65rem] tracking-[0.08em] uppercase text-[#504270] mb-1'
+
 function SearchInput({ value, onChange, placeholder, names }: { value: string; onChange: (v: string) => void; placeholder?: string; names: string[] }) {
   const [query, setQuery] = useState(value)
   const [open, setOpen] = useState(false)
@@ -88,23 +91,21 @@ function SearchInput({ value, onChange, placeholder, names }: { value: string; o
     : []
 
   return (
-    <div ref={containerRef} style={{ position: 'relative' }}>
+    <div ref={containerRef} className="relative">
       <input
-        style={inputStyle}
+        className={inputClass}
         value={query}
         placeholder={placeholder}
         onChange={e => { setQuery(e.target.value); onChange(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
       />
       {open && matches.length > 0 && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, background: '#1e1835', border: '1px solid #3e325e', borderRadius: '4px', marginTop: '2px', maxHeight: '220px', overflowY: 'auto' }}>
+        <div className="absolute top-full left-0 right-0 z-50 bg-[#282042] border border-[#3e325e] rounded mt-[2px] max-h-[220px] overflow-y-auto">
           {matches.map(name => (
             <div
               key={name}
               onMouseDown={() => { onChange(name); setQuery(name); setOpen(false) }}
-              style={{ padding: '7px 10px', fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: name === value ? '#b87aff' : '#bbb4d0', cursor: 'pointer', background: name === value ? 'rgba(155,80,240,0.08)' : 'transparent' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#282042')}
-              onMouseLeave={e => (e.currentTarget.style.background = name === value ? 'rgba(155,80,240,0.08)' : 'transparent')}
+              className={`px-[10px] py-[7px] font-body text-[0.82rem] cursor-pointer transition-colors hover:bg-[#282042] ${name === value ? 'text-[#b87aff] bg-violet-500/8' : 'text-[#bbb4d0]'}`}
             >
               {name}
             </div>
@@ -133,40 +134,15 @@ function ColorSwatch({ hex, selected, onClick }: { hex: string; selected: boolea
       type="button"
       onClick={onClick}
       title={PLAYER_COLORS.find(c => c.hex === hex)?.name ?? hex}
-      style={{
-        width: 26, height: 26, borderRadius: '50%',
-        background: hex,
-        border: selected ? '2px solid #ece6ff' : '2px solid rgba(255,255,255,0.08)',
-        outline: selected ? '2px solid rgba(155,80,240,0.7)' : 'none',
-        outlineOffset: '2px',
-        cursor: 'pointer',
-        padding: 0,
-        flexShrink: 0,
-      }}
+      className={`w-[26px] h-[26px] rounded-full cursor-pointer p-0 shrink-0 border-2 transition-all ${selected ? 'border-[#ece6ff] outline outline-2 outline-offset-2 outline-[rgba(155,80,240,0.7)]' : 'border-white/8'}`}
+      style={{ background: hex }}
     />
   )
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  background: '#110d1e',
-  border: '1px solid #3e325e',
-  borderRadius: '4px',
-  color: '#ece6ff',
-  padding: '7px 10px',
-  fontFamily: 'var(--font-body)',
-  fontSize: '0.82rem',
-}
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontFamily: 'var(--font-mono)',
-  fontSize: '0.65rem',
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: '#504270',
-  marginBottom: '4px',
-}
+const thClass = 'px-3 py-2 text-left font-mono text-[0.65rem] tracking-[0.08em] uppercase text-[#504270] font-normal border-b border-[#3e325e]'
+const tdClass = 'px-3 py-[9px] text-[0.82rem] text-[#bbb4d0] align-middle border-b border-[#1e1835]'
+const dash = <span className="text-[#3e325e]">—</span>
 
 export default function PlayerProfileAdmin() {
   const qc = useQueryClient()
@@ -232,41 +208,19 @@ export default function PlayerProfileAdmin() {
 
   const loading = loadingNames || loadingProfiles
 
-  const thStyle: React.CSSProperties = {
-    padding: '8px 12px',
-    textAlign: 'left',
-    fontFamily: 'var(--font-mono)',
-    fontSize: '0.65rem',
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-    color: '#504270',
-    fontWeight: 400,
-    borderBottom: '1px solid #282042',
-  }
-
-  const tdStyle: React.CSSProperties = {
-    padding: '9px 12px',
-    fontSize: '0.82rem',
-    color: '#bbb4d0',
-    verticalAlign: 'middle',
-    borderBottom: '1px solid #1e1835',
-  }
-
-  const dash = <span style={{ color: '#3e325e' }}>—</span>
-
   return (
-    <div className="page-enter" style={{ padding: '32px 36px' }}>
+    <div className="page-enter py-8 px-9 min-h-full bg-[#0c0e12]">
       <PageHeader title="Player Profiles" subtitle="Player bios and preferences" />
 
       {loading ? (
-        <div style={{ color: '#504270', fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}>Loading…</div>
+        <div className="text-[#504270] font-mono text-[0.78rem]">Loading…</div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '680px' }}>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse min-w-[680px]">
             <thead>
               <tr>
                 {['Player', 'Colors', 'Playing Style', 'Rival', 'Favorite Card', 'Most Frustrating Card', ''].map(h => (
-                  <th key={h} style={thStyle}>{h}</th>
+                  <th key={h} className={thClass}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -276,25 +230,25 @@ export default function PlayerProfileAdmin() {
 
                 if (editing === name) {
                   return (
-                    <tr key={name} style={{ background: '#1e1835', borderBottom: '1px solid #282042' }}>
-                      <td colSpan={7} style={{ padding: '20px 24px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <tr key={name} className="bg-[#282042] border-b border-[#3e325e]">
+                      <td colSpan={7} className="px-6 py-5">
+                        <div className="flex flex-col gap-4">
 
-                          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.95rem', color: '#ece6ff' }}>
+                          <div className="font-display font-semibold text-[0.95rem] text-[#ece6ff]">
                             {name}
                           </div>
 
                           {/* Color swatches — top 3 */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <div style={labelStyle}>Preferred Colors (ranked)</div>
+                          <div className="flex flex-col gap-[10px]">
+                            <div className={labelClass}>Preferred Colors (ranked)</div>
                             {([
                               { key: 'preferred_color',   rank: '1st choice' },
                               { key: 'preferred_color_2', rank: '2nd choice' },
                               { key: 'preferred_color_3', rank: '3rd choice' },
                             ] as { key: keyof EditValues; rank: string }[]).map(({ key, rank }) => (
                               <div key={key}>
-                                <div style={{ ...labelStyle, marginBottom: '6px', color: '#625c7c' }}>{rank}</div>
-                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                <div className="block font-mono text-[0.65rem] tracking-[0.08em] uppercase text-[#625c7c] mb-1.5">{rank}</div>
+                                <div className="flex gap-2 flex-wrap items-center">
                                   {PLAYER_COLORS.map(c => (
                                     <ColorSwatch
                                       key={c.hex}
@@ -307,7 +261,7 @@ export default function PlayerProfileAdmin() {
                                     <button
                                       type="button"
                                       onClick={() => setVals(v => ({ ...v, [key]: '' }))}
-                                      style={{ background: 'none', border: 'none', color: '#504270', cursor: 'pointer', fontSize: '0.7rem', fontFamily: 'var(--font-mono)', padding: '0 4px' }}
+                                      className="bg-transparent border-none text-[#504270] cursor-pointer text-[0.7rem] font-mono px-1 hover:text-[#8e87a8] transition-colors"
                                     >
                                       clear
                                     </button>
@@ -318,18 +272,18 @@ export default function PlayerProfileAdmin() {
                           </div>
 
                           {/* Text fields grid */}
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                          <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label style={labelStyle}>Playing Style</label>
+                              <label className={labelClass}>Playing Style</label>
                               <input
-                                style={inputStyle}
+                                className={inputClass}
                                 value={vals.playing_style}
                                 onChange={e => setVals(v => ({ ...v, playing_style: e.target.value }))}
                                 placeholder="e.g. engine builder, milestones rusher"
                               />
                             </div>
                             <div>
-                              <label style={labelStyle}>Rival</label>
+                              <label className={labelClass}>Rival</label>
                               <SearchInput
                                 value={vals.rival}
                                 onChange={v => setVals(vals => ({ ...vals, rival: v }))}
@@ -337,28 +291,28 @@ export default function PlayerProfileAdmin() {
                                 names={allNames.filter((n: string) => n !== name)}
                               />
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                              <label style={labelStyle}>Favorite Cards (top 3)</label>
+                            <div className="flex flex-col gap-1.5">
+                              <label className={labelClass}>Favorite Cards (top 3)</label>
                               {(['favorite_card', 'favorite_card_2', 'favorite_card_3'] as const).map((key, i) => (
                                 <CardSearchInput key={key} value={vals[key]} onChange={v => setVals(vals => ({ ...vals, [key]: v }))} placeholder={`${i + 1}. Search cards…`} />
                               ))}
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                              <label style={labelStyle}>Most Frustrating Cards (top 3)</label>
+                            <div className="flex flex-col gap-1.5">
+                              <label className={labelClass}>Most Frustrating Cards (top 3)</label>
                               {(['most_tilting_card', 'most_tilting_card_2', 'most_tilting_card_3'] as const).map((key, i) => (
                                 <CardSearchInput key={key} value={vals[key]} onChange={v => setVals(vals => ({ ...vals, [key]: v }))} placeholder={`${i + 1}. Search cards…`} />
                               ))}
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                              <label style={labelStyle}>Favorite Corporations (top 3)</label>
+                            <div className="flex flex-col gap-1.5">
+                              <label className={labelClass}>Favorite Corporations (top 3)</label>
                               {(['favorite_corporation', 'favorite_corporation_2', 'favorite_corporation_3'] as const).map((key, i) => (
                                 <CorpSearchInput key={key} value={vals[key]} onChange={v => setVals(vals => ({ ...vals, [key]: v }))} placeholder={`${i + 1}. Search corporations…`} />
                               ))}
                             </div>
-                            <div style={{ gridColumn: '1 / -1' }}>
-                              <label style={labelStyle}>Trivia</label>
+                            <div className="col-span-2">
+                              <label className={labelClass}>Trivia</label>
                               <textarea
-                                style={{ ...inputStyle, resize: 'vertical', minHeight: '70px' } as React.CSSProperties}
+                                className={`${inputClass} resize-y min-h-[70px]`}
                                 value={vals.trivia}
                                 onChange={e => setVals(v => ({ ...v, trivia: e.target.value }))}
                                 placeholder="Fun facts, notes about this player…"
@@ -367,43 +321,22 @@ export default function PlayerProfileAdmin() {
                           </div>
 
                           {saveError && (
-                            <div style={{ color: '#e05535', fontFamily: 'var(--font-mono)', fontSize: '0.72rem' }}>{saveError}</div>
+                            <div className="text-mars-500 font-mono text-[0.72rem]">{saveError}</div>
                           )}
 
-                          <div style={{ display: 'flex', gap: '8px' }}>
+                          <div className="flex gap-2">
                             <button
                               type="button"
                               onClick={() => save(name)}
                               disabled={saving}
-                              style={{
-                                padding: '7px 20px',
-                                background: 'rgba(155,80,240,0.12)',
-                                border: '1px solid rgba(155,80,240,0.4)',
-                                borderRadius: '4px',
-                                color: '#b87aff',
-                                fontFamily: 'var(--font-mono)',
-                                fontSize: '0.72rem',
-                                letterSpacing: '0.06em',
-                                cursor: saving ? 'not-allowed' : 'pointer',
-                                opacity: saving ? 0.6 : 1,
-                              }}
+                              className="px-5 py-[7px] bg-violet-500/12 border border-violet-500/40 rounded text-[#b87aff] font-mono text-[0.72rem] tracking-[0.06em] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                               {saving ? 'Saving…' : 'Save'}
                             </button>
                             <button
                               type="button"
                               onClick={cancelEdit}
-                              style={{
-                                padding: '7px 16px',
-                                background: 'transparent',
-                                border: '1px solid #282042',
-                                borderRadius: '4px',
-                                color: '#504270',
-                                fontFamily: 'var(--font-mono)',
-                                fontSize: '0.72rem',
-                                letterSpacing: '0.06em',
-                                cursor: 'pointer',
-                              }}
+                              className="px-4 py-[7px] bg-transparent border border-[#3e325e] rounded text-[#504270] font-mono text-[0.72rem] tracking-[0.06em] cursor-pointer hover:border-[#3e325e] hover:text-[#8e87a8] transition-colors"
                             >
                               Cancel
                             </button>
@@ -415,50 +348,27 @@ export default function PlayerProfileAdmin() {
                 }
 
                 return (
-                  <tr
-                    key={name}
-                    style={{ borderBottom: '1px solid #1e1835' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#171228')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    <td style={{ ...tdStyle, color: '#ece6ff', fontFamily: 'var(--font-display)', fontWeight: 600 }}>{name}</td>
-                    <td style={tdStyle}>
-                      <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                  <tr key={name} className="border-b border-[#1e1835] hover:bg-[#171228] transition-colors">
+                    <td className={`${tdClass} text-[#ece6ff] font-display font-semibold`}>{name}</td>
+                    <td className={tdClass}>
+                      <div className="flex gap-[5px] items-center">
                         {[p?.preferred_color, p?.preferred_color_2, p?.preferred_color_3].map((col, i) =>
                           col
-                            ? <div key={i} style={{ width: 16, height: 16, borderRadius: '50%', background: col, border: '1px solid rgba(255,255,255,0.12)' }} title={`${i + 1}. ${PLAYER_COLORS.find(c => c.hex === col)?.name ?? col}`} />
+                            ? <div key={i} className="w-4 h-4 rounded-full border border-white/12" style={{ background: col }} title={`${i + 1}. ${PLAYER_COLORS.find(c => c.hex === col)?.name ?? col}`} />
                             : null
                         )}
                         {!p?.preferred_color && dash}
                       </div>
                     </td>
-                    <td style={tdStyle}>{p?.playing_style || dash}</td>
-                    <td style={tdStyle}>{p?.rival || dash}</td>
-                    <td style={tdStyle}>{p?.favorite_card || dash}</td>
-                    <td style={tdStyle}>{p?.most_tilting_card || dash}</td>
-                    <td style={{ ...tdStyle, textAlign: 'right' }}>
+                    <td className={tdClass}>{p?.playing_style || dash}</td>
+                    <td className={tdClass}>{p?.rival || dash}</td>
+                    <td className={tdClass}>{p?.favorite_card || dash}</td>
+                    <td className={tdClass}>{p?.most_tilting_card || dash}</td>
+                    <td className={`${tdClass} text-right`}>
                       <button
                         type="button"
                         onClick={() => startEdit(name)}
-                        style={{
-                          padding: '4px 12px',
-                          background: 'transparent',
-                          border: '1px solid #282042',
-                          borderRadius: '4px',
-                          color: '#504270',
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: '0.65rem',
-                          letterSpacing: '0.06em',
-                          cursor: 'pointer',
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.borderColor = '#3e325e'
-                          e.currentTarget.style.color = '#8e87a8'
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.borderColor = '#282042'
-                          e.currentTarget.style.color = '#504270'
-                        }}
+                        className="px-3 py-1 bg-transparent border border-[#3e325e] rounded text-[#504270] font-mono text-[0.65rem] tracking-[0.06em] cursor-pointer hover:border-[#3e325e] hover:text-[#8e87a8] transition-colors"
                       >
                         Edit
                       </button>

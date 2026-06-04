@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
+import { SkeletonHeader, SkeletonTable } from '../components/ui/PageSkeleton'
 import DataTable from '../components/ui/DataTable'
 import type { DataTableColumn } from '../components/ui/DataTable'
 import { usePlayerStats, usePlayerProfiles } from '../lib/hooks'
 import type { PlayerStats } from '../types/database'
+import { cn } from '@/lib/utils'
 
 type SortKey = keyof Pick<PlayerStats, 'player_name' | 'games_played' | 'wins' | 'win_rate' | 'avg_score' | 'best_score' | 'avg_position'>
 
@@ -15,8 +17,13 @@ export default function Players() {
   const [sortKey, setSortKey] = useState<SortKey>('wins')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
-  if (isLoading) return <div style={loadingStyle}>Loading…</div>
-  if (error) return <div style={loadingStyle}>Failed to load data.</div>
+  if (isLoading) return (
+    <div className="page-enter py-8 px-9">
+      <SkeletonHeader />
+      <SkeletonTable rows={6} cols={6} />
+    </div>
+  )
+  if (error)     return <div className="py-8 px-9 font-body text-[var(--text-4)]">Failed to load data.</div>
 
   function handleSort(key: string) {
     const k = key as SortKey
@@ -42,14 +49,16 @@ export default function Players() {
       label: 'Player',
       align: 'left',
       sortable: true,
-      tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-1)' },
       render: p => (
         <Link
           to={`/players/${encodeURIComponent(p.player_name)}`}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-1)', textDecoration: 'none' }}
+          className="inline-flex items-center gap-2 font-body font-semibold text-[0.9rem] text-foreground no-underline hover:text-mars-400 transition-colors"
         >
           {profileMap[p.player_name]?.preferred_color && (
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: profileMap[p.player_name].preferred_color!, border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0, display: 'inline-block' }} />
+            <span
+              className="w-2.5 h-2.5 rounded-full shrink-0 inline-block border border-white/15"
+              style={{ background: profileMap[p.player_name].preferred_color! }}
+            />
           )}
           {p.player_name}
         </Link>
@@ -63,7 +72,7 @@ export default function Players() {
       align: 'center',
       sortable: true,
       render: p => (
-        <span style={{ color: p.win_rate >= 50 ? '#4a9e6b' : p.win_rate > 0 ? '#c9a030' : '#707070' }}>
+        <span className={cn(p.win_rate >= 50 ? 'text-win-500' : p.win_rate > 0 ? 'text-score-400' : 'text-[var(--text-4)]')}>
           {Math.round(p.win_rate)}%
         </span>
       ),
@@ -80,8 +89,8 @@ export default function Players() {
       label: 'Best Score',
       align: 'center',
       sortable: true,
-      tdStyle: { color: '#c9a030', fontWeight: 700 },
-      render: p => <>{p.best_score}<span style={{ marginLeft: '3px' }}>VP</span></>,
+      tdStyle: { fontWeight: 700 },
+      render: p => <span className="text-score-400 font-bold">{p.best_score}<span className="ml-[3px]">VP</span></span>,
     },
     {
       key: 'avg_position',
@@ -94,7 +103,7 @@ export default function Players() {
   ]
 
   return (
-    <div className="page-enter" style={{ padding: '32px 36px' }}>
+    <div className="page-enter py-8 px-9">
       <PageHeader title="Players" subtitle={`${players.length} players in the record`} />
 
       <DataTable
@@ -108,37 +117,45 @@ export default function Players() {
       />
 
       {/* Mobile card list */}
-      <div className="players-mobile" style={{ gap: '1px', background: 'var(--bd-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden' }}>
+      <div className="players-mobile flex-col gap-px bg-border border border-border rounded-[6px] overflow-hidden">
         {players.map(p => {
           const color = profileMap[p.player_name]?.preferred_color
           return (
-            <div key={p.player_name} style={{ background: 'var(--bg-panel)', padding: '14px 16px' }}>
+            <div key={p.player_name} className="bg-card px-4 py-3.5">
               <Link
                 to={`/players/${encodeURIComponent(p.player_name)}`}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-1)', textDecoration: 'none', marginBottom: '10px' }}
+                className="flex items-center gap-2 font-body font-semibold text-[0.95rem] text-foreground no-underline mb-2.5"
               >
                 {color && (
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: color, border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0, display: 'inline-block' }} />
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0 inline-block border border-white/15" style={{ background: color }} />
                 )}
                 {p.player_name}
-                <span style={{ marginLeft: 'auto', color: 'var(--text-4)', fontSize: '0.75rem' }}>→</span>
+                <span className="ml-auto text-[var(--text-4)] text-[0.75rem]">→</span>
               </Link>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: '7px', columnGap: '16px' }}>
+              <div className="grid grid-cols-2 gap-y-1.5 gap-x-4">
                 <div>
-                  <div style={mobileLabel}>Wins</div>
-                  <div style={mobileValue}>{p.wins} <span style={mobileSub}>of {p.games_played} games</span></div>
+                  <div className="font-mono text-[0.6rem] tracking-[0.08em] uppercase text-[var(--text-4)] mb-[2px]">Wins</div>
+                  <div className="font-mono text-[0.85rem] text-secondary-foreground">
+                    {p.wins} <span className="font-body text-[0.72rem] text-[var(--text-4)]">of {p.games_played} games</span>
+                  </div>
                 </div>
                 <div>
-                  <div style={mobileLabel}>Win rate</div>
-                  <div style={{ ...mobileValue, color: p.win_rate >= 50 ? '#4a9e6b' : p.win_rate > 0 ? '#c9a030' : '#707070' }}>{Math.round(p.win_rate)}%</div>
+                  <div className="font-mono text-[0.6rem] tracking-[0.08em] uppercase text-[var(--text-4)] mb-[2px]">Win rate</div>
+                  <div className={cn('font-mono text-[0.85rem]', p.win_rate >= 50 ? 'text-win-500' : p.win_rate > 0 ? 'text-score-400' : 'text-[var(--text-4)]')}>
+                    {Math.round(p.win_rate)}%
+                  </div>
                 </div>
                 <div>
-                  <div style={mobileLabel}>Avg score</div>
-                  <div style={mobileValue}>{Math.round(p.avg_score)} <span style={mobileSub}>VP</span></div>
+                  <div className="font-mono text-[0.6rem] tracking-[0.08em] uppercase text-[var(--text-4)] mb-[2px]">Avg score</div>
+                  <div className="font-mono text-[0.85rem] text-secondary-foreground">
+                    {Math.round(p.avg_score)} <span className="font-body text-[0.72rem] text-[var(--text-4)]">VP</span>
+                  </div>
                 </div>
                 <div>
-                  <div style={mobileLabel}>Best score</div>
-                  <div style={{ ...mobileValue, color: '#c9a030', fontWeight: 700 }}>{p.best_score} <span style={{ ...mobileSub, color: '#707070' }}>VP</span></div>
+                  <div className="font-mono text-[0.6rem] tracking-[0.08em] uppercase text-[var(--text-4)] mb-[2px]">Best score</div>
+                  <div className="font-mono text-[0.85rem] font-bold text-score-400">
+                    {p.best_score} <span className="font-body text-[0.72rem] text-[var(--text-4)]">VP</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -147,31 +164,4 @@ export default function Players() {
       </div>
     </div>
   )
-}
-
-const loadingStyle: React.CSSProperties = {
-  padding: '32px 36px',
-  color: 'var(--text-4)',
-  fontFamily: 'var(--font-body)',
-}
-
-const mobileLabel: React.CSSProperties = {
-  fontFamily: 'var(--font-mono)',
-  fontSize: '0.6rem',
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: 'var(--text-4)',
-  marginBottom: '2px',
-}
-
-const mobileValue: React.CSSProperties = {
-  fontFamily: 'var(--font-mono)',
-  fontSize: '0.85rem',
-  color: 'var(--text-2)',
-}
-
-const mobileSub: React.CSSProperties = {
-  fontFamily: 'var(--font-body)',
-  fontSize: '0.72rem',
-  color: 'var(--text-4)',
 }

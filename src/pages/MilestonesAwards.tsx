@@ -1,5 +1,6 @@
 import PageHeader from '../components/ui/PageHeader'
 import SectionHeading from '../components/ui/SectionHeading'
+import { SkeletonHeader, SkeletonTable } from '../components/ui/PageSkeleton'
 import { useAllMilestones, useAllAwards } from '../lib/hooks'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -27,57 +28,31 @@ interface RankRow {
 function RankTable({ rows, nameLabel }: { rows: RankRow[]; nameLabel: string }) {
   if (rows.length === 0) {
     return (
-      <div style={{ padding: '20px', color: 'var(--text-4)', fontFamily: 'var(--font-body)', fontSize: '0.83rem' }}>
+      <div className="p-5 font-body text-[0.83rem] text-[var(--text-4)]">
         No data yet.
       </div>
     )
   }
 
-  const thStyle: React.CSSProperties = {
-    padding: '10px 16px',
-    textAlign: 'left',
-    fontFamily: 'var(--font-mono)',
-    fontSize: '0.62rem',
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-    color: 'var(--text-4)',
-    fontWeight: 400,
-    borderBottom: '1px solid var(--bd-panel)',
-  }
-  const thRight: React.CSSProperties = { ...thStyle, textAlign: 'right' }
-
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <table className="w-full border-collapse">
       <thead>
         <tr>
-          <th style={{ ...thStyle, width: '36px' }}>#</th>
-          <th style={thStyle}>{nameLabel}</th>
-          <th style={thRight}>Times</th>
-          <th style={thRight}>% of games</th>
+          <th className="w-9 px-4 py-[10px] text-left font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[var(--text-4)] font-normal border-b border-border">#</th>
+          <th className="px-4 py-[10px] text-left font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[var(--text-4)] font-normal border-b border-border">{nameLabel}</th>
+          <th className="px-4 py-[10px] text-right font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[var(--text-4)] font-normal border-b border-border">Times</th>
+          <th className="px-4 py-[10px] text-right font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[var(--text-4)] font-normal border-b border-border">% of games</th>
         </tr>
       </thead>
       <tbody>
         {rows.map((row, i) => {
           const pct = (total: number) => total > 0 ? Math.round((row.count / total) * 100) : 0
           return (
-            <tr
-              key={row.name}
-              style={{ borderBottom: '1px solid var(--bd-panel)', background: 'var(--bg-row)' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-row-hover)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-row)')}
-            >
-              <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-4)' }}>
-                {i + 1}
-              </td>
-              <td style={{ padding: '12px 16px', fontFamily: 'var(--font-body)', fontSize: '0.87rem', color: 'var(--text-1)' }}>
-                {row.name}
-              </td>
-              <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#b87aff', textAlign: 'right' }}>
-                {row.count}
-              </td>
-              <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-4)', textAlign: 'right' }}>
-                {pct(row.total)}%
-              </td>
+            <tr key={row.name} className="border-b border-border hover:bg-accent transition-colors">
+              <td className="px-4 py-3 font-mono text-[0.7rem] text-[var(--text-4)]">{i + 1}</td>
+              <td className="px-4 py-3 font-body text-[0.87rem] text-foreground">{row.name}</td>
+              <td className="px-4 py-3 font-mono text-[0.87rem] text-violet-400 text-right">{row.count}</td>
+              <td className="px-4 py-3 font-mono text-[0.82rem] text-[var(--text-4)] text-right">{pct(row.total)}%</td>
             </tr>
           )
         })}
@@ -130,92 +105,69 @@ export default function MilestonesAwards() {
 
   const loading = mlLoading || awLoading
 
-  const panel = (children: React.ReactNode) => (
-    <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden' }}>
-      {children}
-    </div>
-  )
-
   if (loading) {
     return (
-      <div style={{ padding: '32px 36px', color: 'var(--text-4)', fontFamily: 'var(--font-body)' }}>Loading…</div>
+      <div className="page-enter py-8 px-9">
+        <SkeletonHeader />
+        <div className="grid grid-cols-2 gap-6">
+          <SkeletonTable rows={6} cols={3} />
+          <SkeletonTable rows={6} cols={3} />
+        </div>
+      </div>
     )
   }
 
   return (
-    <div className="page-enter" style={{ padding: '32px 36px' }}>
-      <PageHeader
-        title="Milestones & Awards"
-        subtitle={`${totalGames} games tracked`}
-      />
+    <div className="page-enter py-8 px-9">
+      <PageHeader title="Milestones & Awards" subtitle={`${totalGames} games tracked`} />
 
-      {/* Generation stats TODO notice */}
-      <div style={{
-        marginBottom: '28px',
-        padding: '10px 14px',
-        background: 'rgba(201,160,48,0.06)',
-        border: '1px solid rgba(201,160,48,0.2)',
-        borderRadius: '4px',
-        fontFamily: 'var(--font-body)',
-        fontSize: '0.78rem',
-        color: '#c9a030',
-      }}>
+      <div className="mb-7 px-3.5 py-2.5 bg-card border border-border rounded-[6px] font-body text-[0.78rem] text-[var(--text-4)]">
         Generation breakdown coming soon — requires a database schema update to track which generation milestones were claimed / awards were funded.
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '28px', marginBottom: '28px' }}>
-        {/* Milestones */}
+      <div className="grid gap-7 mb-7" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
         <div>
           <SectionHeading effect style={{ marginBottom: '-60px' }}>Milestones — most claimed</SectionHeading>
-          {panel(<RankTable rows={milestoneRanked} nameLabel="Milestone" />)}
+          <div className="bg-card border border-border rounded-[6px] overflow-hidden">
+            <RankTable rows={milestoneRanked} nameLabel="Milestone" />
+          </div>
         </div>
-
-        {/* Awards */}
         <div>
           <SectionHeading effect style={{ marginBottom: '-60px' }}>Awards — most funded</SectionHeading>
-          {panel(<RankTable rows={awardRanked} nameLabel="Award" />)}
+          <div className="bg-card border border-border rounded-[6px] overflow-hidden">
+            <RankTable rows={awardRanked} nameLabel="Award" />
+          </div>
         </div>
       </div>
 
-      {/* Per-player breakdown */}
       <div>
         <SectionHeading effect style={{ marginBottom: '-60px' }}>Per-player activity</SectionHeading>
-        {panel(
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="bg-card border border-border rounded-[6px] overflow-hidden">
+          <table className="w-full border-collapse">
             <thead>
               <tr>
-                {['Player', 'Milestones', 'Awards', 'Total'].map((h, i) => (
-                  <th key={h} style={{
-                    padding: '10px 16px',
-                    textAlign: i === 0 ? 'left' : 'right',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.62rem',
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    color: 'var(--text-4)',
-                    fontWeight: 400,
-                    borderBottom: '1px solid var(--bd-panel)',
-                  }}>{h}</th>
+                {(['Player', 'Milestones', 'Awards', 'Total'] as const).map((h, i) => (
+                  <th
+                    key={h}
+                    className={`px-4 py-[10px] font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[var(--text-4)] font-normal border-b border-border ${i === 0 ? 'text-left' : 'text-right'}`}
+                  >
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {playerEntries.map(p => (
-                <tr
-                  key={p.name}
-                  style={{ borderBottom: '1px solid var(--bd-panel)', background: 'var(--bg-row)' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-row-hover)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-row)')}
-                >
-                  <td style={{ padding: '12px 16px', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.87rem', color: 'var(--text-1)' }}>{p.name}</td>
-                  <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#4a9e6b', textAlign: 'right' }}>{p.milestones}</td>
-                  <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#c9a030', textAlign: 'right' }}>{p.awards}</td>
-                  <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.87rem', color: '#b87aff', textAlign: 'right' }}>{p.milestones + p.awards}</td>
+                <tr key={p.name} className="border-b border-border hover:bg-accent transition-colors">
+                  <td className="px-4 py-3 font-display font-semibold text-[0.87rem] text-foreground">{p.name}</td>
+                  <td className="px-4 py-3 font-mono text-[0.87rem] text-win-500 text-right">{p.milestones}</td>
+                  <td className="px-4 py-3 font-mono text-[0.87rem] text-score-400 text-right">{p.awards}</td>
+                  <td className="px-4 py-3 font-mono text-[0.87rem] text-violet-400 text-right">{p.milestones + p.awards}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        )}
+        </div>
       </div>
     </div>
   )

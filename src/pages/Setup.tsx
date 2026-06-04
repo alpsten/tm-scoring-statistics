@@ -1,12 +1,18 @@
 import PageHeader from '../components/ui/PageHeader'
+import { SkeletonHeader, SkeletonTable } from '../components/ui/PageSkeleton'
 import { useGames } from '../lib/hooks'
 import { EXPANSION_ICONS } from '../lib/expansions'
 
 export default function Setup() {
   const { data, isLoading, error } = useGames()
 
-  if (isLoading) return <div style={loadingStyle}>Loading…</div>
-  if (error) return <div style={loadingStyle}>Failed to load data.</div>
+  if (isLoading) return (
+    <div className="page-enter py-8 px-9">
+      <SkeletonHeader />
+      <SkeletonTable rows={6} cols={4} />
+    </div>
+  )
+  if (error)     return <div className="py-8 px-9 font-body text-[var(--text-4)]">Failed to load data.</div>
 
   const games = data ?? []
 
@@ -32,32 +38,34 @@ export default function Setup() {
   })
 
   return (
-    <div className="page-enter" style={{ padding: '32px 36px' }}>
+    <div className="page-enter py-8 px-9">
       <PageHeader title="Setup" subtitle="Maps, expansions, and colonies" />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+      <div className="grid grid-cols-3 gap-6">
 
         {/* Maps */}
         <div>
-          <h2 style={sectionTitle}>Maps</h2>
+          <h2 className="font-display font-semibold text-[0.82rem] tracking-[0.1em] uppercase text-[var(--text-4)] mb-3 mt-0">
+            Maps
+          </h2>
           {mapScores.length === 0 ? (
-            <div style={emptyCard}>No map data logged yet</div>
+            <EmptyCard>No map data logged yet</EmptyCard>
           ) : (
-            <div style={tableWrap}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div className="bg-card border border-border rounded-[6px] overflow-hidden">
+              <table className="w-full border-collapse">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
-                    <th style={th}>Map</th>
-                    <th style={{ ...th, textAlign: 'center' }}>Games</th>
-                    <th style={{ ...th, textAlign: 'center' }}>Avg score</th>
+                  <tr className="border-b border-border">
+                    <Th>Map</Th>
+                    <Th center>Games</Th>
+                    <Th center>Avg score</Th>
                   </tr>
                 </thead>
                 <tbody>
                   {mapScores.sort((a, b) => b.count - a.count).map((m, i) => (
-                    <tr key={m.map} style={{ borderBottom: i < mapScores.length - 1 ? '1px solid var(--bd-panel)' : 'none' }}>
-                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)' }}>{m.map}</td>
-                      <td style={{ ...numTd, textAlign: 'center' }}>{m.count}</td>
-                      <td style={{ ...numTd, textAlign: 'center', color: '#c9a030' }}>{Math.round(m.avgScore)}</td>
+                    <tr key={m.map} className={i < mapScores.length - 1 ? 'border-b border-border' : ''}>
+                      <td className="py-2.5 px-3.5 font-body text-[0.83rem] text-foreground">{m.map}</td>
+                      <NumTd>{m.count}</NumTd>
+                      <NumTd className="text-score-400">{Math.round(m.avgScore)}</NumTd>
                     </tr>
                   ))}
                 </tbody>
@@ -68,28 +76,32 @@ export default function Setup() {
 
         {/* Expansions */}
         <div>
-          <h2 style={sectionTitle}>Expansions</h2>
+          <h2 className="font-display font-semibold text-[0.82rem] tracking-[0.1em] uppercase text-[var(--text-4)] mb-3 mt-0">
+            Expansions
+          </h2>
           {Object.keys(expansionCounts).length === 0 ? (
-            <div style={emptyCard}>No expansion data logged yet</div>
+            <EmptyCard>No expansion data logged yet</EmptyCard>
           ) : (
-            <div style={tableWrap}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div className="bg-card border border-border rounded-[6px] overflow-hidden">
+              <table className="w-full border-collapse">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
-                    <th style={th}>Expansion</th>
-                    <th style={{ ...th, textAlign: 'center' }}>Games used</th>
+                  <tr className="border-b border-border">
+                    <Th>Expansion</Th>
+                    <Th center>Games used</Th>
                   </tr>
                 </thead>
                 <tbody>
                   {Object.entries(expansionCounts).sort((a, b) => b[1] - a[1]).map(([exp, count], i, arr) => (
-                    <tr key={exp} style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--bd-panel)' : 'none' }}>
-                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                          {EXPANSION_ICONS[exp] && <img src={EXPANSION_ICONS[exp]} alt={exp} style={{ width: '16px', height: '16px', objectFit: 'contain' }} />}
+                    <tr key={exp} className={i < arr.length - 1 ? 'border-b border-border' : ''}>
+                      <td className="py-2.5 px-3.5 font-body text-[0.83rem] text-foreground">
+                        <span className="inline-flex items-center gap-2">
+                          {EXPANSION_ICONS[exp] && (
+                            <img src={EXPANSION_ICONS[exp]} alt={exp} className="w-4 h-4 object-contain" />
+                          )}
                           {exp}
                         </span>
                       </td>
-                      <td style={{ ...numTd, textAlign: 'center' }}>{count}</td>
+                      <NumTd>{count}</NumTd>
                     </tr>
                   ))}
                 </tbody>
@@ -100,23 +112,25 @@ export default function Setup() {
 
         {/* Colonies */}
         <div>
-          <h2 style={sectionTitle}>Colonies</h2>
+          <h2 className="font-display font-semibold text-[0.82rem] tracking-[0.1em] uppercase text-[var(--text-4)] mb-3 mt-0">
+            Colonies
+          </h2>
           {Object.keys(colonyCounts).length === 0 ? (
-            <div style={emptyCard}>No colony data logged yet</div>
+            <EmptyCard>No colony data logged yet</EmptyCard>
           ) : (
-            <div style={tableWrap}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div className="bg-card border border-border rounded-[6px] overflow-hidden">
+              <table className="w-full border-collapse">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
-                    <th style={th}>Colony</th>
-                    <th style={{ ...th, textAlign: 'center' }}>Appearances</th>
+                  <tr className="border-b border-border">
+                    <Th>Colony</Th>
+                    <Th center>Appearances</Th>
                   </tr>
                 </thead>
                 <tbody>
                   {Object.entries(colonyCounts).sort((a, b) => b[1] - a[1]).map(([col, count], i, arr) => (
-                    <tr key={col} style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--bd-panel)' : 'none' }}>
-                      <td style={{ padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)' }}>{col}</td>
-                      <td style={{ ...numTd, textAlign: 'center' }}>{count}</td>
+                    <tr key={col} className={i < arr.length - 1 ? 'border-b border-border' : ''}>
+                      <td className="py-2.5 px-3.5 font-body text-[0.83rem] text-foreground">{col}</td>
+                      <NumTd>{count}</NumTd>
                     </tr>
                   ))}
                 </tbody>
@@ -129,56 +143,26 @@ export default function Setup() {
   )
 }
 
-const loadingStyle: React.CSSProperties = {
-  padding: '32px 36px',
-  color: 'var(--text-4)',
-  fontFamily: 'var(--font-body)',
+function EmptyCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="bg-card border border-border rounded-[6px] py-5 px-3.5 font-body text-[0.8rem] text-[var(--text-4)] text-center">
+      {children}
+    </div>
+  )
 }
 
-const emptyCard: React.CSSProperties = {
-  background: 'var(--bg-panel)',
-  border: '1px solid var(--bd-panel)',
-  borderRadius: '6px',
-  padding: '20px 14px',
-  fontFamily: 'var(--font-body)',
-  fontSize: '0.8rem',
-  color: 'var(--text-4)',
-  textAlign: 'center',
+function Th({ children, center }: { children: React.ReactNode; center?: boolean }) {
+  return (
+    <th className={`py-[9px] px-3.5 font-body text-[0.66rem] font-semibold tracking-[0.08em] uppercase text-[var(--text-4)] ${center ? 'text-center' : 'text-left'}`}>
+      {children}
+    </th>
+  )
 }
 
-const tableWrap: React.CSSProperties = {
-  background: 'var(--bg-panel)',
-  border: '1px solid var(--bd-panel)',
-  borderRadius: '6px',
-  overflow: 'hidden',
-}
-
-const sectionTitle: React.CSSProperties = {
-  fontFamily: 'var(--font-display)',
-  fontWeight: 600,
-  fontSize: '0.82rem',
-  letterSpacing: '0.1em',
-  textTransform: 'uppercase',
-  color: 'var(--text-4)',
-  marginBottom: '12px',
-  marginTop: 0,
-}
-
-const th: React.CSSProperties = {
-  padding: '9px 14px',
-  textAlign: 'left',
-  fontFamily: 'var(--font-body)',
-  fontSize: '0.66rem',
-  fontWeight: 600,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: 'var(--text-4)',
-}
-
-const numTd: React.CSSProperties = {
-  padding: '10px 14px',
-  textAlign: 'right',
-  fontFamily: 'var(--font-mono)',
-  fontSize: '0.82rem',
-  color: 'var(--text-2)',
+function NumTd({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <td className={`py-2.5 px-3.5 text-center font-mono text-[0.82rem] text-secondary-foreground ${className ?? ''}`}>
+      {children}
+    </td>
+  )
 }

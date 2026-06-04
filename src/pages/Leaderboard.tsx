@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
+import { SkeletonHeader, SkeletonCardGrid } from '../components/ui/PageSkeleton'
 import { useGames } from '../lib/hooks'
+import { cn } from '@/lib/utils'
 import type { GameWithResults } from '../types/database'
 
 type Entry = { player: string; value: number; gameNumber: number | null }
@@ -46,25 +48,41 @@ function LeaderboardCard({ label, unit, color, bg, border, entries }: {
 }) {
   if (entries.length === 0) return null
   return (
-    <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden' }}>
-      <div style={{ padding: '10px 16px', background: bg, borderBottom: `1px solid ${border}` }}>
-        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', color }}>{label}</span>
+    <div className="bg-card border border-border rounded-[6px] overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-border">
+        <span className="font-display font-bold text-[0.75rem] tracking-[0.1em] uppercase text-[var(--text-4)]">
+          {label}
+        </span>
       </div>
-      <div style={{ padding: '4px 0' }}>
+      <div className="py-1">
         {entries.map((e, i) => {
           const badge = (
-            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color, background: bg, border: `1px solid ${border}`, borderRadius: '4px', padding: '2px 9px', whiteSpace: 'nowrap' as const }}>
+            <span
+              className="font-mono font-bold text-[0.85rem] border rounded px-[9px] py-[2px] min-w-[82px] inline-block text-center"
+              style={{ color, background: bg, borderColor: border }}
+            >
               {unit === '+VP' ? `+${e.value} VP` : `${e.value} ${unit}`}
             </span>
           )
           return (
-            <div key={e.player} style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', borderBottom: i < entries.length - 1 ? '1px solid var(--bd-panel)' : 'none', gap: '10px' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', fontWeight: 700, color: RANK_COLORS[i], minWidth: '18px' }}>#{i + 1}</span>
-              <Link to={`/players/${encodeURIComponent(e.player)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)', textDecoration: 'none', flex: 1 }}>
+            <div
+              key={e.player}
+              className={cn(
+                'flex items-center px-4 py-2 gap-2.5',
+                i < entries.length - 1 && 'border-b border-border'
+              )}
+            >
+              <span className="font-mono text-[0.78rem] font-bold min-w-[22px]" style={{ color: RANK_COLORS[i] }}>
+                #{i + 1}
+              </span>
+              <Link
+                to={`/players/${encodeURIComponent(e.player)}`}
+                className="font-body text-[0.83rem] text-foreground no-underline flex-1 hover:text-mars-400 transition-colors"
+              >
                 {e.player}
               </Link>
               {e.gameNumber != null
-                ? <Link to={`/games/${e.gameNumber}`} style={{ textDecoration: 'none' }}>{badge}</Link>
+                ? <Link to={`/games/${e.gameNumber}`} className="no-underline">{badge}</Link>
                 : badge}
             </div>
           )
@@ -77,42 +95,50 @@ function LeaderboardCard({ label, unit, color, bg, border, entries }: {
 export default function Leaderboard() {
   const { data: games, isLoading } = useGames()
 
-  if (isLoading) return <div style={{ padding: '32px 36px', color: 'var(--text-4)', fontFamily: 'var(--font-body)' }}>Loading…</div>
+  if (isLoading) return (
+    <div className="page-enter py-8 px-9">
+      <SkeletonHeader />
+      <SkeletonCardGrid count={6} />
+    </div>
+  )
+
+  const gold = { color: '#e8c84a', bg: 'rgba(232,200,74,0.28)',  border: 'rgba(232,200,74,0.60)'  }
+  const fire = { color: '#ff7a60', bg: 'rgba(255,122,96,0.28)',  border: 'rgba(255,122,96,0.60)'  }
 
   const stats = [
-    { label: 'Highest Score',       unit: 'VP',  color: '#c9a030', bg: 'rgba(201,160,48,0.10)',  border: 'rgba(201,160,48,0.35)',  entries: computeBest(games, r => r.total_vp) },
-    { label: 'Biggest Win',         unit: '+VP', color: '#c9a030', bg: 'rgba(201,160,48,0.10)',  border: 'rgba(201,160,48,0.35)',  entries: computeBiggestWin(games) },
-    { label: 'Terraforming Rating', unit: 'TR',  color: '#e05535', bg: 'rgba(224,85,53,0.10)',   border: 'rgba(224,85,53,0.35)',   entries: computeBest(games, r => r.tr) },
-    { label: 'Greenery VP',         unit: 'VP',  color: '#4a9e6b', bg: 'rgba(74,158,107,0.10)',  border: 'rgba(74,158,107,0.35)',  entries: computeBest(games, r => r.greenery_vp) },
-    { label: 'City VP',             unit: 'VP',  color: '#8e8e9a', bg: 'rgba(142,142,154,0.10)', border: 'rgba(142,142,154,0.35)', entries: computeBest(games, r => r.city_vp) },
-    { label: 'Card VP',             unit: 'VP',  color: '#a0693a', bg: 'rgba(160,105,58,0.10)',  border: 'rgba(160,105,58,0.35)',  entries: computeBest(games, r => r.card_vp) },
-    { label: 'Habitat VP',          unit: 'VP',  color: '#8c94b0', bg: 'rgba(140,148,176,0.10)', border: 'rgba(140,148,176,0.35)', entries: computeBest(games, r => r.habitat_vp) },
-    { label: 'Mining VP',           unit: 'VP',  color: '#c97b3a', bg: 'rgba(201,123,58,0.10)',  border: 'rgba(201,123,58,0.35)',  entries: computeBest(games, r => r.mining_vp) },
-    { label: 'Logistics VP',        unit: 'VP',  color: '#2e8b8b', bg: 'rgba(46,139,139,0.10)',  border: 'rgba(46,139,139,0.35)',  entries: computeBest(games, r => r.logistics_vp) },
+    { label: 'Highest Score',       unit: 'VP',  ...gold, entries: computeBest(games, r => r.total_vp) },
+    { label: 'Biggest Win',         unit: '+VP', ...gold, entries: computeBiggestWin(games) },
+    { label: 'Terraforming Rating', unit: 'TR',  ...fire, entries: computeBest(games, r => r.tr) },
+    { label: 'Greenery VP',         unit: 'VP',  ...gold, entries: computeBest(games, r => r.greenery_vp) },
+    { label: 'City VP',             unit: 'VP',  ...gold, entries: computeBest(games, r => r.city_vp) },
+    { label: 'Card VP',             unit: 'VP',  ...gold, entries: computeBest(games, r => r.card_vp) },
+    { label: 'Habitat VP',          unit: 'VP',  ...gold, entries: computeBest(games, r => r.habitat_vp) },
+    { label: 'Mining VP',           unit: 'VP',  ...gold, entries: computeBest(games, r => r.mining_vp) },
+    { label: 'Logistics VP',        unit: 'VP',  ...gold, entries: computeBest(games, r => r.logistics_vp) },
   ]
 
-  const moonStats = stats.slice(6)
   const mainStats = stats.slice(0, 6)
+  const moonStats = stats.slice(6)
   const hasMoon = moonStats.some(s => s.entries.length > 0)
 
   return (
-    <div className="page-enter" style={{ padding: '32px 36px' }}>
+    <div className="page-enter py-8 px-9">
       <PageHeader title="Leaderboard" subtitle="All-time records across all players" />
 
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(91,141,217,0.08)', border: '1px solid rgba(91,141,217,0.25)', borderRadius: '4px', padding: '8px 14px', marginBottom: '28px', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#5b8dd9' }}>
+      <div className="bg-card border border-border rounded-[6px] px-4 py-3 mb-7 font-body text-[0.78rem] text-[var(--text-3)]">
         Every record on this page is the best performance achieved in a single game — it does not necessarily mean that player won that game.
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px', marginBottom: hasMoon ? '32px' : 0 }}>
+      <div className={cn('grid gap-4', hasMoon && 'mb-8')} style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}>
         {mainStats.map(s => <LeaderboardCard key={s.label} {...s} />)}
       </div>
 
       {hasMoon && (
         <>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8c94b0', marginBottom: '12px' }}>
+          <div className="font-display font-semibold text-[0.72rem] tracking-[0.12em] uppercase text-[#8c94b0] mb-3">
             Moon Expansion
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
+          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}>
             {moonStats.map(s => <LeaderboardCard key={s.label} {...s} />)}
           </div>
         </>

@@ -2,22 +2,27 @@ import { useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getCorps } from '../types/database'
 import { useQueryClient } from '@tanstack/react-query'
+import { SkeletonHeader, SkeletonTable } from '../components/ui/PageSkeleton'
 import { useGame, useGameByNumber, deleteGame, useGameCards, useGameMilestones, useGameAwards, useCardReference } from '../lib/hooks'
 import { useAuth } from '../context/useAuth'
 import { EXPANSION_ICONS, TYPE_COLORS } from '../lib/expansions'
 import Tag from '../components/ui/Tag'
 import { parseTags } from '../components/ui/tagUtils'
 import SectionHeading from '../components/ui/SectionHeading'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+
+const thClass = 'px-4 py-2.5 text-left font-body text-[0.68rem] font-semibold tracking-[0.08em] uppercase text-[var(--text-4)]'
+const tdClass = 'px-4 py-3'
+const metaLabel = 'font-body text-[0.67rem] font-semibold tracking-[0.08em] uppercase text-[var(--text-4)]'
 
 export default function GameDetail() {
   const { id: urlId } = useParams<{ id: string }>()
   const isNumeric = /^\d+$/.test(urlId ?? '')
-  // Numeric URLs: direct DB query by game_number (fast, indexed)
   const { data: gameByNum, isLoading: numLoading, error: numError } = useGameByNumber(
     isNumeric ? Number(urlId) : 0,
     { enabled: isNumeric }
   )
-  // Legacy text-ID URLs: query by the text id
   const { data: gameByText, isLoading: textLoading, error: textError } = useGame(
     isNumeric ? '' : (urlId ?? ''),
     { enabled: !isNumeric }
@@ -52,11 +57,16 @@ export default function GameDetail() {
     }
   }
 
-  if (isLoading) return <div style={loadingStyle}>Loading…</div>
+  if (isLoading) return (
+    <div className="page-enter py-8 px-9">
+      <SkeletonHeader />
+      <SkeletonTable rows={4} cols={8} />
+    </div>
+  )
   if (error || !game) {
     return (
-      <div style={loadingStyle}>
-        Game not found. <Link to="/games" style={{ color: '#e05535' }}>Back to games</Link>
+      <div className="py-8 px-9 font-body text-[var(--text-4)]">
+        Game not found. <Link to="/games" className="text-mars-500">Back to games</Link>
       </div>
     )
   }
@@ -70,135 +80,139 @@ export default function GameDetail() {
   const genColor = (gen: number) => GEN_COLORS[(gen - 1) % GEN_COLORS.length]
 
   const scoreFields: { key: keyof typeof winner; label: string; short: string }[] = [
-    { key: 'tr',           label: 'TR',          short: 'TR' },
-    { key: 'milestone_vp', label: 'Milestones',  short: 'MS' },
-    { key: 'award_vp',     label: 'Awards',      short: 'AW' },
-    { key: 'greenery_vp',  label: 'Greeneries',  short: 'GR' },
-    { key: 'city_vp',      label: 'Cities',      short: 'CI' },
-    { key: 'card_vp',      label: 'Cards',       short: 'CA' },
+    { key: 'tr',           label: 'TR',         short: 'TR' },
+    { key: 'milestone_vp', label: 'Milestones', short: 'MS' },
+    { key: 'award_vp',     label: 'Awards',     short: 'AW' },
+    { key: 'greenery_vp',  label: 'Greeneries', short: 'GR' },
+    { key: 'city_vp',      label: 'Cities',     short: 'CI' },
+    { key: 'card_vp',      label: 'Cards',      short: 'CA' },
   ]
 
   return (
-    <div className="page-enter" style={{ padding: '32px 36px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '10px' }}>
-        <Link to="/games" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-4)', textDecoration: 'none' }}>
+    <div className="page-enter py-8 px-9">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-2.5">
+        <Link to="/games" className="font-body text-[0.78rem] text-[var(--text-4)] no-underline hover:text-muted-foreground transition-colors">
           ← Games
         </Link>
 
         {user && (
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div className="flex gap-2 items-center">
             <Link
               to={`/admin/games/${dbId}/edit`}
-              style={{ padding: '5px 14px', background: 'rgba(155,80,240,0.08)', border: '1px solid rgba(155,80,240,0.3)', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#b87aff', textDecoration: 'none' }}
+              className="px-3.5 py-[5px] bg-violet-500/8 border border-violet-500/30 rounded font-body text-[0.78rem] text-violet-400 no-underline hover:bg-violet-500/15 transition-colors"
             >
               Edit
             </Link>
             {!showDeleteConfirm ? (
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setShowDeleteConfirm(true)}
-                style={{ padding: '5px 14px', background: 'transparent', border: '1px solid var(--bd-input)', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-4)', cursor: 'pointer' }}
+                className="text-[var(--text-4)] text-[0.78rem]"
               >
                 Delete
-              </button>
+              </Button>
             ) : (
               <>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#e05535' }}>Permanently delete this game?</span>
-                <button
+                <span className="font-body text-[0.78rem] text-mars-500">Permanently delete this game?</span>
+                <Button
+                  variant="destructive"
+                  size="sm"
                   onClick={handleDelete}
                   disabled={deleting}
-                  style={{ padding: '5px 14px', background: 'rgba(224,85,53,0.12)', border: '1px solid rgba(224,85,53,0.4)', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#e05535', cursor: deleting ? 'not-allowed' : 'pointer' }}
+                  className="text-[0.78rem]"
                 >
                   {deleting ? 'Deleting…' : 'Yes, delete'}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setShowDeleteConfirm(false)}
-                  style={{ padding: '5px 14px', background: 'transparent', border: '1px solid var(--bd-input)', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-4)', cursor: 'pointer' }}
+                  className="text-[var(--text-4)] text-[0.78rem]"
                 >
                   Cancel
-                </button>
+                </Button>
               </>
             )}
           </div>
         )}
       </div>
 
-      <div style={{ marginBottom: '24px' }}>
+      <div className="mb-6">
         <SectionHeading effect style={{ height: '161px', fontSize: '0.9rem', padding: '0 24px 9px', marginTop: '-58px', marginBottom: '-60px' }}>{game.map_name ?? 'Digital'}</SectionHeading>
-        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-4)', marginTop: '6px' }}>
+        <div className="font-body text-[0.83rem] text-[var(--text-4)] mt-1.5">
           {gameNum ? `#${gameNum} · ` : ''}{new Date(game.date).toLocaleDateString('sv-SE')} · {game.player_count} players{game.generations ? ` · ${game.generations} generations` : ''}
         </div>
       </div>
 
       {/* Game meta */}
-      <div className="game-meta-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '32px' }}>
-        {/* Row 1: Winner | Turn Order */}
-        <div style={{ background: 'var(--bg-panel)', border: '1px solid rgba(224,85,53,0.2)', borderRadius: '6px', padding: '14px 16px', gridColumn: game.turn_order?.length ? undefined : '1 / -1' }}>
-          <div style={metaLabelStyle}>Winner</div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '6px' }}>
+      <div className="game-meta-grid grid grid-cols-2 gap-3 mb-8">
+        <div className={cn('bg-card border border-mars-500/20 rounded-[6px] px-4 py-3.5', !game.turn_order?.length && 'col-span-2')}>
+          <div className={metaLabel}>Winner</div>
+          <div className="flex justify-between items-start mt-1.5">
             <div>
-              <div style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-1)' }}>{winner.player_name}</div>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-4)', marginTop: '3px' }}>
+              <div className="font-body font-semibold text-[0.95rem] text-foreground">{winner.player_name}</div>
+              <div className="font-body text-[0.78rem] text-[var(--text-4)] mt-[3px]">
                 {getCorps(winner).join(' + ')}{getCorps(winner).length > 1 ? ' (Merger)' : ''}
               </div>
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1.3rem', color: '#c9a030', lineHeight: 1, flexShrink: 0 }}>
-              {winner.total_vp}<span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1.3rem', color: '#c9a030', marginLeft: '4px' }}>VP</span>
+            <div className="font-mono font-bold text-[1.3rem] text-score-400 leading-none shrink-0">
+              {winner.total_vp}<span className="ml-1">VP</span>
             </div>
           </div>
         </div>
         {game.turn_order && game.turn_order.length > 0 && (
-          <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '14px 16px' }}>
-            <div style={metaLabelStyle}>Turn order</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '8px' }}>
+          <div className="bg-card border border-border rounded-[6px] px-4 py-3.5">
+            <div className={metaLabel}>Turn order</div>
+            <div className="flex flex-col gap-[5px] mt-2">
               {game.turn_order.map((name, i) => (
-                <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-4)', minWidth: '14px' }}>#{i + 1}</span>
-                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)' }}>{name}</span>
+                <div key={name} className="flex items-center gap-2">
+                  <span className="font-mono text-[0.65rem] text-[var(--text-4)] min-w-[14px]">#{i + 1}</span>
+                  <span className="font-body text-[0.83rem] text-foreground">{name}</span>
                 </div>
               ))}
             </div>
           </div>
         )}
-        {/* Row 2: Expansions | Colonies */}
-        <div style={{ background: 'var(--bg-panel)', border: '1px solid rgba(46,139,139,0.2)', borderRadius: '6px', padding: '14px 16px' }}>
-          <div style={metaLabelStyle}>Expansions</div>
+        <div className="bg-card border border-[rgba(46,139,139,0.2)] rounded-[6px] px-4 py-3.5">
+          <div className={metaLabel}>Expansions</div>
           {game.expansions.length > 0 ? (
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px', alignItems: 'center' }}>
+            <div className="flex gap-1.5 flex-wrap mt-2 items-center">
               {game.expansions.map(exp => EXPANSION_ICONS[exp] ? (
-                <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+                <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} className="w-6 h-6 object-contain" />
               ) : (
-                <span key={exp} style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '3px', background: 'rgba(46,139,139,0.1)', color: '#3bbfbf', border: '1px solid rgba(46,139,139,0.25)' }}>
+                <span key={exp} className="font-body text-[0.7rem] px-2 py-[2px] rounded-[3px] bg-[rgba(46,139,139,0.1)] text-[#3bbfbf] border border-[rgba(46,139,139,0.25)]">
                   {exp}
                 </span>
               ))}
             </div>
           ) : (
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--text-4)', marginTop: '8px' }}>Base only</div>
+            <div className="font-body text-[0.85rem] text-[var(--text-4)] mt-2">Base only</div>
           )}
         </div>
-        <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '14px 16px' }}>
-          <div style={metaLabelStyle}>Colonies</div>
+        <div className="bg-card border border-border rounded-[6px] px-4 py-3.5">
+          <div className={metaLabel}>Colonies</div>
           {game.colonies.length > 0 ? (
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+            <div className="flex gap-1.5 flex-wrap mt-2">
               {game.colonies.map(colony => (
-                <span key={colony} style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '3px', background: 'rgba(155,80,240,0.08)', color: '#b87aff', border: '1px solid rgba(155,80,240,0.2)' }}>
+                <span key={colony} className="font-body text-[0.7rem] px-2 py-[2px] rounded-[3px] bg-violet-500/8 text-violet-400 border border-violet-500/20">
                   {colony}
                 </span>
               ))}
             </div>
           ) : (
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--text-4)', marginTop: '8px' }}>None</div>
+            <div className="font-body text-[0.85rem] text-[var(--text-4)] mt-2">None</div>
           )}
         </div>
       </div>
 
       {/* Milestones & Awards */}
       {(gameMilestones.length > 0 || gameAwards.length > 0) && (
-        <div className="game-milestone-award-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '32px' }}>
+        <div className="game-milestone-award-grid grid grid-cols-2 gap-3 mb-8">
           {gameMilestones.length > 0 && (
-            <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '14px 16px' }}>
-              <div style={metaLabelStyle}>Milestones</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px' }}>
+            <div className="bg-card border border-border rounded-[6px] px-4 py-3.5">
+              <div className={metaLabel}>Milestones</div>
+              <div className="flex flex-col gap-3 mt-2.5">
                 {[...gameMilestones]
                   .sort((a, b) => {
                     if (a.claimed_order !== null && b.claimed_order !== null) return a.claimed_order - b.claimed_order
@@ -207,16 +221,16 @@ export default function GameDetail() {
                     return 0
                   })
                   .map(m => (
-                    <div key={m.milestone_name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-1)' }}>{m.milestone_name}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
+                    <div key={m.milestone_name} className="flex justify-between items-center gap-2">
+                      <span className="font-body text-[0.82rem] text-foreground">{m.milestone_name}</span>
+                      <div className="flex items-center gap-[5px] shrink-0">
                         {m.claimed_order !== null && (
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.63rem', color: 'var(--text-4)' }}>#{m.claimed_order}</span>
+                          <span className="font-mono text-[0.63rem] text-[var(--text-4)]">#{m.claimed_order}</span>
                         )}
                         {m.player_name ? (
-                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#c9a030' }}>{m.player_name}</span>
+                          <span className="font-body text-[0.72rem] text-score-400">{m.player_name}</span>
                         ) : (
-                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', fontStyle: 'italic' }}>Not claimed</span>
+                          <span className="font-body text-[0.72rem] text-[var(--text-4)] italic">Not claimed</span>
                         )}
                       </div>
                     </div>
@@ -226,51 +240,45 @@ export default function GameDetail() {
             </div>
           )}
           {gameAwards.length > 0 && (
-            <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '14px 16px' }}>
-              <div style={metaLabelStyle}>Awards</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+            <div className="bg-card border border-border rounded-[6px] px-4 py-3.5">
+              <div className={metaLabel}>Awards</div>
+              <div className="flex flex-col gap-2.5 mt-2.5">
                 {gameAwards.map(a => {
                   const hasData = !!(a.funder_name || a.winner_name || a.second_name)
                   return (
                     <div key={a.award_name}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: hasData ? '4px' : 0 }}>
-                        <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-1)' }}>{a.award_name}</span>
-                        {!hasData && (
-                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)', fontStyle: 'italic' }}>Not claimed</span>
-                        )}
+                      <div className={cn('flex justify-between items-center gap-2', hasData && 'mb-1')}>
+                        <span className="font-body text-[0.82rem] text-foreground">{a.award_name}</span>
+                        {!hasData && <span className="font-body text-[0.72rem] text-[var(--text-4)] italic">Not claimed</span>}
                       </div>
                       {hasData && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingLeft: '8px', borderLeft: '2px solid var(--bd-panel)' }}>
+                        <div className="flex flex-col gap-[2px] pl-2 border-l-2 border-border">
                           {a.funder_name && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-4)', minWidth: '16px' }}>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-[0.6rem] text-[var(--text-4)] min-w-[16px]">
                                 {a.funded_order === 1 ? 'Funded first' : a.funded_order === 2 ? 'Funded second' : a.funded_order === 3 ? 'Funded third' : 'Funded by'}
                               </span>
-                              <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--text-4)' }}>{a.funder_name}</span>
+                              <span className="font-body text-[0.72rem] text-[var(--text-4)]">{a.funder_name}</span>
                             </div>
                           )}
                           {(a.winner_name || a.winner_name_2) && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-4)', minWidth: '16px' }}>1st</span>
-                              <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#c9a030' }}>{a.winner_name}</span>
-                              {a.winner_name_2 && (
-                                <>
-                                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.6rem', color: 'var(--text-4)' }}>tie</span>
-                                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#c9a030' }}>{a.winner_name_2}</span>
-                                </>
-                              )}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-mono text-[0.6rem] text-[var(--text-4)] min-w-[16px]">1st</span>
+                              <span className="font-body text-[0.78rem] text-score-400">{a.winner_name}</span>
+                              {a.winner_name_2 && <>
+                                <span className="font-body text-[0.6rem] text-[var(--text-4)]">tie</span>
+                                <span className="font-body text-[0.78rem] text-score-400">{a.winner_name_2}</span>
+                              </>}
                             </div>
                           )}
                           {(a.second_name || a.second_name_2) && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-4)', minWidth: '16px' }}>2nd</span>
-                              <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-3)' }}>{a.second_name}</span>
-                              {a.second_name_2 && (
-                                <>
-                                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.6rem', color: 'var(--text-4)' }}>tie</span>
-                                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-3)' }}>{a.second_name_2}</span>
-                                </>
-                              )}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-mono text-[0.6rem] text-[var(--text-4)] min-w-[16px]">2nd</span>
+                              <span className="font-body text-[0.78rem] text-[var(--text-3)]">{a.second_name}</span>
+                              {a.second_name_2 && <>
+                                <span className="font-body text-[0.6rem] text-[var(--text-4)]">tie</span>
+                                <span className="font-body text-[0.78rem] text-[var(--text-3)]">{a.second_name_2}</span>
+                              </>}
                             </div>
                           )}
                         </div>
@@ -285,27 +293,25 @@ export default function GameDetail() {
       )}
 
       {/* Score breakdown table */}
-      <div style={{ marginBottom: '32px' }}>
-        <SectionHeading>
-          Score breakdown
-        </SectionHeading>
-        <div className="game-score-table" style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div className="mb-8">
+        <SectionHeading>Score breakdown</SectionHeading>
+        <div className="game-score-table bg-card border border-border rounded-[6px] overflow-auto">
+          <table className="w-full border-collapse">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
-                <th style={thStyle}>Player</th>
-                <th className="corp-col" style={thStyle}>Corporation</th>
+              <tr className="border-b border-border">
+                <th className={thClass}>Player</th>
+                <th className={cn(thClass, 'corp-col')}>Corporation</th>
                 {scoreFields.map(f => (
-                  <th key={f.key} style={{ ...thStyle, textAlign: 'center' }}>
+                  <th key={f.key} className={cn(thClass, 'text-center')}>
                     <span className="col-label-full">{f.label}</span>
                     <span className="col-label-short">{f.short}</span>
                   </th>
                 ))}
-                <th style={{ ...thStyle, textAlign: 'center', color: '#c9a030' }}>
+                <th className={cn(thClass, 'text-center text-score-400')}>
                   <span className="col-label-full">Total</span>
                   <span className="col-label-short">VP</span>
                 </th>
-                <th style={{ ...thStyle, textAlign: 'center', color: '#3bbfbf' }}>
+                <th className={cn(thClass, 'text-center text-[#3bbfbf]')}>
                   <span className="col-label-full">MC</span>
                   <span className="col-label-short">MC</span>
                 </th>
@@ -313,44 +319,47 @@ export default function GameDetail() {
             </thead>
             <tbody>
               {sorted.map((r, i) => (
-                <tr key={r.id} style={{ borderBottom: i < sorted.length - 1 ? '1px solid var(--bd-panel)' : 'none' }}>
-                  <td style={tdStyle}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: r.position === 1 ? '#4a9e6b' : 'var(--text-4)' }}>
+                <tr key={r.id} className={cn(i < sorted.length - 1 && 'border-b border-border')}>
+                  <td className={tdClass}>
+                    <div className="flex items-center gap-2">
+                      <span className={cn('font-mono text-[0.68rem]', r.position === 1 ? 'text-win-500' : 'text-[var(--text-4)]')}>
                         #{r.position}
                       </span>
                       <div>
-                        <Link to={`/players/${encodeURIComponent(r.player_name)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--text-1)', textDecoration: 'none', fontWeight: r.position === 1 ? 600 : 400 }}>
+                        <Link
+                          to={`/players/${encodeURIComponent(r.player_name)}`}
+                          className={cn('font-body text-[0.85rem] text-foreground no-underline hover:text-mars-400 transition-colors', r.position === 1 ? 'font-semibold' : 'font-normal')}
+                        >
                           {r.player_name}
                         </Link>
-                        <span className="corp-inline" style={{ display: 'none', fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: '#b87aff' }}>
+                        <span className="corp-inline hidden font-body text-[0.7rem] text-violet-400">
                           {getCorps(r).join(' + ')}
                         </span>
                       </div>
                     </div>
                   </td>
-                  <td className="corp-col" style={tdStyle}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                  <td className={cn(tdClass, 'corp-col')}>
+                    <span className="inline-flex items-center gap-1 flex-wrap">
                       {getCorps(r).map((corp, ci) => (
-                        <span key={corp} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          {ci > 0 && <span style={{ color: 'var(--text-4)' }}>+</span>}
-                          <Link to={`/cards/${encodeURIComponent(corp)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#b87aff', textDecoration: 'none' }}>{corp}</Link>
+                        <span key={corp} className="inline-flex items-center gap-1">
+                          {ci > 0 && <span className="text-[var(--text-4)]">+</span>}
+                          <Link to={`/cards/${encodeURIComponent(corp)}`} className="font-body text-[0.8rem] text-violet-400 no-underline hover:text-violet-300 transition-colors">{corp}</Link>
                         </span>
                       ))}
                       {getCorps(r).length > 1 && (
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#c9a030', background: 'rgba(201,160,48,0.1)', border: '1px solid rgba(201,160,48,0.3)', borderRadius: '4px', padding: '1px 5px' }}>Merger</span>
+                        <span className="font-mono text-[0.65rem] text-score-400 bg-score-400/10 border border-score-400/30 rounded px-[5px] py-[1px]">Merger</span>
                       )}
                     </span>
                   </td>
                   {scoreFields.map(f => (
-                    <td key={f.key} style={{ ...tdStyle, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-2)' }}>
+                    <td key={f.key} className="px-4 py-3 text-center font-mono text-[0.82rem] text-secondary-foreground">
                       {r[f.key] ?? '—'}
                     </td>
                   ))}
-                  <td style={{ ...tdStyle, textAlign: 'center', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1rem', color: r.position === 1 ? '#c9a030' : 'var(--text-3)' }}>
+                  <td className={cn('px-4 py-3 text-center font-mono font-bold text-[1rem]', r.position === 1 ? 'text-score-400' : 'text-[var(--text-3)]')}>
                     {r.total_vp}
                   </td>
-                  <td style={{ ...tdStyle, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: r.mc != null ? '#3bbfbf' : 'var(--bd-secondary)' }}>
+                  <td className={cn('px-4 py-3 text-center font-mono text-[0.82rem]', r.mc != null ? 'text-[#3bbfbf]' : 'text-border')}>
                     {r.mc != null ? r.mc : '—'}
                   </td>
                 </tr>
@@ -369,30 +378,28 @@ export default function GameDetail() {
           { key: 'temperature_steps', label: 'Temperature', short: 'TEMP', color: '#e05535' },
           { key: 'oxygen_steps',      label: 'Oxygen',      short: 'OX',   color: '#4a9e6b' },
           { key: 'ocean_steps',       label: 'Oceans',      short: 'OC',   color: '#2e8b8b' },
-          ...(hasVenus ? [{ key: 'venus_steps' as const,    label: 'Venus',     short: 'VN',  color: '#b87aff' }] : []),
+          ...(hasVenus ? [{ key: 'venus_steps'    as const, label: 'Venus',     short: 'VN',  color: '#b87aff' }] : []),
           ...(hasMoon  ? [
-            { key: 'habitat_steps'  as const, label: 'Habitat',   short: 'HAB', color: '#2e8b8b' },
-            { key: 'mining_steps'   as const, label: 'Mining',    short: 'MIN', color: '#a0724a' },
-            { key: 'logistics_steps'as const, label: 'Logistics', short: 'LOG', color: '#555555' },
+            { key: 'habitat_steps'   as const, label: 'Habitat',   short: 'HAB', color: '#2e8b8b' },
+            { key: 'mining_steps'    as const, label: 'Mining',    short: 'MIN', color: '#a0724a' },
+            { key: 'logistics_steps' as const, label: 'Logistics', short: 'LOG', color: '#555555' },
           ] : []),
         ]
         return (
-          <div style={{ marginBottom: '32px' }}>
-            <SectionHeading>
-              Parameter contributions
-            </SectionHeading>
-            <div className="game-param-table" style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="mb-8">
+            <SectionHeading>Parameter contributions</SectionHeading>
+            <div className="game-param-table bg-card border border-border rounded-[6px] overflow-auto">
+              <table className="w-full border-collapse">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
-                    <th style={thStyle}>Player</th>
+                  <tr className="border-b border-border">
+                    <th className={thClass}>Player</th>
                     {paramCols.map(col => (
-                      <th key={col.key} style={{ ...thStyle, textAlign: 'center', color: col.color }}>
+                      <th key={col.key} className={cn(thClass, 'text-center')} style={{ color: col.color }}>
                         <span className="col-label-full">{col.label}</span>
                         <span className="col-label-short">{col.short}</span>
                       </th>
                     ))}
-                    <th style={{ ...thStyle, textAlign: 'center', color: 'var(--text-2)' }}>
+                    <th className={cn(thClass, 'text-center text-secondary-foreground')}>
                       <span className="col-label-full">Total</span>
                       <span className="col-label-short">TOT</span>
                     </th>
@@ -402,30 +409,28 @@ export default function GameDetail() {
                   {params.map((p, i) => {
                     const rowTotal = paramCols.reduce((s, col) => s + (p[col.key] as number), 0)
                     return (
-                      <tr key={p.player_name} style={{ borderBottom: i < params.length - 1 ? '1px solid var(--bd-panel)' : 'none' }}>
-                        <td style={{ ...tdStyle, fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--text-1)' }}>{p.player_name}</td>
+                      <tr key={p.player_name} className={cn(i < params.length - 1 && 'border-b border-border')}>
+                        <td className={cn(tdClass, 'font-body text-[0.85rem] text-foreground')}>{p.player_name}</td>
                         {paramCols.map(col => (
-                          <td key={col.key} style={{ ...tdStyle, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: (p[col.key] as number) > 0 ? col.color : '#888888' }}>
+                          <td key={col.key} className="px-4 py-3 text-center font-mono text-[0.85rem]" style={{ color: (p[col.key] as number) > 0 ? col.color : '#888888' }}>
                             {p[col.key] as number}
                           </td>
                         ))}
-                        <td style={{ ...tdStyle, textAlign: 'center', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-2)' }}>
-                          {rowTotal}
-                        </td>
+                        <td className="px-4 py-3 text-center font-mono font-bold text-[0.85rem] text-secondary-foreground">{rowTotal}</td>
                       </tr>
                     )
                   })}
-                  <tr style={{ borderTop: '1px solid #e0e0e0', background: 'rgba(155,80,240,0.04)' }}>
-                    <td style={{ ...tdStyle, fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-4)', fontStyle: 'italic' }}>Total</td>
+                  <tr className="border-t border-border bg-violet-500/4">
+                    <td className={cn(tdClass, 'font-body text-[0.78rem] text-[var(--text-4)] italic')}>Total</td>
                     {paramCols.map(col => {
                       const total = params.reduce((s, p) => s + (p[col.key] as number), 0)
                       return (
-                        <td key={col.key} style={{ ...tdStyle, textAlign: 'center', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: col.color }}>
+                        <td key={col.key} className="px-4 py-3 text-center font-mono font-bold text-[0.85rem]" style={{ color: col.color }}>
                           {total}
                         </td>
                       )
                     })}
-                    <td style={{ ...tdStyle, textAlign: 'center', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-2)' }}>
+                    <td className="px-4 py-3 text-center font-mono font-bold text-[0.85rem] text-secondary-foreground">
                       {params.reduce((s, p) => s + paramCols.reduce((ss, col) => ss + (p[col.key] as number), 0), 0)}
                     </td>
                   </tr>
@@ -442,22 +447,19 @@ export default function GameDetail() {
         for (const c of gameCards) {
           ;(byPlayer[c.player_name] ??= []).push(c)
         }
-        // Keep player order consistent with score table
         const playerOrder = sorted.map(r => r.player_name)
         const players = [...new Set([...playerOrder, ...Object.keys(byPlayer)])]
 
         return (
-          <div style={{ marginBottom: '32px' }}>
-            <SectionHeading>
-              Cards played
-            </SectionHeading>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div className="mb-8">
+            <SectionHeading>Cards played</SectionHeading>
+            <div className="flex flex-col gap-1">
               {players.map(player => {
                 const cards = byPlayer[player] ?? []
                 const isExpanded = expandedPlayers.has(player)
                 const posResult = sorted.find(r => r.player_name === player)
                 return (
-                  <div key={player} style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden' }}>
+                  <div key={player} className="bg-card border border-border rounded-[6px] overflow-hidden">
                     <button
                       onClick={() => setExpandedPlayers(prev => {
                         const next = new Set(prev)
@@ -465,36 +467,33 @@ export default function GameDetail() {
                         else next.add(player)
                         return next
                       })}
-                      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                      className="w-full flex items-center justify-between px-3.5 py-2.5 bg-transparent border-none cursor-pointer"
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div className="flex items-center gap-2.5">
                         {posResult && (
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: posResult.position === 1 ? '#4a9e6b' : 'var(--text-4)' }}>
+                          <span className={cn('font-mono text-[0.65rem]', posResult.position === 1 ? 'text-win-500' : 'text-[var(--text-4)]')}>
                             #{posResult.position}
                           </span>
                         )}
                         <Link
                           to={`/players/${encodeURIComponent(player)}`}
                           onClick={e => e.stopPropagation()}
-                          style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.87rem', color: 'var(--text-1)', textDecoration: 'none' }}
+                          className="font-display font-semibold text-[0.87rem] text-foreground no-underline hover:text-mars-400 transition-colors"
                         >
                           {player}
                         </Link>
                       </div>
-                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-4)' }}>{cards.length} cards</span>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-4)' }}>{isExpanded ? '▲' : '▼'}</span>
+                      <div className="flex gap-2.5 items-center">
+                        <span className="font-mono text-[0.65rem] text-[var(--text-4)]">{cards.length} cards</span>
+                        <span className={cn('font-mono text-[0.6rem] text-[var(--text-4)] transition-transform duration-150', isExpanded && 'rotate-180')}>▼</span>
                       </div>
                     </button>
                     {isExpanded && (
-                      <div style={{ borderTop: '1px solid var(--bd-panel)', padding: '4px 0' }}>
+                      <div className="border-t border-border py-1">
                         {cards.map((c, i) => (
-                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 14px', gap: '8px', background: 'var(--bg-row)' }}
-                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-row-hover)')}
-                            onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-row)')}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                              <Link to={`/cards/${encodeURIComponent(c.card_name)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--text-2)', textDecoration: 'none', lineHeight: 1.5 }}>
+                          <div key={i} className="flex justify-between items-center px-3.5 py-1 gap-2 hover:bg-accent transition-colors">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Link to={`/cards/${encodeURIComponent(c.card_name)}`} className="font-body text-[0.78rem] text-secondary-foreground no-underline leading-[1.5] hover:text-mars-400 transition-colors">
                                 {c.card_name}
                               </Link>
                               {(() => {
@@ -505,23 +504,23 @@ export default function GameDetail() {
                                 return (
                                   <>
                                     {tc && (
-                                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.62rem', fontWeight: 500, padding: '1px 5px', borderRadius: '3px', background: tc.bg, color: tc.color, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                      <span className="font-body text-[0.62rem] font-medium px-[5px] py-[1px] rounded-[3px] whitespace-nowrap shrink-0" style={{ background: tc.bg, color: tc.color }}>
                                         {ref.card_type}
                                       </span>
                                     )}
-                                    <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
+                                    <div className="flex gap-[3px] items-center">
                                       {tags.map((tag, i) => <Tag key={`${tag}-${i}`} name={tag} />)}
                                     </div>
                                   </>
                                 )
                               })()}
                             </div>
-                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                            <div className="flex gap-1.5 items-center shrink-0">
                               {c.vp_from_card != null && (
-                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#c9a030' }}>{c.vp_from_card}VP</span>
+                                <span className="font-mono text-[0.65rem] text-score-400">{c.vp_from_card}VP</span>
                               )}
                               {c.generation != null && (
-                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: genColor(c.generation) }}>G{c.generation}</span>
+                                <span className="font-mono text-[0.6rem]" style={{ color: genColor(c.generation) }}>G{c.generation}</span>
                               )}
                             </div>
                           </div>
@@ -539,16 +538,14 @@ export default function GameDetail() {
       {/* Notes */}
       {sorted.some(r => r.key_notes) && (
         <div>
-          <SectionHeading>
-            Strategy notes
-          </SectionHeading>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <SectionHeading>Strategy notes</SectionHeading>
+          <div className="flex flex-col gap-2">
             {sorted.filter(r => r.key_notes).map(r => (
-              <div key={r.id} style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '4px', padding: '12px 16px', display: 'flex', gap: '12px' }}>
-                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.83rem', color: 'var(--text-1)', minWidth: '70px' }}>
+              <div key={r.id} className="bg-card border border-border rounded px-4 py-3 flex gap-3">
+                <span className="font-body font-semibold text-[0.83rem] text-foreground min-w-[70px]">
                   {r.player_name}
                 </span>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-3)', fontStyle: 'italic' }}>
+                <span className="font-body text-[0.83rem] text-[var(--text-3)] italic">
                   {r.key_notes}
                 </span>
               </div>
@@ -558,34 +555,4 @@ export default function GameDetail() {
       )}
     </div>
   )
-}
-
-const loadingStyle: React.CSSProperties = {
-  padding: '32px 36px',
-  color: 'var(--text-4)',
-  fontFamily: 'var(--font-body)',
-}
-
-const thStyle: React.CSSProperties = {
-  padding: '10px 16px',
-  textAlign: 'left',
-  fontFamily: 'var(--font-body)',
-  fontSize: '0.68rem',
-  fontWeight: 600,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: 'var(--text-4)',
-}
-
-const tdStyle: React.CSSProperties = {
-  padding: '12px 16px',
-}
-
-const metaLabelStyle: React.CSSProperties = {
-  fontFamily: 'var(--font-body)',
-  fontSize: '0.67rem',
-  fontWeight: 600,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-  color: 'var(--text-4)',
 }

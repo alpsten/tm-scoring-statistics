@@ -9,32 +9,15 @@ import { supabase } from '../../lib/supabase'
 import { usePlayerStats, useCardReference, useGame, useGameMilestones, useGameAwards } from '../../lib/hooks'
 import { EXPANSION_ICONS, ALL_EXPANSIONS } from '../../lib/expansions'
 
-// ─── Shared styles (defined before Combobox so it can reference them) ─────────
+// ─── Shared class constants ────────────────────────────────────────────────────
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  height: '34px',
-  padding: '0 10px',
-  background: '#171228',
-  border: '1px solid #3e325e',
-  borderRadius: '4px',
-  color: '#ece6ff',
-  fontFamily: 'var(--font-body)',
-  fontSize: '0.83rem',
-  outline: 'none',
-  boxSizing: 'border-box',
-}
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontFamily: 'var(--font-body)',
-  fontSize: '0.68rem',
-  fontWeight: 500,
-  letterSpacing: '0.06em',
-  textTransform: 'uppercase',
-  color: '#625c7c',
-  marginBottom: '5px',
-}
+const baseInputClass = 'h-[34px] px-2.5 bg-[#171228] border border-[#3e325e] rounded text-[#ece6ff] font-body text-[0.83rem] outline-none box-border'
+const inputClass = `w-full ${baseInputClass}`
+const labelClass = 'block font-body text-[0.68rem] font-medium tracking-[0.06em] uppercase text-[#625c7c] mb-[5px]'
+const sectionLabelClass = 'font-display font-semibold text-[0.8rem] tracking-[0.1em] uppercase text-[#625c7c] mb-4'
+const errClass = 'font-body text-[0.68rem] text-mars-500 mt-[3px] block'
+const mergerBtnClass = 'px-[9px] py-1.5 bg-[rgba(212,168,32,0.08)] border border-[rgba(212,168,32,0.3)] rounded text-[#d4a820] font-body text-[0.72rem] cursor-pointer whitespace-nowrap'
+const removeMergerBtnClass = 'px-4 py-1.5 bg-mars-500/8 border border-mars-500/40 rounded text-mars-500 font-body text-[0.72rem] cursor-pointer'
 
 // ─── Combobox ─────────────────────────────────────────────────────────────────
 
@@ -60,7 +43,7 @@ function Combobox({ value, onChange, options, placeholder, strict }: {
   }
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div className="relative">
       <input
         value={value}
         onChange={e => onChange(e.target.value)}
@@ -68,22 +51,16 @@ function Combobox({ value, onChange, options, placeholder, strict }: {
         onBlur={handleBlur}
         placeholder={placeholder}
         autoComplete="off"
-        style={{ ...inputStyle, borderColor: isValid ? '#3e325e' : '#e05535' }}
+        className={inputClass}
+        style={!isValid ? { borderColor: '#e05535' } : undefined}
       />
       {open && filtered.length > 0 && (
-        <div style={{
-          position: 'absolute', top: 'calc(100% + 2px)', left: 0, right: 0,
-          background: '#1e1835', border: '1px solid #3e325e', borderRadius: '4px',
-          zIndex: 200, maxHeight: '200px', overflowY: 'auto',
-          boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
-        }}>
+        <div className="absolute top-[calc(100%+2px)] left-0 right-0 bg-[#282042] border border-[#3e325e] rounded z-[200] max-h-[200px] overflow-y-auto shadow-[0_6px_20px_rgba(0,0,0,0.5)]">
           {filtered.map(opt => (
             <div
               key={opt}
               onMouseDown={() => { onChange(opt); setOpen(false) }}
-              style={{ padding: '8px 12px', fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#ece6ff', cursor: 'pointer' }}
-              onMouseEnter={e => (e.currentTarget.style.background = '#282042')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              className="px-3 py-2 font-body text-[0.83rem] text-[#ece6ff] cursor-pointer hover:bg-[#282042] transition-colors"
             >
               {opt}
             </div>
@@ -660,11 +637,11 @@ export default function AddGame() {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="page-enter" style={{ padding: '32px 36px', maxWidth: '1100px' }}>
-      <div style={{ marginBottom: '24px' }}>
+    <div className="page-enter py-8 px-9 max-w-[1100px] min-h-full bg-[#0c0e12]">
+      <div className="mb-6">
         <Link
           to={isEdit ? `/games/${editId}` : '/admin'}
-          style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', textDecoration: 'none' }}
+          className="font-body text-[0.78rem] text-[#625c7c] no-underline"
         >
           {isEdit ? `← Game` : '← Admin'}
         </Link>
@@ -682,35 +659,35 @@ export default function AddGame() {
       })}>
 
         {/* ── SESSION ──────────────────────────────────────────────────────── */}
-        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '24px', marginBottom: '24px' }}>
-          <div style={sectionLabel}>Session</div>
+        <div className="bg-[#282042] border border-[#3e325e] rounded-[6px] p-6 mb-6">
+          <div className={sectionLabelClass}>Session</div>
 
           {/* Date / Map / Generations / Format */}
-          <div className="addgame-session-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
-            <div style={{ minWidth: 0 }}>
-              <label style={labelStyle}>Date *</label>
-              <input type="date" {...register('date')} style={{ ...inputStyle, width: '100%' }} />
-              {errors.date && <span style={errStyle}>{errors.date.message}</span>}
+          <div className="addgame-session-grid grid grid-cols-4 gap-4 mb-5">
+            <div className="min-w-0">
+              <label className={labelClass}>Date *</label>
+              <input type="date" {...register('date')} className={inputClass} />
+              {errors.date && <span className={errClass}>{errors.date.message}</span>}
             </div>
-            <div style={{ minWidth: 0 }}>
-              <label style={labelStyle}>Map</label>
-              <select {...register('map_name')} style={inputStyle}>
+            <div className="min-w-0">
+              <label className={labelClass}>Map</label>
+              <select {...register('map_name')} className={inputClass}>
                 <option value="">Select map…</option>
                 {MAPS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
-            <div style={{ minWidth: 0 }}>
-              <label style={labelStyle}>Generations</label>
-              <select {...register('generations')} style={inputStyle}>
+            <div className="min-w-0">
+              <label className={labelClass}>Generations</label>
+              <select {...register('generations')} className={inputClass}>
                 <option value="">—</option>
                 {Array.from({ length: 20 }, (_, i) => i + 1).map(n => (
                   <option key={n} value={n}>{n}</option>
                 ))}
               </select>
             </div>
-            <div style={{ minWidth: 0 }}>
-              <label style={labelStyle}>Format</label>
-              <select {...register('format')} style={inputStyle}>
+            <div className="min-w-0">
+              <label className={labelClass}>Format</label>
+              <select {...register('format')} className={inputClass}>
                 <option value="Digital">Digital</option>
                 <option value="Physical">Physical</option>
               </select>
@@ -718,26 +695,15 @@ export default function AddGame() {
           </div>
 
           {/* Player count */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>Players</label>
-            <div style={{ display: 'flex', gap: '6px' }}>
+          <div className="mb-5">
+            <label className={labelClass}>Players</label>
+            <div className="flex gap-1.5">
               {[1, 2, 3, 4, 5].map(n => (
                 <button
                   key={n}
                   type="button"
                   onClick={() => setPlayerCount(n)}
-                  style={{
-                    width: '38px', height: '34px',
-                    background: fields.length === n ? '#9b50f0' : '#171228',
-                    border: `1px solid ${fields.length === n ? '#9b50f0' : '#3e325e'}`,
-                    borderRadius: '4px',
-                    color: fields.length === n ? '#fff' : '#8e87a8',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.88rem',
-                    fontWeight: fields.length === n ? 700 : 400,
-                    cursor: 'pointer',
-                    transition: 'all 0.12s',
-                  }}
+                  className={`w-[38px] h-[34px] border rounded cursor-pointer transition-all font-mono text-[0.88rem] ${fields.length === n ? 'bg-[#9b50f0] border-[#9b50f0] text-white font-bold' : 'bg-[#171228] border-[#3e325e] text-[#8e87a8]'}`}
                 >
                   {n}
                 </button>
@@ -746,9 +712,9 @@ export default function AddGame() {
           </div>
 
           {/* Expansions */}
-          <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Expansions</label>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          <div className="mb-4">
+            <label className={labelClass}>Expansions</label>
+            <div className="flex gap-1.5 flex-wrap">
               {EXPANSIONS.map(e => {
                 const on = expansions.includes(e)
                 const icon = EXPANSION_ICONS[e]
@@ -757,22 +723,10 @@ export default function AddGame() {
                     key={e}
                     type="button"
                     onClick={() => toggleExpansion(e)}
-                    style={{
-                      padding: '4px 10px',
-                      background: on ? 'rgba(155, 80, 240, 0.12)' : 'transparent',
-                      border: `1px solid ${on ? '#9b50f0' : '#3e325e'}`,
-                      borderRadius: '12px',
-                      color: on ? '#b87aff' : '#625c7c',
-                      fontFamily: 'var(--font-body)',
-                      fontSize: '0.78rem',
-                      cursor: 'pointer',
-                      transition: 'all 0.12s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                    }}
+                    className="flex items-center gap-[5px] px-[10px] py-1 rounded-[12px] cursor-pointer transition-all font-body text-[0.78rem]"
+                    style={{ background: on ? 'rgba(155,80,240,0.12)' : 'transparent', border: `1px solid ${on ? '#9b50f0' : '#3e325e'}`, color: on ? '#b87aff' : '#625c7c' }}
                   >
-                    {icon && <img src={icon} alt={e} style={{ width: '14px', height: '14px', objectFit: 'contain', opacity: on ? 1 : 0.5 }} />}
+                    {icon && <img src={icon} alt={e} className="w-[14px] h-[14px] object-contain" style={{ opacity: on ? 1 : 0.5 }} />}
                     {on ? '✓ ' : ''}{e}
                   </button>
                 )
@@ -782,9 +736,9 @@ export default function AddGame() {
 
           {/* Colony tiles — only visible when Colonies expansion selected */}
           {expansions.includes('Colonies') && (
-            <div style={{ marginBottom: '16px' }}>
-              <label style={labelStyle}>Colony tiles in play</label>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <div className="mb-4">
+              <label className={labelClass}>Colony tiles in play</label>
+              <div className="flex gap-1.5 flex-wrap">
                 {[...COLONY_TILES, ...(expansions.includes('Pathfinders') ? PATHFINDERS_COLONY_TILES : [])].map(c => {
                   const on = colonies.includes(c)
                   return (
@@ -792,17 +746,8 @@ export default function AddGame() {
                       key={c}
                       type="button"
                       onClick={() => toggleColony(c)}
-                      style={{
-                        padding: '3px 10px',
-                        background: on ? 'rgba(46, 139, 139, 0.12)' : 'transparent',
-                        border: `1px solid ${on ? '#2e8b8b' : '#3e325e'}`,
-                        borderRadius: '12px',
-                        color: on ? '#2e8b8b' : '#625c7c',
-                        fontFamily: 'var(--font-body)',
-                        fontSize: '0.73rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.12s',
-                      }}
+                      className="px-[10px] py-[3px] rounded-[12px] cursor-pointer transition-all font-body text-[0.73rem]"
+                      style={{ background: on ? 'rgba(46,139,139,0.12)' : 'transparent', border: `1px solid ${on ? '#2e8b8b' : '#3e325e'}`, color: on ? '#2e8b8b' : '#625c7c' }}
                     >
                       {c}
                     </button>
@@ -813,8 +758,8 @@ export default function AddGame() {
           )}
 
           {/* Options */}
-          <div style={{ display: 'flex', gap: '20px', marginBottom: '16px', flexWrap: 'wrap' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#8e87a8' }}>
+          <div className="flex gap-5 mb-4 flex-wrap">
+            <label className="flex items-center gap-[7px] cursor-pointer font-body text-[0.78rem] text-[#8e87a8]">
               <input type="checkbox" checked={hasParams} onChange={e => setHasParams(e.target.checked)} style={{ accentColor: '#9b50f0' }} />
               Track parameter contributions
             </label>
@@ -822,20 +767,20 @@ export default function AddGame() {
 
           {/* Notes */}
           <div>
-            <label style={labelStyle}>Notes</label>
+            <label className={labelClass}>Notes</label>
             <textarea
               {...register('notes')}
               placeholder="Optional session notes…"
               rows={2}
-              style={{ ...inputStyle, height: 'auto', padding: '8px 10px', resize: 'vertical', minHeight: '60px' }}
+              className="w-full px-2.5 py-2 bg-[#171228] border border-[#3e325e] rounded text-[#ece6ff] font-body text-[0.83rem] outline-none resize-y min-h-[60px]"
             />
           </div>
         </div>
 
         {/* ── MILESTONES & AWARDS ──────────────────────────────────────────── */}
-        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '24px', marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-            <div style={sectionLabel}>Milestones &amp; Awards{hasVenusNext ? ' · Venus Next adds 6th slot' : ''}</div>
+        <div className="bg-[#282042] border border-[#3e325e] rounded-[6px] p-6 mb-6">
+          <div className="flex items-center gap-3 mb-3.5">
+            <div className={sectionLabelClass}>Milestones &amp; Awards{hasVenusNext ? ' · Venus Next adds 6th slot' : ''}</div>
             {MAP_MILESTONES[watchedMap] && (
               <button
                 type="button"
@@ -844,211 +789,196 @@ export default function AddGame() {
                   setUseRandomMA(next)
                   if (!next) populateFromMap(watchedMap)
                 }}
-                style={{
-                  padding: '3px 10px', borderRadius: '4px', cursor: 'pointer',
-                  fontFamily: 'var(--font-body)', fontSize: '0.72rem', fontWeight: 600,
-                  background: useRandomMA ? 'rgba(91,141,217,0.15)' : 'transparent',
-                  border: `1px solid ${useRandomMA ? '#5b8dd9' : '#3e325e'}`,
-                  color: useRandomMA ? '#5b8dd9' : '#625c7c',
-                  transition: 'all 0.12s',
-                }}
+                className={`px-[10px] py-[3px] rounded cursor-pointer font-body text-[0.72rem] font-semibold transition-all ${useRandomMA ? 'bg-[rgba(91,141,217,0.15)] border border-[#5b8dd9] text-[#5b8dd9]' : 'bg-transparent border border-[#3e325e] text-[#625c7c]'}`}
               >
                 {useRandomMA ? '✓ Random M&A' : 'Random M&A'}
               </button>
             )}
           </div>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: MAP_MILESTONES[watchedMap] && !useRandomMA ? '#2e8b8b' : '#504270', marginBottom: '14px' }}>
+          <div className="font-body text-[0.72rem] mb-3.5" style={{ color: MAP_MILESTONES[watchedMap] && !useRandomMA ? '#2e8b8b' : '#504270' }}>
             {MAP_MILESTONES[watchedMap] && !useRandomMA
               ? `Pre-filled from ${watchedMap} — edit any field to override.`
               : watchedMap ? 'No preset for this map — search below.' : 'Select a map above for auto-fill, or search manually.'
             }
           </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-              {/* Milestones */}
-              <div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '10px' }}>
-                  Milestones
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {Array.from({ length: maSlots }).map((_, i) => (
-                    <Combobox
-                      key={i}
-                      value={milestones[i] ?? ''}
-                      onChange={v => setMilestones(prev => { const n = [...prev]; n[i] = v; return n })}
-                      options={(!useRandomMA && MAP_MILESTONES[watchedMap]) ? [...MAP_MILESTONES[watchedMap], ...(hasVenusNext ? ['Hoverlord'] : [])] : RANDOM_MILESTONES}
-                      placeholder={`Milestone ${i + 1}${i === 5 ? ' (Venus Next)' : ''}`}
-                      strict
-                    />
-                  ))}
-                </div>
+          <div className="grid grid-cols-2 gap-6">
+            {/* Milestones */}
+            <div>
+              <div className="font-body text-[0.68rem] font-semibold tracking-[0.08em] uppercase text-[#625c7c] mb-2.5">
+                Milestones
               </div>
-              {/* Awards */}
-              <div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.68rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '10px' }}>
-                  Awards
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {Array.from({ length: maSlots }).map((_, i) => (
-                    <div key={i}>
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        <div style={{ flex: 1 }}>
-                          <Combobox
-                            value={awards[i] ?? ''}
-                            onChange={v => setAwards(prev => { const n = [...prev]; n[i] = v; return n })}
-                            options={(!useRandomMA && MAP_AWARDS[watchedMap]) ? [...MAP_AWARDS[watchedMap], ...(hasVenusNext ? ['Venuphile'] : [])] : RANDOM_AWARDS}
-                            placeholder={`Award ${i + 1}${i === 5 ? ' (Venus Next)' : ''}`}
-                            strict
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setAwardExpanded(prev => {
-                            const n = [...prev]
-                            const closing = n[i]
-                            n[i] = !n[i]
-                            if (closing) {
-                              setAwardFunders(pf => { const nf = [...pf]; nf[i] = ''; return nf })
-                              setAwardFundOrders(po => { const no = [...po]; no[i] = ''; return no })
-                              setAwardWinners(pw => { const nw = [...pw]; nw[i] = ''; return nw })
-                              setAwardWinners2(pw => { const nw = [...pw]; nw[i] = ''; return nw })
-                              setAwardWinnerTied(pt => { const nt = [...pt]; nt[i] = false; return nt })
-                              setAwardSecond(ps => { const ns = [...ps]; ns[i] = ''; return ns })
-                              setAwardSecond2(ps => { const ns = [...ps]; ns[i] = ''; return ns })
-                              setAwardSecondTied(pt => { const nt = [...pt]; nt[i] = false; return nt })
-                            }
-                            return n
-                          })}
-                          style={{
-                            width: '28px', height: '34px', flexShrink: 0,
-                            background: awardExpanded[i] ? 'rgba(201,160,48,0.1)' : 'transparent',
-                            border: `1px solid ${awardExpanded[i] ? 'rgba(201,160,48,0.35)' : '#3e325e'}`,
-                            borderRadius: '4px',
-                            color: awardExpanded[i] ? '#c9a030' : '#625c7c',
-                            fontFamily: 'var(--font-mono)', fontSize: '1rem', lineHeight: 1,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {awardExpanded[i] ? '−' : '+'}
-                        </button>
-                      </div>
-                      {awardExpanded[i] && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px', paddingLeft: '2px' }}>
-                          {/* Row 1: Fund order + Funded by */}
-                          <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end' }}>
-                            <div style={{ flexShrink: 0 }}>
-                              <label style={{ ...labelStyle, color: '#8e87a8' }}>Order</label>
-                              <select
-                                value={awardFundOrders[i] ?? ''}
-                                onChange={e => setAwardFundOrders(prev => { const n = [...prev]; n[i] = e.target.value; return n })}
-                                style={{ width: '52px', height: '34px', background: '#110d1e', border: '1px solid #3e325e', borderRadius: '4px', color: '#ece6ff', fontFamily: 'var(--font-body)', fontSize: '0.82rem', padding: '0 6px' }}
-                              >
-                                <option value="">—</option>
-                                <option value="1">#1</option>
-                                <option value="2">#2</option>
-                                <option value="3">#3</option>
-                              </select>
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <label style={{ ...labelStyle, color: '#8e87a8' }}>Funded by</label>
-                              <Combobox
-                                value={awardFunders[i] ?? ''}
-                                onChange={v => setAwardFunders(prev => { const n = [...prev]; n[i] = v; return n })}
-                                options={existingPlayers}
-                                placeholder="Who funded…"
-                              />
-                            </div>
-                          </div>
-                          {/* Row 2: Winner + Tied toggle */}
-                          <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end' }}>
-                            <div style={{ flex: 1 }}>
-                              <label style={{ ...labelStyle, color: '#c9a030' }}>Winner</label>
-                              <Combobox
-                                value={awardWinners[i] ?? ''}
-                                onChange={v => setAwardWinners(prev => { const n = [...prev]; n[i] = v; return n })}
-                                options={existingPlayers}
-                                placeholder="Who won…"
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setAwardWinnerTied(prev => {
-                                const n = [...prev]; n[i] = !n[i]
-                                if (!n[i]) setAwardWinners2(pw => { const nw = [...pw]; nw[i] = ''; return nw })
-                                return n
-                              })}
-                              style={{ height: '34px', padding: '0 10px', flexShrink: 0, background: awardWinnerTied[i] ? 'rgba(201,160,48,0.12)' : 'transparent', border: `1px solid ${awardWinnerTied[i] ? 'rgba(201,160,48,0.5)' : '#3e325e'}`, borderRadius: '4px', color: awardWinnerTied[i] ? '#c9a030' : '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.68rem', letterSpacing: '0.05em', cursor: 'pointer' }}
-                            >
-                              Tied
-                            </button>
-                            {awardWinnerTied[i] && (
-                              <div style={{ flex: 1 }}>
-                                <label style={{ ...labelStyle, color: '#c9a030' }}>Also won</label>
-                                <Combobox
-                                  value={awardWinners2[i] ?? ''}
-                                  onChange={v => setAwardWinners2(prev => { const n = [...prev]; n[i] = v; return n })}
-                                  options={existingPlayers}
-                                  placeholder="Tied winner…"
-                                />
-                              </div>
-                            )}
-                          </div>
-                          {/* Row 3: Second place + Tied toggle (hidden in 2-player games) */}
-                          {fields.length > 2 && <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end' }}>
-                            <div style={{ flex: 1 }}>
-                              <label style={{ ...labelStyle, color: '#625c7c' }}>2nd place</label>
-                              <Combobox
-                                value={awardSecond[i] ?? ''}
-                                onChange={v => setAwardSecond(prev => { const n = [...prev]; n[i] = v; return n })}
-                                options={existingPlayers}
-                                placeholder="Second place…"
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setAwardSecondTied(prev => {
-                                const n = [...prev]; n[i] = !n[i]
-                                if (!n[i]) setAwardSecond2(ps => { const ns = [...ps]; ns[i] = ''; return ns })
-                                return n
-                              })}
-                              style={{ height: '34px', padding: '0 10px', flexShrink: 0, background: awardSecondTied[i] ? 'rgba(201,160,48,0.12)' : 'transparent', border: `1px solid ${awardSecondTied[i] ? 'rgba(201,160,48,0.5)' : '#3e325e'}`, borderRadius: '4px', color: awardSecondTied[i] ? '#c9a030' : '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.68rem', letterSpacing: '0.05em', cursor: 'pointer' }}
-                            >
-                              Tied
-                            </button>
-                            {awardSecondTied[i] && (
-                              <div style={{ flex: 1 }}>
-                                <label style={{ ...labelStyle, color: '#625c7c' }}>Also 2nd</label>
-                                <Combobox
-                                  value={awardSecond2[i] ?? ''}
-                                  onChange={v => setAwardSecond2(prev => { const n = [...prev]; n[i] = v; return n })}
-                                  options={existingPlayers}
-                                  placeholder="Tied 2nd…"
-                                />
-                              </div>
-                            )}
-                          </div>}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: maSlots }).map((_, i) => (
+                  <Combobox
+                    key={i}
+                    value={milestones[i] ?? ''}
+                    onChange={v => setMilestones(prev => { const n = [...prev]; n[i] = v; return n })}
+                    options={(!useRandomMA && MAP_MILESTONES[watchedMap]) ? [...MAP_MILESTONES[watchedMap], ...(hasVenusNext ? ['Hoverlord'] : [])] : RANDOM_MILESTONES}
+                    placeholder={`Milestone ${i + 1}${i === 5 ? ' (Venus Next)' : ''}`}
+                    strict
+                  />
+                ))}
               </div>
             </div>
+            {/* Awards */}
+            <div>
+              <div className="font-body text-[0.68rem] font-semibold tracking-[0.08em] uppercase text-[#625c7c] mb-2.5">
+                Awards
+              </div>
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: maSlots }).map((_, i) => (
+                  <div key={i}>
+                    <div className="flex gap-1.5 items-center">
+                      <div className="flex-1">
+                        <Combobox
+                          value={awards[i] ?? ''}
+                          onChange={v => setAwards(prev => { const n = [...prev]; n[i] = v; return n })}
+                          options={(!useRandomMA && MAP_AWARDS[watchedMap]) ? [...MAP_AWARDS[watchedMap], ...(hasVenusNext ? ['Venuphile'] : [])] : RANDOM_AWARDS}
+                          placeholder={`Award ${i + 1}${i === 5 ? ' (Venus Next)' : ''}`}
+                          strict
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAwardExpanded(prev => {
+                          const n = [...prev]
+                          const closing = n[i]
+                          n[i] = !n[i]
+                          if (closing) {
+                            setAwardFunders(pf => { const nf = [...pf]; nf[i] = ''; return nf })
+                            setAwardFundOrders(po => { const no = [...po]; no[i] = ''; return no })
+                            setAwardWinners(pw => { const nw = [...pw]; nw[i] = ''; return nw })
+                            setAwardWinners2(pw => { const nw = [...pw]; nw[i] = ''; return nw })
+                            setAwardWinnerTied(pt => { const nt = [...pt]; nt[i] = false; return nt })
+                            setAwardSecond(ps => { const ns = [...ps]; ns[i] = ''; return ns })
+                            setAwardSecond2(ps => { const ns = [...ps]; ns[i] = ''; return ns })
+                            setAwardSecondTied(pt => { const nt = [...pt]; nt[i] = false; return nt })
+                          }
+                          return n
+                        })}
+                        className={`w-7 h-[34px] shrink-0 border rounded cursor-pointer font-mono text-[1rem] leading-none transition-all ${awardExpanded[i] ? 'bg-[rgba(201,160,48,0.1)] border-[rgba(201,160,48,0.35)] text-[#c9a030]' : 'bg-transparent border-[#3e325e] text-[#625c7c]'}`}
+                      >
+                        {awardExpanded[i] ? '−' : '+'}
+                      </button>
+                    </div>
+                    {awardExpanded[i] && (
+                      <div className="flex flex-col gap-1.5 mt-1.5 pl-[2px]">
+                        {/* Row 1: Fund order + Funded by */}
+                        <div className="flex gap-1.5 items-end">
+                          <div className="shrink-0">
+                            <label className="block font-body text-[0.68rem] font-medium tracking-[0.06em] uppercase text-[#8e87a8] mb-[5px]">Order</label>
+                            <select
+                              value={awardFundOrders[i] ?? ''}
+                              onChange={e => setAwardFundOrders(prev => { const n = [...prev]; n[i] = e.target.value; return n })}
+                              className="w-[52px] h-[34px] bg-[#110d1e] border border-[#3e325e] rounded text-[#ece6ff] font-body text-[0.82rem] px-[6px] outline-none"
+                            >
+                              <option value="">—</option>
+                              <option value="1">#1</option>
+                              <option value="2">#2</option>
+                              <option value="3">#3</option>
+                            </select>
+                          </div>
+                          <div className="flex-1">
+                            <label className="block font-body text-[0.68rem] font-medium tracking-[0.06em] uppercase text-[#8e87a8] mb-[5px]">Funded by</label>
+                            <Combobox
+                              value={awardFunders[i] ?? ''}
+                              onChange={v => setAwardFunders(prev => { const n = [...prev]; n[i] = v; return n })}
+                              options={existingPlayers}
+                              placeholder="Who funded…"
+                            />
+                          </div>
+                        </div>
+                        {/* Row 2: Winner + Tied toggle */}
+                        <div className="flex gap-1.5 items-end">
+                          <div className="flex-1">
+                            <label className="block font-body text-[0.68rem] font-medium tracking-[0.06em] uppercase text-[#c9a030] mb-[5px]">Winner</label>
+                            <Combobox
+                              value={awardWinners[i] ?? ''}
+                              onChange={v => setAwardWinners(prev => { const n = [...prev]; n[i] = v; return n })}
+                              options={existingPlayers}
+                              placeholder="Who won…"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setAwardWinnerTied(prev => {
+                              const n = [...prev]; n[i] = !n[i]
+                              if (!n[i]) setAwardWinners2(pw => { const nw = [...pw]; nw[i] = ''; return nw })
+                              return n
+                            })}
+                            className={`h-[34px] px-2.5 shrink-0 border rounded font-body text-[0.68rem] tracking-[0.05em] cursor-pointer transition-all ${awardWinnerTied[i] ? 'bg-[rgba(201,160,48,0.12)] border-[rgba(201,160,48,0.5)] text-[#c9a030]' : 'bg-transparent border-[#3e325e] text-[#625c7c]'}`}
+                          >
+                            Tied
+                          </button>
+                          {awardWinnerTied[i] && (
+                            <div className="flex-1">
+                              <label className="block font-body text-[0.68rem] font-medium tracking-[0.06em] uppercase text-[#c9a030] mb-[5px]">Also won</label>
+                              <Combobox
+                                value={awardWinners2[i] ?? ''}
+                                onChange={v => setAwardWinners2(prev => { const n = [...prev]; n[i] = v; return n })}
+                                options={existingPlayers}
+                                placeholder="Tied winner…"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        {/* Row 3: Second place + Tied toggle (hidden in 2-player games) */}
+                        {fields.length > 2 && <div className="flex gap-1.5 items-end">
+                          <div className="flex-1">
+                            <label className={labelClass}>2nd place</label>
+                            <Combobox
+                              value={awardSecond[i] ?? ''}
+                              onChange={v => setAwardSecond(prev => { const n = [...prev]; n[i] = v; return n })}
+                              options={existingPlayers}
+                              placeholder="Second place…"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setAwardSecondTied(prev => {
+                              const n = [...prev]; n[i] = !n[i]
+                              if (!n[i]) setAwardSecond2(ps => { const ns = [...ps]; ns[i] = ''; return ns })
+                              return n
+                            })}
+                            className={`h-[34px] px-2.5 shrink-0 border rounded font-body text-[0.68rem] tracking-[0.05em] cursor-pointer transition-all ${awardSecondTied[i] ? 'bg-[rgba(201,160,48,0.12)] border-[rgba(201,160,48,0.5)] text-[#c9a030]' : 'bg-transparent border-[#3e325e] text-[#625c7c]'}`}
+                          >
+                            Tied
+                          </button>
+                          {awardSecondTied[i] && (
+                            <div className="flex-1">
+                              <label className={labelClass}>Also 2nd</label>
+                              <Combobox
+                                value={awardSecond2[i] ?? ''}
+                                onChange={v => setAwardSecond2(prev => { const n = [...prev]; n[i] = v; return n })}
+                                options={existingPlayers}
+                                placeholder="Tied 2nd…"
+                              />
+                            </div>
+                          )}
+                        </div>}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── PLAYER RESULTS ───────────────────────────────────────────────── */}
-        <div style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', padding: '24px', marginBottom: '24px' }}>
-          <div style={sectionLabel}>Player results</div>
+        <div className="bg-[#282042] border border-[#3e325e] rounded-[6px] p-6 mb-6">
+          <div className={sectionLabelClass}>Player results</div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="flex flex-col gap-4">
             {fields.map((field, index) => (
-              <div key={field.id} style={{ border: '1px solid #322850', borderRadius: '5px', padding: '16px' }}>
+              <div key={field.id} className="border border-[#322850] rounded-[5px] p-4">
 
                 {/* Row 1: Player + Start + Corporation(s) */}
-                <div className="addgame-player-row1" style={{ display: 'flex', gap: '10px', marginBottom: '12px', alignItems: 'flex-end' }}>
+                <div className="addgame-player-row1 flex gap-2.5 mb-3 items-end">
 
                   {/* Player name combobox */}
-                  <div style={{ flex: '0 0 160px' }}>
-                    <label style={labelStyle}>Player *</label>
+                  <div className="w-40 shrink-0">
+                    <label className={labelClass}>Player *</label>
                     <Controller
                       name={`players.${index}.player_name`}
                       control={control}
@@ -1062,17 +992,17 @@ export default function AddGame() {
                       )}
                     />
                     {errors.players?.[index]?.player_name && (
-                      <span style={errStyle}>{errors.players[index]!.player_name!.message}</span>
+                      <span className={errClass}>{errors.players[index]!.player_name!.message}</span>
                     )}
                   </div>
 
                   {/* Start order */}
-                  <div style={{ flex: '0 0 68px' }}>
-                    <label style={labelStyle}>Start</label>
+                  <div className="w-[68px] shrink-0">
+                    <label className={labelClass}>Start</label>
                     <select
                       value={startOrders[index] ?? 0}
                       onChange={e => setStartOrders(prev => { const n = [...prev]; n[index] = Number(e.target.value); return n })}
-                      style={{ ...inputStyle, height: '34px', width: '68px' }}
+                      className={`w-[68px] ${baseInputClass}`}
                     >
                       <option value={0}>—</option>
                       {Array.from({ length: fields.length }).map((_, i) => (
@@ -1082,9 +1012,9 @@ export default function AddGame() {
                   </div>
 
                   {/* Corporation combobox(es) + Merger controls */}
-                  <div className="addgame-corp-row" style={{ flex: 1, display: 'flex', gap: '8px', alignItems: 'flex-end', minWidth: 0 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <label style={labelStyle}>Corporation *</label>
+                  <div className="addgame-corp-row flex-1 flex gap-2 items-end min-w-0">
+                    <div className="flex-1 min-w-0">
+                      <label className={labelClass}>Corporation *</label>
                       <Controller
                         name={`players.${index}.corporation`}
                         control={control}
@@ -1098,13 +1028,13 @@ export default function AddGame() {
                         )}
                       />
                       {errors.players?.[index]?.corporation && (
-                        <span style={errStyle}>{errors.players[index]!.corporation!.message}</span>
+                        <span className={errClass}>{errors.players[index]!.corporation!.message}</span>
                       )}
                     </div>
 
                     {(mergerCounts[index] ?? 1) >= 2 && (
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <label style={{ ...labelStyle, color: '#d4a820' }}>Merger corp</label>
+                      <div className="flex-1 min-w-0">
+                        <label className="block font-body text-[0.68rem] font-medium tracking-[0.06em] uppercase text-[#d4a820] mb-[5px]">Merger corp</label>
                         <Combobox
                           value={extraCorp2[index] ?? ''}
                           onChange={v => setExtraCorp2(prev => { const n = [...prev]; n[index] = v; return n })}
@@ -1115,8 +1045,8 @@ export default function AddGame() {
                     )}
 
                     {(mergerCounts[index] ?? 1) >= 3 && (
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <label style={{ ...labelStyle, color: '#d4a820' }}>3rd corp</label>
+                      <div className="flex-1 min-w-0">
+                        <label className="block font-body text-[0.68rem] font-medium tracking-[0.06em] uppercase text-[#d4a820] mb-[5px]">3rd corp</label>
                         <Combobox
                           value={extraCorp3[index] ?? ''}
                           onChange={v => setExtraCorp3(prev => { const n = [...prev]; n[index] = v; return n })}
@@ -1127,19 +1057,19 @@ export default function AddGame() {
                     )}
 
                     {/* Merger + remove buttons */}
-                    <div style={{ display: 'flex', gap: '4px' }}>
+                    <div className="flex gap-1">
                       {(mergerCounts[index] ?? 1) < 3 && (
                         <button
                           type="button"
                           onClick={() => addMerger(index)}
                           title="Player used the Merger Prelude card"
-                          style={mergerBtnStyle}
+                          className={mergerBtnClass}
                         >
                           Merger +
                         </button>
                       )}
                       {(mergerCounts[index] ?? 1) > 1 && (
-                        <button type="button" onClick={() => removeMerger(index)} style={removeMergerBtnStyle}>−</button>
+                        <button type="button" onClick={() => removeMerger(index)} className={removeMergerBtnClass}>−</button>
                       )}
                     </div>
 
@@ -1148,7 +1078,7 @@ export default function AddGame() {
                       <button
                         type="button"
                         onClick={() => removePlayer(index)}
-                        style={{ padding: '7px 10px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px', color: '#625c7c', cursor: 'pointer', fontSize: '0.8rem' }}
+                        className="px-2.5 py-[7px] bg-transparent border border-[#3e325e] rounded text-[#625c7c] cursor-pointer text-[0.8rem] hover:border-[#625c7c] transition-colors"
                       >
                         ✕
                       </button>
@@ -1158,8 +1088,8 @@ export default function AddGame() {
 
                 {/* CEO field — only when CEO expansion is active */}
                 {hasCEO && (
-                  <div style={{ marginBottom: '12px', maxWidth: '220px' }}>
-                    <label style={{ ...labelStyle, color: '#d07832' }}>CEO</label>
+                  <div className="mb-3 max-w-[220px]">
+                    <label className="block font-body text-[0.68rem] font-medium tracking-[0.06em] uppercase text-[#d07832] mb-[5px]">CEO</label>
                     <Combobox
                       value={ceos[index] ?? ''}
                       onChange={v => setCeos(prev => { const n = [...prev]; n[index] = v; return n })}
@@ -1171,22 +1101,22 @@ export default function AddGame() {
                 )}
 
                 {/* Row 2: Score fields + Place */}
-                <div className="addgame-score-row" style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'flex-end' }}>
+                <div className="addgame-score-row flex gap-2 mb-3 items-end">
                   {SCORE_FIELDS.map(f => (
-                    <div key={f.key} style={{ flex: '1 1 0', minWidth: '48px' }}>
-                      <label style={labelStyle}>{f.label}</label>
+                    <div key={f.key} className="flex-[1_1_0] min-w-[48px]">
+                      <label className={labelClass}>{f.label}</label>
                       <input
                         type="number"
                         step="1"
                         min={f.min}
                         {...register(`players.${index}.${f.key}`)}
-                        style={inputStyle}
+                        className={inputClass}
                       />
                     </div>
                   ))}
-                  <div style={{ flex: '0 0 72px' }}>
-                    <label style={labelStyle}>Place</label>
-                    <select {...register(`players.${index}.position`)} style={inputStyle}>
+                  <div className="w-[72px] shrink-0">
+                    <label className={labelClass}>Place</label>
+                    <select {...register(`players.${index}.position`)} className={inputClass}>
                       {[1, 2, 3, 4, 5].map(n => (
                         <option key={n} value={n}>{n}</option>
                       ))}
@@ -1195,45 +1125,45 @@ export default function AddGame() {
                 </div>
 
                 {/* Row 3: Strategy notes + Moon VP */}
-                <div className="addgame-notes-row" style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', marginBottom: hasParams ? '12px' : 0 }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={labelStyle}>Strategy notes</label>
+                <div className={`addgame-notes-row flex gap-2.5 items-end ${hasParams ? 'mb-3' : ''}`}>
+                  <div className="flex-1">
+                    <label className={labelClass}>Strategy notes</label>
                     <input
                       {...register(`players.${index}.key_notes`)}
                       placeholder="e.g. Jovian engine, plant strategy…"
-                      style={inputStyle}
+                      className={inputClass}
                     />
                   </div>
                   {hasMoon && (
-                    <div className="addgame-moon-row" style={{ display: 'contents' }}>
+                    <div className="addgame-moon-row contents">
                       {(['habitat_vp', 'logistics_vp', 'mining_vp'] as const).map(f => (
-                        <div key={f} style={{ flex: '0 0 75px' }}>
-                          <label style={labelStyle}>
+                        <div key={f} className="w-[75px] shrink-0">
+                          <label className={labelClass}>
                             {f === 'habitat_vp' ? 'Habitat' : f === 'logistics_vp' ? 'Logistics' : 'Mining'}
                           </label>
-                          <input type="number" min={0} step="1" {...register(`players.${index}.${f}`)} style={inputStyle} />
+                          <input type="number" min={0} step="1" {...register(`players.${index}.${f}`)} className={inputClass} />
                         </div>
                       ))}
                     </div>
                   )}
                   {hasPathfinders && (
-                    <div style={{ flex: '0 0 75px' }}>
-                      <label style={labelStyle}>P-Track</label>
-                      <input type="number" min={0} step="1" {...register(`players.${index}.plantery_vp`)} style={inputStyle} />
+                    <div className="w-[75px] shrink-0">
+                      <label className={labelClass}>P-Track</label>
+                      <input type="number" min={0} step="1" {...register(`players.${index}.plantery_vp`)} className={inputClass} />
                     </div>
                   )}
                 </div>
 
                 {/* Row 4: Parameter contributions */}
                 {hasParams && (
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', paddingTop: '12px', borderTop: '1px solid #322850', flexWrap: 'wrap' }}>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.67rem', letterSpacing: '0.06em', textTransform: 'uppercase', color: '#504270', alignSelf: 'center', whiteSpace: 'nowrap', minWidth: '58px' }}>
+                  <div className="flex gap-2.5 items-end pt-3 border-t border-[#322850] flex-wrap">
+                    <span className="font-body text-[0.67rem] tracking-[0.06em] uppercase text-[#504270] self-center whitespace-nowrap min-w-[58px]">
                       Steps raised
                     </span>
                     {PARAM_FIELDS.map(f => (
-                      <div key={f.key} style={{ flex: '0 0 80px' }}>
-                        <label style={{ ...labelStyle, color: f.color }}>{f.label}</label>
-                        <input type="number" min={0} {...register(`players.${index}.${f.key}`)} style={inputStyle} />
+                      <div key={f.key} className="w-20 shrink-0">
+                        <label className={labelClass} style={{ color: f.color }}>{f.label}</label>
+                        <input type="number" min={0} {...register(`players.${index}.${f.key}`)} className={inputClass} />
                       </div>
                     ))}
                     {hasMoon && ([
@@ -1241,9 +1171,9 @@ export default function AddGame() {
                       { key: 'mining_steps',   label: 'Mining',    color: '#a0724a' },
                       { key: 'logistics_steps',label: 'Logistics', color: '#8e87a8' },
                     ] as const).map(f => (
-                      <div key={f.key} style={{ flex: '0 0 80px' }}>
-                        <label style={{ ...labelStyle, color: f.color }}>{f.label}</label>
-                        <input type="number" min={0} {...register(`players.${index}.${f.key}`)} style={inputStyle} />
+                      <div key={f.key} className="w-20 shrink-0">
+                        <label className={labelClass} style={{ color: f.color }}>{f.label}</label>
+                        <input type="number" min={0} {...register(`players.${index}.${f.key}`)} className={inputClass} />
                       </div>
                     ))}
                   </div>
@@ -1254,28 +1184,22 @@ export default function AddGame() {
         </div>
 
         {/* ── SUBMIT ───────────────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div className="flex gap-3 items-center">
           <button
             type="submit"
             disabled={saving || saved}
-            style={{
-              padding: '10px 28px',
-              background: saved ? '#4a9e6b' : saving ? '#282042' : '#9b50f0',
-              border: 'none', borderRadius: '4px', color: '#fff',
-              fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.9rem',
-              cursor: saving || saved ? 'not-allowed' : 'pointer', transition: 'background 0.15s',
-            }}
+            className={`px-7 py-[10px] border-none rounded text-white font-body font-semibold text-[0.9rem] transition-colors ${saved ? 'bg-win-500 cursor-not-allowed' : saving ? 'bg-[#282042] cursor-not-allowed' : 'bg-[#9b50f0] cursor-pointer'}`}
           >
             {saved ? '✓ Saved' : saving ? 'Saving…' : isEdit ? 'Update game' : 'Save game'}
           </button>
           <Link
             to={isEdit ? `/games/${editId}` : '/admin'}
-            style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#625c7c', textDecoration: 'none' }}
+            className="font-body text-[0.8rem] text-[#625c7c] no-underline"
           >
             Cancel
           </Link>
           {saveError && (
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#e05535' }}>
+            <span className="font-body text-[0.78rem] text-mars-500">
               Error: {saveError}
             </span>
           )}
@@ -1284,26 +1208,4 @@ export default function AddGame() {
       </form>
     </div>
   )
-}
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const sectionLabel: React.CSSProperties = {
-  fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.8rem',
-  letterSpacing: '0.1em', textTransform: 'uppercase', color: '#625c7c', marginBottom: '16px',
-}
-const errStyle: React.CSSProperties = {
-  fontFamily: 'var(--font-body)', fontSize: '0.68rem', color: '#e05535', marginTop: '3px', display: 'block',
-}
-const mergerBtnStyle: React.CSSProperties = {
-  padding: '6px 9px', background: 'rgba(212, 168, 32, 0.08)',
-  border: '1px solid rgba(212, 168, 32, 0.3)', borderRadius: '4px',
-  color: '#d4a820', fontFamily: 'var(--font-body)', fontSize: '0.72rem',
-  cursor: 'pointer', whiteSpace: 'nowrap',
-}
-const removeMergerBtnStyle: React.CSSProperties = {
-  padding: '6px 16px', background: 'rgba(224, 85, 53, 0.08)',
-  border: '1px solid rgba(224, 85, 53, 0.4)', borderRadius: '4px',
-  color: '#e05535', fontFamily: 'var(--font-body)',
-  fontSize: '0.72rem', cursor: 'pointer',
 }

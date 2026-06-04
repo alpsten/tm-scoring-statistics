@@ -1,21 +1,23 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import PageHeader from '../components/ui/PageHeader'
+import { SkeletonHeader } from '../components/ui/PageSkeleton'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useNotes, addNote, updateNote, deleteNote } from '../lib/hooks'
 import { useAuth } from '../context/useAuth'
 import type { NoteCategory, SiteNote } from '../lib/queries'
-
-const SECTIONS: { key: NoteCategory; label: string; color: string; bg: string; border: string }[] = [
-  { key: 'in_progress', label: 'In Progress', color: '#c9a030', bg: 'rgba(201,160,48,0.08)',  border: 'rgba(201,160,48,0.3)'  },
-  { key: 'todo',        label: 'TODO',        color: '#5b8dd9', bg: 'rgba(91,141,217,0.08)',  border: 'rgba(91,141,217,0.3)'  },
-  { key: 'done',        label: 'Done',        color: '#4a9e6b', bg: 'rgba(74,158,107,0.08)',  border: 'rgba(74,158,107,0.3)'  },
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+const SECTIONS: { key: NoteCategory; label: string }[] = [
+  { key: 'in_progress', label: 'Under Development' },
+  { key: 'todo',        label: 'Wishlist'          },
 ]
 
 function NoteCard({ note, isAdmin, onSaved }: { note: SiteNote; isAdmin: boolean; onSaved: () => void }) {
-  const [editing, setEditing]   = useState(false)
-  const [content, setContent]   = useState(note.content)
-  const [category, setCategory] = useState<NoteCategory>(note.category)
-  const [saving, setSaving]     = useState(false)
+  const [editing, setEditing]             = useState(false)
+  const [content, setContent]             = useState(note.content)
+  const [category, setCategory]           = useState<NoteCategory>(note.category)
+  const [saving, setSaving]               = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   async function save() {
@@ -33,42 +35,48 @@ function NoteCard({ note, isAdmin, onSaved }: { note: SiteNote; isAdmin: boolean
 
   if (editing) {
     return (
-      <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <textarea
+      <div className="bg-card border border-border rounded-[6px] p-3.5 flex flex-col gap-2">
+        <Textarea
           value={content}
           onChange={e => setContent(e.target.value)}
           rows={3}
-          style={{ width: '100%', padding: '8px 10px', background: '#171228', border: '1px solid #3e325e', borderRadius: '4px', color: '#ece6ff', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+          className="text-[0.83rem] resize-y"
         />
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <select value={category} onChange={e => setCategory(e.target.value as NoteCategory)} style={{ padding: '4px 8px', background: '#171228', border: '1px solid #3e325e', borderRadius: '4px', color: '#ece6ff', fontFamily: 'var(--font-body)', fontSize: '0.78rem' }}>
+        <div className="flex gap-2 items-center">
+          <select
+            value={category}
+            onChange={e => setCategory(e.target.value as NoteCategory)}
+            className="px-2 py-1 bg-input border border-border rounded text-foreground font-body text-[0.78rem] outline-none"
+          >
             {SECTIONS.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
           </select>
-          <button onClick={save} disabled={saving} style={{ padding: '4px 14px', background: '#9b50f0', border: 'none', borderRadius: '4px', color: '#fff', fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}>
+          <Button size="xs" onClick={save} disabled={saving} className="font-body">
             {saving ? 'Saving…' : 'Save'}
-          </button>
-          <button onClick={() => { setEditing(false); setContent(note.content); setCategory(note.category) }} style={{ padding: '4px 10px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.78rem', cursor: 'pointer' }}>
+          </Button>
+          <Button size="xs" variant="ghost" onClick={() => { setEditing(false); setContent(note.content); setCategory(note.category) }}>
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-      <p style={{ margin: 0, fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--text-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap', flex: 1 }}>{note.content}</p>
+    <div className="bg-secondary border border-border rounded-[5px] p-3 flex justify-between items-start gap-3">
+      <p className="m-0 font-body text-[0.85rem] text-secondary-foreground leading-[1.6] whitespace-pre-wrap flex-1">
+        {note.content}
+      </p>
       {isAdmin && (
-        <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+        <div className="flex gap-1.5 shrink-0">
           {confirmDelete ? (
             <>
-              <button onClick={remove} style={{ padding: '3px 10px', background: 'rgba(224,85,53,0.12)', border: '1px solid rgba(224,85,53,0.4)', borderRadius: '3px', color: '#e05535', fontFamily: 'var(--font-body)', fontSize: '0.72rem', cursor: 'pointer' }}>Delete</button>
-              <button onClick={() => setConfirmDelete(false)} style={{ padding: '3px 8px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '3px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.72rem', cursor: 'pointer' }}>Cancel</button>
+              <Button size="xs" variant="destructive" onClick={remove} className="font-body">Delete</Button>
+              <Button size="xs" variant="ghost" onClick={() => setConfirmDelete(false)}>Cancel</Button>
             </>
           ) : (
             <>
-              <button onClick={() => setEditing(true)} style={{ padding: '3px 10px', background: 'rgba(155,80,240,0.08)', border: '1px solid rgba(155,80,240,0.3)', borderRadius: '3px', color: '#b87aff', fontFamily: 'var(--font-body)', fontSize: '0.72rem', cursor: 'pointer' }}>Edit</button>
-              <button onClick={() => setConfirmDelete(true)} style={{ padding: '3px 8px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '3px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.72rem', cursor: 'pointer' }}>×</button>
+              <Button size="xs" variant="outline" onClick={() => setEditing(true)} className="text-violet-400 border-violet-400/30 bg-violet-400/8 hover:bg-violet-400/15">Edit</Button>
+              <Button size="xs" variant="ghost" onClick={() => setConfirmDelete(true)} className="text-[var(--text-4)]">×</Button>
             </>
           )}
         </div>
@@ -94,29 +102,32 @@ function AddNoteForm({ category, onSaved }: { category: NoteCategory; onSaved: (
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} style={{ width: '100%', padding: '8px', background: 'transparent', border: '1px dashed #3e325e', borderRadius: '6px', color: '#504270', fontFamily: 'var(--font-body)', fontSize: '0.78rem', cursor: 'pointer', textAlign: 'left' }}>
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full py-2 bg-transparent border border-dashed border-border rounded-[6px] text-[var(--text-4)] font-body text-[0.78rem] cursor-pointer text-left px-3 hover:border-border hover:text-muted-foreground transition-colors"
+      >
         + Add note
       </button>
     )
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <textarea
+    <div className="flex flex-col gap-2">
+      <Textarea
         autoFocus
         value={content}
         onChange={e => setContent(e.target.value)}
         placeholder="Note content…"
         rows={3}
-        style={{ width: '100%', padding: '8px 10px', background: '#171228', border: '1px solid #3e325e', borderRadius: '4px', color: '#ece6ff', fontFamily: 'var(--font-body)', fontSize: '0.83rem', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+        className="text-[0.83rem] resize-y"
       />
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <button onClick={submit} disabled={saving || !content.trim()} style={{ padding: '5px 16px', background: '#9b50f0', border: 'none', borderRadius: '4px', color: '#fff', fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer' }}>
+      <div className="flex gap-2">
+        <Button size="sm" onClick={submit} disabled={saving || !content.trim()} className="font-body">
           {saving ? 'Adding…' : 'Add'}
-        </button>
-        <button onClick={() => { setOpen(false); setContent('') }} style={{ padding: '5px 10px', background: 'transparent', border: '1px solid #3e325e', borderRadius: '4px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.78rem', cursor: 'pointer' }}>
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setContent('') }}>
           Cancel
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -132,22 +143,37 @@ export default function Notes() {
     queryClient.invalidateQueries({ queryKey: ['site-notes'] })
   }
 
-  if (isLoading) return <div style={{ padding: '32px 36px', color: 'var(--text-4)', fontFamily: 'var(--font-body)' }}>Loading…</div>
+  if (isLoading) return (
+    <div className="page-enter py-8 px-9">
+      <SkeletonHeader />
+      <div className="flex flex-col gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-card border border-border rounded-[6px] p-4 flex flex-col gap-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 
   return (
-    <div className="page-enter" style={{ padding: '32px 36px' }}>
-      <PageHeader title="Notes" subtitle="Work in progress and TODO list" />
+    <div className="page-enter py-8 px-9">
+      <PageHeader title="Under Development" subtitle="What's being built and what's planned" />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
-        {SECTIONS.map(({ key, label, color, bg, border }) => {
+      <div className="grid gap-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+        {SECTIONS.map(({ key, label }) => {
           const sectionNotes = notes.filter(n => n.category === key)
           return (
-            <div key={key}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 14px', background: bg, border: `1px solid ${border}`, borderRadius: '6px', marginBottom: '10px' }}>
-                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', color }}>{label}</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color, opacity: 0.7 }}>{sectionNotes.length}</span>
+            <div key={key} className="bg-card border border-border rounded-[6px] p-4 flex flex-col gap-3">
+              <div className="font-display font-bold text-[0.75rem] tracking-[0.1em] uppercase text-[var(--text-4)] border-b border-border pb-2.5">
+                {label}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="flex flex-col gap-2">
+                {sectionNotes.length === 0 && (
+                  <p className="m-0 font-body text-[0.83rem] text-[var(--text-4)] italic">Nothing here yet.</p>
+                )}
                 {sectionNotes.map(note => (
                   <NoteCard key={note.id} note={note} isAdmin={isAdmin} onSaved={refresh} />
                 ))}

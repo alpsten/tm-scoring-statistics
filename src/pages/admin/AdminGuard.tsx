@@ -7,7 +7,7 @@ export default function AdminGuard({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#504270', letterSpacing: '0.1em' }}>
+      <div className="flex items-center justify-center h-screen font-mono text-[0.75rem] text-[#504270] tracking-[0.1em]">
         LOADING…
       </div>
     )

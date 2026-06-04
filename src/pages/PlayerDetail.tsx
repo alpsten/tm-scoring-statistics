@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import PageHeader from '../components/ui/PageHeader'
+import { SkeletonHeader, SkeletonStatGrid, SkeletonTable } from '../components/ui/PageSkeleton'
 import PositionBadge from '../components/ui/PositionBadge'
 import SectionHeading from '../components/ui/SectionHeading'
 import DataTable from '../components/ui/DataTable'
@@ -12,6 +13,13 @@ import { getCorps } from '../types/database'
 import Tag from '../components/ui/Tag'
 import { parseTags } from '../components/ui/tagUtils'
 import { EXPANSION_ICONS, NO_TAG, UNOFFICIAL_EXPANSIONS, PROJECT_CARD_TYPES, TYPE_COLORS } from '../lib/expansions'
+import { cn } from '@/lib/utils'
+
+const COLOR_NAMES: Record<string, string> = {
+  '#c62828': 'Red', '#2e7d32': 'Green', '#1565c0': 'Blue', '#f9a825': 'Yellow',
+  '#37474f': 'Black', '#e0e0e0': 'White', '#d84315': 'Orange', '#ad1457': 'Pink',
+  '#6a1b9a': 'Purple', '#78909c': 'Silver',
+}
 
 export default function PlayerDetail() {
   const rawName = useParams<{ name: string }>().name
@@ -47,7 +55,13 @@ export default function PlayerDetail() {
     }
   }, [gamesLoading])
 
-  if (gamesLoading || statsLoading) return <div style={loadingStyle}>Loading…</div>
+  if (gamesLoading || statsLoading) return (
+    <div className="page-enter py-8 px-9">
+      <SkeletonHeader />
+      <SkeletonStatGrid count={6} />
+      <SkeletonTable rows={8} cols={5} />
+    </div>
+  )
 
   const stats = (playerStats ?? []).find(p => p.player_name === name)
   const profile = profiles.find(p => p.player_name === name)
@@ -56,13 +70,16 @@ export default function PlayerDetail() {
     .sort((a, b) => b.date.localeCompare(a.date))
 
   if (!stats) {
-    return <div style={loadingStyle}>Player not found. <Link to="/players" style={{ color: '#e05535' }}>Back</Link></div>
+    return (
+      <div className="py-8 px-9 font-body text-[var(--text-4)]">
+        Player not found. <Link to="/players" className="text-mars-500">Back</Link>
+      </div>
+    )
   }
 
   const myResults = playerGames.map(g => g.player_results.find(r => r.player_name === name)!)
   const totalVP = myResults.reduce((sum, r) => sum + r.total_vp, 0)
 
-  // Win streak (playerGames is newest-first, so iterate reversed for chronological)
   let longestStreak = 0, tempStreak = 0
   for (let i = myResults.length - 1; i >= 0; i--) {
     if (myResults[i].position === 1) { tempStreak++; if (tempStreak > longestStreak) longestStreak = tempStreak }
@@ -71,7 +88,6 @@ export default function PlayerDetail() {
   let currentStreak = 0
   for (const r of myResults) { if (r.position === 1) currentStreak++; else break }
 
-  // Win rate by player count
   const winRateByCount: Record<number, { wins: number; games: number }> = {}
   for (let i = 0; i < playerGames.length; i++) {
     const pc = playerGames[i].player_count
@@ -92,13 +108,13 @@ export default function PlayerDetail() {
     return best
   }
 
-  const bestScore    = findBest(r => r.total_vp)
-  const bestTR       = findBest(r => r.tr)
-  const bestGreenery = findBest(r => r.greenery_vp)
-  const bestCity     = findBest(r => r.city_vp)
-  const bestCardVP   = findBest(r => r.card_vp)
-  const bestHabitat  = findBest(r => r.habitat_vp)
-  const bestMining   = findBest(r => r.mining_vp)
+  const bestScore     = findBest(r => r.total_vp)
+  const bestTR        = findBest(r => r.tr)
+  const bestGreenery  = findBest(r => r.greenery_vp)
+  const bestCity      = findBest(r => r.city_vp)
+  const bestCardVP    = findBest(r => r.card_vp)
+  const bestHabitat   = findBest(r => r.habitat_vp)
+  const bestMining    = findBest(r => r.mining_vp)
   const bestLogistics = findBest(r => r.logistics_vp)
   const biggestWin = (() => {
     let best: GameRecord | null = null
@@ -129,6 +145,7 @@ export default function PlayerDetail() {
     }
     return acc
   }, [])
+
   type GameRow = { id: string; game_number: number | null; date: string; map_name: string | null; corporations: string[]; position: number; total_vp: number; key_notes: string | null }
   const gameRows: GameRow[] = playerGames.map(game => {
     const result = game.player_results.find(r => r.player_name === name)!
@@ -136,9 +153,7 @@ export default function PlayerDetail() {
   })
 
   const cardRefMap = Object.fromEntries(cardRef.map(c => [c.card_name, c]))
-
   const isOfficial = (exps: string[]) => !exps.some(e => UNOFFICIAL_EXPANSIONS.has(e))
-
   const activeCardRef = officialOnly ? cardRef.filter(c => isOfficial(c.expansions)) : cardRef
   const activePlayerCards = officialOnly
     ? playerCards.filter(c => {
@@ -149,7 +164,6 @@ export default function PlayerDetail() {
 
   const PROJECT_TYPES = new Set<string>(PROJECT_CARD_TYPES)
 
-  // --- Tags on Project Cards (Automated + Active + Event pool only) ---
   const playerProjectTagPlays: Record<string, number> = {}
   let playerProjectTotalPlays = 0
   for (const c of activePlayerCards) {
@@ -182,7 +196,6 @@ export default function PlayerDetail() {
         .sort((a, b) => b.affinity - a.affinity)
     : []
 
-  // --- Card Types (project card pool only) ---
   const playerTypePlays: Record<string, number> = {}
   for (const c of activePlayerCards) {
     const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
@@ -208,7 +221,6 @@ export default function PlayerDetail() {
         .sort((a, b) => b.affinity - a.affinity)
     : []
 
-  // --- Corporations (corporation pool only) ---
   const playerCorpTagCounts: Record<string, number> = {}
   let corpTotalPlays = 0
   for (const game of playerGames) {
@@ -245,7 +257,6 @@ export default function PlayerDetail() {
         .slice(0, 3)
     : []
 
-  // --- Preludes (prelude pool only) ---
   const playerPreludeTagCounts: Record<string, number> = {}
   let preludeTotalPlays = 0
   for (const c of activePlayerCards) {
@@ -277,6 +288,7 @@ export default function PlayerDetail() {
         .sort((a, b) => b.affinity - a.affinity)
         .slice(0, 3)
     : []
+
   const globalWinRateMap = Object.fromEntries(globalCardStats.map(s => [s.card_name, s.win_rate]))
 
   const handleCardSort = (key: string) => {
@@ -297,11 +309,10 @@ export default function PlayerDetail() {
     {
       key: 'card_name',
       label: 'Card',
-      tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)' },
       render: c => {
         const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
         return (
-          <Link to={`/cards/${encodeURIComponent(canonical)}`} style={{ color: 'var(--text-1)', textDecoration: 'none' }}>
+          <Link to={`/cards/${encodeURIComponent(canonical)}`} className="font-body text-[0.83rem] text-foreground no-underline hover:text-mars-400 transition-colors">
             {canonical}
           </Link>
         )
@@ -317,7 +328,7 @@ export default function PlayerDetail() {
       render: c => {
         const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
         const base_vp = cardRefMap[canonical]?.base_vp
-        return <span style={{ color: base_vp != null ? '#c9a030' : 'var(--text-5)' }}>{base_vp ?? '/'}</span>
+        return <span className={base_vp != null ? 'text-score-400' : 'text-[var(--text-5)]'}>{base_vp ?? '/'}</span>
       },
     },
     {
@@ -329,8 +340,8 @@ export default function PlayerDetail() {
       render: c => {
         const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
         const wr = globalWinRateMap[canonical]
-        if (wr == null) return <span style={{ color: 'var(--text-5)' }}>—</span>
-        return <span style={{ color: wr >= 50 ? '#4a9e6b' : wr > 33 ? '#c9a030' : '#e05535' }}>{Math.round(wr)}%</span>
+        if (wr == null) return <span className="text-[var(--text-5)]">—</span>
+        return <span className={wr >= 50 ? 'text-win-500' : wr > 33 ? 'text-score-400' : 'text-mars-500'}>{Math.round(wr)}%</span>
       },
     },
     {
@@ -341,9 +352,9 @@ export default function PlayerDetail() {
       render: c => {
         const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
         const tags = parseTags(cardRefMap[canonical]?.tags ?? null)
-        if (tags.length === 0) return <span style={{ color: 'var(--text-5)' }}>—</span>
+        if (tags.length === 0) return <span className="text-[var(--text-5)]">—</span>
         return (
-          <span style={{ display: 'inline-flex', gap: '3px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <span className="inline-flex gap-[3px] flex-wrap justify-center">
             {tags.map((t, i) => <Tag key={`${t}-${i}`} name={t} />)}
           </span>
         )
@@ -357,12 +368,12 @@ export default function PlayerDetail() {
       render: c => {
         const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
         const exps = cardRefMap[canonical]?.expansions ?? []
-        if (exps.length === 0) return <span style={{ color: 'var(--text-5)' }}>—</span>
+        if (exps.length === 0) return <span className="text-[var(--text-5)]">—</span>
         return (
-          <span style={{ display: 'inline-flex', gap: '3px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <span className="inline-flex gap-[3px] flex-wrap justify-center">
             {exps.map(exp => EXPANSION_ICONS[exp]
-              ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} style={{ width: '16px', height: '16px', objectFit: 'contain' }} />
-              : <span key={exp} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', color: 'var(--text-4)' }}>{exp.slice(0, 3).toUpperCase()}</span>
+              ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} className="w-4 h-4 object-contain" />
+              : <span key={exp} className="font-mono text-[0.55rem] text-[var(--text-4)]">{exp.slice(0, 3).toUpperCase()}</span>
             )}
           </span>
         )
@@ -376,7 +387,7 @@ export default function PlayerDetail() {
       label: 'Date',
       tdStyle: { fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--text-3)' },
       render: r => r.game_number != null ? (
-        <Link to={`/games/${r.game_number}`} style={{ color: 'var(--text-3)', textDecoration: 'none' }}>
+        <Link to={`/games/${r.game_number}`} className="font-mono text-[0.78rem] text-[var(--text-3)] no-underline">
           {new Date(r.date).toLocaleDateString('sv-SE')}
         </Link>
       ) : <>{new Date(r.date).toLocaleDateString('sv-SE')}</>,
@@ -384,7 +395,7 @@ export default function PlayerDetail() {
     {
       key: 'map_name',
       label: 'Map',
-      tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-1)' },
+      tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.83rem' },
       render: r => <>{r.map_name ?? '—'}</>,
     },
     {
@@ -392,11 +403,11 @@ export default function PlayerDetail() {
       label: 'Corporation',
       tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.8rem' },
       render: r => (
-        <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
+        <span className="inline-flex flex-wrap gap-1 items-center">
           {r.corporations.map((corp, i) => (
-            <span key={corp} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              {i > 0 && <span style={{ color: 'var(--text-5)', fontSize: '0.7rem' }}>+</span>}
-              <Link to={`/corporations/${encodeURIComponent(corp)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>{corp}</Link>
+            <span key={corp} className="inline-flex items-center gap-1">
+              {i > 0 && <span className="text-[var(--text-5)] text-[0.7rem]">+</span>}
+              <Link to={`/corporations/${encodeURIComponent(corp)}`} className="text-violet-400 no-underline hover:text-violet-300 transition-colors">{corp}</Link>
             </span>
           ))}
         </span>
@@ -412,8 +423,8 @@ export default function PlayerDetail() {
       label: 'Score',
       tdStyle: { fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem' },
       render: r => (
-        <span style={{ color: r.position === 1 ? '#c9a030' : 'var(--text-3)' }}>
-          {r.total_vp}<span style={{ marginLeft: '3px' }}>VP</span>
+        <span className={r.position === 1 ? 'text-score-400' : 'text-[var(--text-3)]'}>
+          {r.total_vp}<span className="ml-[3px]">VP</span>
         </span>
       ),
     },
@@ -426,16 +437,18 @@ export default function PlayerDetail() {
   ]
 
   return (
-    <div className="page-enter" style={{ padding: '32px 36px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: '#707070', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.78rem', padding: 0 }}>← Back</button>
+    <div className="page-enter py-8 px-9">
+      <div className="mb-6">
+        <button onClick={() => navigate(-1)} className="bg-transparent border-none text-[var(--text-4)] cursor-pointer font-body text-[0.78rem] p-0 hover:text-muted-foreground transition-colors">
+          ← Back
+        </button>
       </div>
 
       <PageHeader
         title={
           profile?.preferred_color
-            ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ width: 14, height: 14, borderRadius: '50%', background: profile.preferred_color, border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0, display: 'inline-block' }} />
+            ? <span className="inline-flex items-center gap-2.5">
+                <span className="w-3.5 h-3.5 rounded-full shrink-0 inline-block border border-white/15" style={{ background: profile.preferred_color }} />
                 {name}
               </span>
             : name!
@@ -444,19 +457,14 @@ export default function PlayerDetail() {
       />
 
       {profile && (profile.preferred_color || profile.playing_style || profile.rival || profile.favorite_card || profile.most_tilting_card || profile.favorite_corporation || profile.trivia) && (() => {
-        const COLOR_NAMES: Record<string, string> = {
-          '#c62828': 'Red', '#2e7d32': 'Green', '#1565c0': 'Blue', '#f9a825': 'Yellow',
-          '#37474f': 'Black', '#e0e0e0': 'White', '#d84315': 'Orange', '#ad1457': 'Pink',
-          '#6a1b9a': 'Purple', '#78909c': 'Silver',
-        }
         const labelEl = (text: string) => (
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '5px' }}>{text}</div>
+          <div className="font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[var(--text-4)] mb-[5px]">{text}</div>
         )
         const rankedList = (items: (string | null | undefined)[], render: (v: string, i: number) => React.ReactNode) => (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div className="flex flex-col gap-1">
             {items.filter(Boolean).map((v, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: 'var(--text-5)', minWidth: '12px' }}>{i + 1}.</span>
+              <div key={i} className="flex items-center gap-1.5">
+                <span className="font-mono text-[0.72rem] text-[var(--text-5)] min-w-[12px]">{i + 1}.</span>
                 {render(v!, i)}
               </div>
             ))}
@@ -464,72 +472,70 @@ export default function PlayerDetail() {
         )
         return (
           <>
-          <SectionHeading>Profile</SectionHeading>
-          <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '16px 20px', marginBottom: '24px', display: 'inline-block', minWidth: 0 }}>
-            {/* Top row: ranked lists */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', marginBottom: (profile.playing_style || profile.rival || profile.trivia) ? '16px' : 0 }}>
-              {(profile.preferred_color || profile.preferred_color_2 || profile.preferred_color_3) && (
-                <div>
-                  {labelEl('Preferred Colors')}
-                  {rankedList([profile.preferred_color, profile.preferred_color_2, profile.preferred_color_3], (col) => (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ width: 12, height: 12, borderRadius: '50%', background: col, border: '1px solid rgba(255,255,255,0.15)', flexShrink: 0 }} />
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-2)' }}>{COLOR_NAMES[col] ?? col}</span>
-                    </span>
-                  ))}
-                </div>
-              )}
-              {profile.favorite_card && (
-                <div>
-                  {labelEl('Favorite Cards')}
-                  {rankedList([profile.favorite_card, profile.favorite_card_2, profile.favorite_card_3], (card) => (
-                    <Link to={`/cards/${encodeURIComponent(card)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#b87aff', textDecoration: 'none' }}>{card}</Link>
-                  ))}
-                </div>
-              )}
-              {profile.most_tilting_card && (
-                <div>
-                  {labelEl('Most Frustrating Cards')}
-                  {rankedList([profile.most_tilting_card, profile.most_tilting_card_2, profile.most_tilting_card_3], (card) => (
-                    <Link to={`/cards/${encodeURIComponent(card)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-2)', textDecoration: 'none' }}>{card}</Link>
-                  ))}
-                </div>
-              )}
-              {profile.favorite_corporation && (
-                <div>
-                  {labelEl('Favorite Corporations')}
-                  {rankedList([profile.favorite_corporation, profile.favorite_corporation_2, profile.favorite_corporation_3], (corp) => (
-                    <Link to={`/cards/${encodeURIComponent(corp)}`} style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: '#c9a030', textDecoration: 'none' }}>{corp}</Link>
-                  ))}
-                </div>
-              )}
-            </div>
-            {/* Bottom row: style, rival, trivia */}
-            {(profile.playing_style || profile.rival || profile.trivia) && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', paddingTop: '14px', borderTop: '1px solid var(--bd-panel)', alignItems: 'baseline' }}>
-                {profile.playing_style && (
+            <SectionHeading>Profile</SectionHeading>
+            <div className="bg-card border border-border rounded-[6px] px-5 py-4 mb-6 inline-block min-w-0">
+              <div className={cn('flex flex-wrap gap-6', (profile.playing_style || profile.rival || profile.trivia) && 'mb-4')}>
+                {(profile.preferred_color || profile.preferred_color_2 || profile.preferred_color_3) && (
                   <div>
-                    {labelEl('Style')}
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-2)' }}>{profile.playing_style}</div>
+                    {labelEl('Preferred Colors')}
+                    {rankedList([profile.preferred_color, profile.preferred_color_2, profile.preferred_color_3], (col) => (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-full shrink-0 border border-white/15" style={{ background: col }} />
+                        <span className="font-body text-[0.83rem] text-secondary-foreground">{COLOR_NAMES[col] ?? col}</span>
+                      </span>
+                    ))}
                   </div>
                 )}
-                {profile.rival && (
+                {profile.favorite_card && (
                   <div>
-                    {labelEl('Rival')}
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem' }}>
-                      <Link to={`/players/${encodeURIComponent(profile.rival)}`} style={{ color: '#e05535', textDecoration: 'none' }}>{profile.rival}</Link>
-                    </div>
+                    {labelEl('Favorite Cards')}
+                    {rankedList([profile.favorite_card, profile.favorite_card_2, profile.favorite_card_3], (card) => (
+                      <Link to={`/cards/${encodeURIComponent(card)}`} className="font-body text-[0.83rem] text-violet-400 no-underline hover:text-violet-300 transition-colors">{card}</Link>
+                    ))}
                   </div>
                 )}
-                {profile.trivia && (
+                {profile.most_tilting_card && (
                   <div>
-                    {labelEl('Trivia')}
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.83rem', color: 'var(--text-2)' }}>{profile.trivia}</div>
+                    {labelEl('Most Frustrating Cards')}
+                    {rankedList([profile.most_tilting_card, profile.most_tilting_card_2, profile.most_tilting_card_3], (card) => (
+                      <Link to={`/cards/${encodeURIComponent(card)}`} className="font-body text-[0.83rem] text-secondary-foreground no-underline">{card}</Link>
+                    ))}
+                  </div>
+                )}
+                {profile.favorite_corporation && (
+                  <div>
+                    {labelEl('Favorite Corporations')}
+                    {rankedList([profile.favorite_corporation, profile.favorite_corporation_2, profile.favorite_corporation_3], (corp) => (
+                      <Link to={`/cards/${encodeURIComponent(corp)}`} className="font-body text-[0.83rem] text-score-400 no-underline hover:text-score-300 transition-colors">{corp}</Link>
+                    ))}
                   </div>
                 )}
               </div>
-            )}
-          </div>
+              {(profile.playing_style || profile.rival || profile.trivia) && (
+                <div className="flex flex-wrap gap-5 pt-3.5 border-t border-border items-baseline">
+                  {profile.playing_style && (
+                    <div>
+                      {labelEl('Style')}
+                      <div className="font-body text-[0.83rem] text-secondary-foreground">{profile.playing_style}</div>
+                    </div>
+                  )}
+                  {profile.rival && (
+                    <div>
+                      {labelEl('Rival')}
+                      <div className="font-body text-[0.83rem]">
+                        <Link to={`/players/${encodeURIComponent(profile.rival)}`} className="text-mars-500 no-underline hover:text-mars-400 transition-colors">{profile.rival}</Link>
+                      </div>
+                    </div>
+                  )}
+                  {profile.trivia && (
+                    <div>
+                      {labelEl('Trivia')}
+                      <div className="font-body text-[0.83rem] text-secondary-foreground">{profile.trivia}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </>
         )
       })()}
@@ -537,38 +543,38 @@ export default function PlayerDetail() {
       <SectionHeading>Personal Achievements</SectionHeading>
 
       {/* Panel 1: Win stats — 2-column grid */}
-      <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', marginBottom: '16px' }}>
+      <div className="bg-card border border-border rounded-[6px] mb-4">
         {(() => {
           const statLabel = (text: string) => (
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>{text}</span>
+            <span className="font-mono text-[0.68rem] tracking-[0.08em] uppercase text-[var(--text-4)]">{text}</span>
           )
           const statRow = (label: string, node: React.ReactNode, last: boolean) => (
-            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: last ? 'none' : '1px solid var(--bd-panel)' }}>
+            <div key={label} className={cn('flex justify-between items-center px-4 py-2.5', !last && 'border-b border-border')}>
               {statLabel(label)}
               {node}
             </div>
           )
+          const wrColor = (wr: number) => wr >= 60 ? 'text-win-500' : wr >= 40 ? 'text-score-400' : 'text-mars-500'
           const left = [
             statRow('Wins', (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-3)' }}>
+              <span className="font-mono text-[0.9rem] font-bold text-[var(--text-3)]">
                 {stats.wins} wins of {stats.games_played} games
               </span>
             ), false),
             statRow('Overall Win Rate', (
-              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: stats.win_rate >= 60 ? '#4a9e6b' : stats.win_rate >= 40 ? '#c9a030' : '#e05535' }}>
+              <span className={cn('font-mono font-bold text-[0.95rem]', wrColor(stats.win_rate))}>
                 {Math.round(stats.win_rate)}%
               </span>
             ), false),
             statRow('Win Rate by Player Count', (
-              <span style={{ display: 'inline-flex', gap: '14px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem' }}>
+              <span className="inline-flex gap-3.5 font-mono text-[0.82rem]">
                 {Object.entries(winRateByCount).sort(([a], [b]) => Number(a) - Number(b)).map(([count, { wins, games }]) => {
                   const wr = wins / games * 100
-                  const wrColor = wr >= 60 ? '#4a9e6b' : wr >= 40 ? '#c9a030' : '#e05535'
                   return (
                     <span key={count}>
-                      <span style={{ fontWeight: 700, color: '#5b8dd9' }}>{count}P </span>
-                      <span style={{ fontWeight: 700, color: wrColor }}>{Math.round(wr)}%</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}> (<span style={{ color: wrColor }}>{wins}</span>/{games})</span>
+                      <span className="font-bold text-[#5b8dd9]">{count}P </span>
+                      <span className={cn('font-bold', wrColor(wr))}>{Math.round(wr)}%</span>
+                      <span className="text-[0.75rem] text-[var(--text-3)]"> (<span className={wrColor(wr)}>{wins}</span>/{games})</span>
                     </span>
                   )
                 })}
@@ -577,28 +583,28 @@ export default function PlayerDetail() {
           ]
           const right = [
             statRow('Win Streak', (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
-                <span style={{ fontWeight: 700, color: '#c9a030' }}>{longestStreak} games in a row</span>
+              <span className="font-mono text-[0.85rem]">
+                <span className="font-bold text-score-400">{longestStreak} games in a row</span>
                 {currentStreak > 0 && <>
-                  <span style={{ color: 'var(--text-5)', margin: '0 8px' }}>·</span>
-                  <span style={{ fontWeight: 700, color: '#4a9e6b' }}>Current {currentStreak} in a row</span>
+                  <span className="text-[var(--text-5)] mx-2">·</span>
+                  <span className="font-bold text-win-500">Current {currentStreak} in a row</span>
                 </>}
               </span>
             ), false),
             statRow('Average Score Per Game', (
-              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#c9a030' }}>
+              <span className="font-mono font-bold text-[0.95rem] text-score-400">
                 {Math.round(stats.avg_score)} VP
               </span>
             ), false),
             statRow('Total VP Gained', (
-              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: '#c9a030' }}>
+              <span className="font-mono font-bold text-[0.95rem] text-score-400">
                 {totalVP.toLocaleString()} VP
               </span>
             ), true),
           ]
           return (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-              <div style={{ borderRight: '1px solid var(--bd-panel)' }}>{left}</div>
+            <div className="grid grid-cols-2">
+              <div className="border-r border-border">{left}</div>
               <div>{right}</div>
             </div>
           )
@@ -606,30 +612,30 @@ export default function PlayerDetail() {
       </div>
 
       {/* Panel 2: Per-game records grid */}
-      <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '14px 16px', marginBottom: '32px' }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-4)', marginBottom: '12px' }}>
+      <div className="bg-card border border-border rounded-[6px] px-4 py-3.5 mb-8">
+        <div className="font-display font-semibold text-[0.72rem] tracking-[0.1em] uppercase text-[var(--text-4)] mb-3">
           Highest In a Single Game
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gridTemplateRows: 'repeat(3, auto)', gridAutoFlow: 'column', gap: '8px' }}>
+        <div className="grid gap-2" style={{ gridTemplateColumns: '1fr 1fr 1fr', gridTemplateRows: 'repeat(3, auto)', gridAutoFlow: 'column' }}>
           {([
-            { label: 'Highest Score',       record: bestScore,    color: '#c9a030', bg: 'rgba(201,160,48,0.12)',  border: 'rgba(201,160,48,0.4)',  fmt: (v: number) => `${v} VP`  },
-            { label: 'Biggest Win',         record: biggestWin,   color: '#c9a030', bg: 'rgba(201,160,48,0.12)',  border: 'rgba(201,160,48,0.4)',  fmt: (v: number) => `+${v} VP` },
-            { label: 'Terraforming Rating', record: bestTR,       color: '#e05535', bg: 'rgba(224,85,53,0.12)',   border: 'rgba(224,85,53,0.4)',   fmt: (v: number) => `${v} TR`  },
-            { label: 'Greenery VP',         record: bestGreenery, color: '#4a9e6b', bg: 'rgba(74,158,107,0.12)',  border: 'rgba(74,158,107,0.4)',  fmt: (v: number) => `${v} VP`  },
-            { label: 'City VP',             record: bestCity,     color: '#b0b0c4', bg: 'rgba(176,176,196,0.12)', border: 'rgba(176,176,196,0.4)', fmt: (v: number) => `${v} VP`  },
-            { label: 'Card VP',             record: bestCardVP,   color: '#b07840', bg: 'rgba(176,120,64,0.12)',  border: 'rgba(176,120,64,0.4)',  fmt: (v: number) => `${v} VP`  },
-            { label: 'Habitat VP',          record: bestHabitat,  color: '#2ec4b6', bg: 'rgba(46,196,182,0.12)',  border: 'rgba(46,196,182,0.4)',  fmt: (v: number) => `${v} VP`  },
-            { label: 'Mining VP',           record: bestMining,   color: '#7a4820', bg: 'rgba(122,72,32,0.12)',   border: 'rgba(122,72,32,0.4)',   fmt: (v: number) => `${v} VP`  },
-            { label: 'Logistics VP',        record: bestLogistics, color: '#8080a0', bg: 'rgba(128,128,160,0.12)', border: 'rgba(128,128,160,0.4)', fmt: (v: number) => `${v} VP`  },
+            { label: 'Highest Score',       record: bestScore,    color: '#e8c84a', bg: 'rgba(232,200,74,0.28)',  border: 'rgba(232,200,74,0.60)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'Biggest Win',         record: biggestWin,   color: '#e8c84a', bg: 'rgba(232,200,74,0.28)',  border: 'rgba(232,200,74,0.60)',  fmt: (v: number) => `+${v} VP` },
+            { label: 'Terraforming Rating', record: bestTR,       color: '#ff7a60', bg: 'rgba(255,122,96,0.28)',  border: 'rgba(255,122,96,0.60)',  fmt: (v: number) => `${v} TR`  },
+            { label: 'Greenery VP',         record: bestGreenery, color: '#e8c84a', bg: 'rgba(232,200,74,0.28)',  border: 'rgba(232,200,74,0.60)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'City VP',             record: bestCity,     color: '#e8c84a', bg: 'rgba(232,200,74,0.28)',  border: 'rgba(232,200,74,0.60)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'Card VP',             record: bestCardVP,   color: '#e8c84a', bg: 'rgba(232,200,74,0.28)',  border: 'rgba(232,200,74,0.60)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'Habitat VP',          record: bestHabitat,  color: '#e8c84a', bg: 'rgba(232,200,74,0.28)',  border: 'rgba(232,200,74,0.60)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'Mining VP',           record: bestMining,   color: '#e8c84a', bg: 'rgba(232,200,74,0.28)',  border: 'rgba(232,200,74,0.60)',  fmt: (v: number) => `${v} VP`  },
+            { label: 'Logistics VP',        record: bestLogistics, color: '#e8c84a', bg: 'rgba(232,200,74,0.28)',  border: 'rgba(232,200,74,0.60)',  fmt: (v: number) => `${v} VP`  },
           ] as const).map(({ label, record, color, bg, border, fmt }) => {
             const badge = record
               ? record.gameNumber != null
-                ? <Link to={`/games/${record.gameNumber}`} style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color, background: bg, border: `1px solid ${border}`, borderRadius: '4px', padding: '3px 10px', textDecoration: 'none', whiteSpace: 'nowrap' as const }}>{fmt(record.value)}</Link>
-                : <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color, background: bg, border: `1px solid ${border}`, borderRadius: '4px', padding: '3px 10px', whiteSpace: 'nowrap' as const }}>{fmt(record.value)}</span>
-              : <span style={{ color: 'var(--text-5)' }}>—</span>
+                ? <Link to={`/games/${record.gameNumber}`} className="font-mono font-bold text-[0.9rem] rounded px-2.5 py-[3px] no-underline min-w-[82px] inline-block text-center" style={{ color, background: bg, border: `1px solid ${border}` }}>{fmt(record.value)}</Link>
+                : <span className="font-mono font-bold text-[0.9rem] rounded px-2.5 py-[3px] min-w-[82px] inline-block text-center" style={{ color, background: bg, border: `1px solid ${border}` }}>{fmt(record.value)}</span>
+              : <span className="text-[var(--text-5)]">—</span>
             return (
-              <div key={label} style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>{label}</span>
+              <div key={label} className="bg-card border border-border rounded-[6px] px-3.5 py-2.5 flex justify-between items-center gap-2">
+                <span className="font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[var(--text-4)]">{label}</span>
                 {badge}
               </div>
             )
@@ -638,12 +644,21 @@ export default function PlayerDetail() {
       </div>
 
       {/* Score trend chart */}
-      <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '20px 24px', marginBottom: '28px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-4)' }}>Score trend</span>
-          <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+      <div className="bg-card border border-border rounded-[6px] px-6 py-5 mb-7">
+        <div className="flex items-center gap-2.5 flex-wrap mb-4">
+          <span className="font-display font-semibold text-[0.82rem] tracking-[0.1em] uppercase text-[var(--text-4)]">Score trend</span>
+          <div className="flex gap-[5px] flex-wrap">
             {['All', ...chartYears].map(y => (
-              <button key={y} onClick={() => setChartYear(y)} style={{ padding: '2px 9px', borderRadius: '10px', border: `1px solid ${chartYear === y ? '#5b8dd9' : 'var(--bd-panel)'}`, background: chartYear === y ? 'rgba(91,141,217,0.12)' : 'transparent', color: chartYear === y ? '#5b8dd9' : 'var(--text-4)', fontFamily: 'var(--font-mono)', fontSize: '0.68rem', cursor: 'pointer', transition: 'all 0.12s' }}>
+              <button
+                key={y}
+                onClick={() => setChartYear(y)}
+                className={cn(
+                  'px-2.5 py-[2px] rounded-[10px] font-mono text-[0.68rem] cursor-pointer transition-all',
+                  chartYear === y
+                    ? 'border border-[#5b8dd9] bg-[rgba(91,141,217,0.12)] text-[#5b8dd9]'
+                    : 'border border-border bg-transparent text-[var(--text-4)]'
+                )}
+              >
                 {y}
               </button>
             ))}
@@ -652,7 +667,7 @@ export default function PlayerDetail() {
         {(() => {
           const N = chartData.length
           const monthLabels = (leftMargin: number, rightMargin: number) => monthGroups.length > 0 ? (
-            <div style={{ position: 'relative', height: '28px', marginLeft: `${leftMargin}px`, marginRight: `${rightMargin}px` }}>
+            <div className="relative h-7" style={{ marginLeft: `${leftMargin}px`, marginRight: `${rightMargin}px` }}>
               {monthGroups.map((g, i) => {
                 const firstIdx = chartData.findIndex(d => d.fullDate === g.firstDate)
                 const nextFirstIdx = i < monthGroups.length - 1 ? chartData.findIndex(d => d.fullDate === monthGroups[i + 1].firstDate) : N
@@ -661,18 +676,18 @@ export default function PlayerDetail() {
                 const midPct = (leftPct + nextPct) / 2
                 return (
                   <div key={g.key}>
-                    <div style={{ position: 'absolute', left: `${leftPct}%`, top: 0, width: '1px', height: '12px', background: '#5b8dd9' }} />
-                    <div style={{ position: 'absolute', left: `${midPct}%`, top: '14px', transform: 'translateX(-50%)', fontFamily: 'var(--font-mono)', fontSize: '9px', fontWeight: 600, color: '#5b8dd9', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
+                    <div className="absolute top-0 w-px h-3 bg-[#5b8dd9]" style={{ left: `${leftPct}%` }} />
+                    <div className="absolute top-[14px] font-mono text-[9px] font-semibold text-[#5b8dd9] tracking-[0.06em] whitespace-nowrap -translate-x-1/2" style={{ left: `${midPct}%` }}>
                       {g.label.toUpperCase()}
                     </div>
                   </div>
                 )
               })}
-              <div style={{ position: 'absolute', right: 0, top: 0, width: '1px', height: '12px', background: '#5b8dd9' }} />
+              <div className="absolute top-0 right-0 w-px h-3 bg-[#5b8dd9]" />
             </div>
           ) : null
           return isMobile ? (
-            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+            <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' as any }}>
               <div style={{ width: Math.max(N * 22, 300) }}>
                 <div style={{ height: 220 }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -725,15 +740,14 @@ export default function PlayerDetail() {
             </>
           )
         })()}
-        <div style={{ display: 'flex', gap: '16px', marginTop: '10px', fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--text-4)' }}>
-          <span><span style={{ color: '#e05535' }}>●</span> Win</span>
-          <span><span style={{ color: 'var(--bd-secondary)' }}>●</span> Other finish</span>
+        <div className="flex gap-4 mt-2.5 font-body text-[0.7rem] text-[var(--text-4)]">
+          <span><span className="text-mars-500">●</span> Win</span>
+          <span><span className="text-[var(--bd-secondary)]">●</span> Other finish</span>
         </div>
       </div>
 
       {/* Head-to-head */}
       {(() => {
-        // Build per-opponent records from shared games
         const records: Record<string, { games: number; wins: number; losses: number; draws: number; scoreDiffs: number[] }> = {}
         for (const game of playerGames) {
           const myResult = game.player_results.find(r => r.player_name === name)!
@@ -742,7 +756,6 @@ export default function PlayerDetail() {
             if (!records[opp.player_name]) records[opp.player_name] = { games: 0, wins: 0, losses: 0, draws: 0, scoreDiffs: [] }
             records[opp.player_name].games++
             if (myResult.position === 1 && opp.position === 1) {
-              // tied on VP — tiebreaker is MegaCredits
               const myMC = myResult.mc ?? 0
               const oppMC = opp.mc ?? 0
               if (myMC > oppMC) records[opp.player_name].wins++
@@ -756,48 +769,36 @@ export default function PlayerDetail() {
             records[opp.player_name].scoreDiffs.push(myResult.total_vp - opp.total_vp)
           }
         }
-
         const opponents = Object.entries(records).sort((a, b) => b[1].games - a[1].games)
         if (opponents.length === 0) return null
 
         return (
-          <div style={{ marginBottom: '28px' }}>
+          <div className="mb-7">
             <SectionHeading>Head-to-head</SectionHeading>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+            <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
               {opponents.map(([opp, rec]) => {
                 const avgDiff = rec.scoreDiffs.reduce((s, v) => s + v, 0) / rec.scoreDiffs.length
                 const winRate = (rec.wins / rec.games) * 100
                 return (
-                  <div key={opp} style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '14px 16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                      <Link to={`/players/${encodeURIComponent(opp)}`} style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '0.87rem', color: 'var(--text-1)', textDecoration: 'none' }}>
+                  <div key={opp} className="bg-card border border-border rounded-[6px] px-4 py-3.5">
+                    <div className="flex justify-between items-start mb-2.5">
+                      <Link to={`/players/${encodeURIComponent(opp)}`} className="font-body font-semibold text-[0.87rem] text-foreground no-underline hover:text-mars-400 transition-colors">
                         {opp}
                       </Link>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#5b8dd9' }}>
-                        {rec.games} Games
-                      </span>
+                      <span className="font-mono text-[0.75rem] text-[#5b8dd9]">{rec.games} Games</span>
                     </div>
-                    {/* W / L bar */}
-                    <div style={{ display: 'flex', height: '4px', borderRadius: '2px', overflow: 'hidden', marginBottom: '10px', background: 'var(--bd-panel)' }}>
-                      {rec.wins > 0 && (
-                        <div style={{ width: `${winRate}%`, background: '#4a9e6b', transition: 'width 0.3s' }} />
-                      )}
-                      {rec.draws > 0 && (
-                        <div style={{ width: `${(rec.draws / rec.games) * 100}%`, background: '#707070', transition: 'width 0.3s' }} />
-                      )}
-                      {rec.losses > 0 && (
-                        <div style={{ width: `${(rec.losses / rec.games) * 100}%`, background: '#e05535', transition: 'width 0.3s' }} />
-                      )}
+                    <div className="flex h-1 rounded-full overflow-hidden mb-2.5 bg-border">
+                      {rec.wins > 0 && <div className="bg-win-500 transition-[width] duration-300" style={{ width: `${winRate}%` }} />}
+                      {rec.draws > 0 && <div className="bg-[#707070] transition-[width] duration-300" style={{ width: `${(rec.draws / rec.games) * 100}%` }} />}
+                      {rec.losses > 0 && <div className="bg-mars-500 transition-[width] duration-300" style={{ width: `${(rec.losses / rec.games) * 100}%` }} />}
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#4a9e6b' }}>{rec.wins}W</span>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#e05535' }}>{rec.losses}L</span>
-                        {rec.draws > 0 && (
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--text-4)' }}>{rec.draws}D</span>
-                        )}
+                    <div className="flex justify-between">
+                      <div className="flex gap-2.5">
+                        <span className="font-mono text-[0.8rem] text-win-500">{rec.wins}W</span>
+                        <span className="font-mono text-[0.8rem] text-mars-500">{rec.losses}L</span>
+                        {rec.draws > 0 && <span className="font-mono text-[0.8rem] text-[var(--text-4)]">{rec.draws}D</span>}
                       </div>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: avgDiff > 0 ? '#4a9e6b' : avgDiff < 0 ? '#e05535' : '#707070' }}>
+                      <span className={cn('font-mono text-[0.75rem]', avgDiff > 0 ? 'text-score-400' : avgDiff < 0 ? 'text-mars-500' : 'text-[#707070]')}>
                         {avgDiff > 0 ? '+' : ''}{Math.round(avgDiff)} VP avg
                       </span>
                     </div>
@@ -840,7 +841,7 @@ export default function PlayerDetail() {
             label: 'Corporation',
             tdStyle: { fontFamily: 'var(--font-body)', fontSize: '0.83rem' },
             render: r => (
-              <Link to={`/corporations/${encodeURIComponent(r.corp)}`} style={{ color: '#b87aff', textDecoration: 'none' }}>
+              <Link to={`/corporations/${encodeURIComponent(r.corp)}`} className="text-violet-400 no-underline hover:text-violet-300 transition-colors">
                 {r.corp}
               </Link>
             ),
@@ -851,7 +852,7 @@ export default function PlayerDetail() {
             label: 'Wins',
             align: 'center',
             tdStyle: { fontSize: '0.82rem' },
-            render: r => <span style={{ color: '#4a9e6b' }}>{r.wins}</span>,
+            render: r => <span className="text-win-500">{r.wins}</span>,
           },
           {
             key: 'win_rate',
@@ -859,7 +860,7 @@ export default function PlayerDetail() {
             align: 'center',
             tdStyle: { fontSize: '0.82rem' },
             render: r => (
-              <span style={{ color: r.win_rate >= 60 ? '#4a9e6b' : r.win_rate >= 40 ? '#c9a030' : '#e05535' }}>
+              <span className={r.win_rate >= 60 ? 'text-win-500' : r.win_rate >= 40 ? 'text-score-400' : 'text-mars-500'}>
                 {Math.round(r.win_rate)}%
               </span>
             ),
@@ -869,25 +870,28 @@ export default function PlayerDetail() {
             label: 'Avg Score',
             align: 'center',
             tdStyle: { fontSize: '0.82rem' },
-            render: r => <span style={{ color: '#c9a030' }}>{Math.round(r.avg_score)} VP</span>,
+            render: r => <span className="text-score-400">{Math.round(r.avg_score)} VP</span>,
           },
         ]
 
         return (
-          <div style={{ marginBottom: '28px' }}>
+          <div className="mb-7">
             <SectionHeading>Corporations Played</SectionHeading>
             <DataTable compact columns={corpColumns} rows={corpRows} rowKey={r => r.corp} />
             {allCorpRows.length > 5 && (
-              <div style={{ marginTop: '8px' }}>
+              <div className="mt-2">
                 <button
                   onClick={() => setAllCorpsOpen(o => !o)}
-                  style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', background: 'rgba(184,122,255,0.06)', border: '1px solid rgba(184,122,255,0.2)', borderRadius: allCorpsOpen ? '6px 6px 0 0' : '6px', cursor: 'pointer' }}
+                  className={cn(
+                    'w-full flex justify-between items-center px-3.5 py-2 bg-violet-400/6 border border-violet-400/20 cursor-pointer transition-colors',
+                    allCorpsOpen ? 'rounded-t-[6px]' : 'rounded-[6px]'
+                  )}
                 >
-                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#b87aff' }}>All corporations · {allCorpRows.length}</span>
-                  <span style={{ fontSize: '0.7rem', color: '#b87aff', transform: allCorpsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
+                  <span className="font-display font-semibold text-[0.72rem] tracking-[0.1em] uppercase text-violet-400">All corporations · {allCorpRows.length}</span>
+                  <span className={cn('text-[0.7rem] text-violet-400 transition-transform duration-150', allCorpsOpen && 'rotate-180')}>▼</span>
                 </button>
                 {allCorpsOpen && (
-                  <div style={{ border: '1px solid rgba(184,122,255,0.2)', borderTop: 'none', borderRadius: '0 0 6px 6px', overflow: 'hidden' }}>
+                  <div className="border border-violet-400/20 border-t-0 rounded-b-[6px] overflow-hidden">
                     <DataTable compact columns={corpColumns} rows={allCorpRows} rowKey={r => r.corp} />
                   </div>
                 )}
@@ -901,27 +905,23 @@ export default function PlayerDetail() {
       {playerCards.length > 0 && (() => {
         const top10 = [...playerCards].sort((a, b) => b.times_played - a.times_played).slice(0, 10)
         const sections: { label: string; color: string; bg: string; border: string; types: string[] }[] = [
-          { label: 'Prelude cards',    color: '#d9689a', bg: 'rgba(217,104,154,0.08)', border: 'rgba(217,104,154,0.3)', types: ['Prelude'] },
-          { label: 'Automated cards',  color: '#4a9e6b', bg: 'rgba(74,158,107,0.08)',  border: 'rgba(74,158,107,0.3)',  types: ['Automated'] },
-          { label: 'Active cards',     color: '#5b8dd9', bg: 'rgba(91,141,217,0.08)',  border: 'rgba(91,141,217,0.3)',  types: ['Active'] },
-          { label: 'Event cards',      color: '#e05535', bg: 'rgba(224,85,53,0.08)',   border: 'rgba(224,85,53,0.3)',   types: ['Event'] },
+          { label: 'Prelude cards',   color: '#d9689a', bg: 'rgba(217,104,154,0.08)', border: 'rgba(217,104,154,0.3)', types: ['Prelude'] },
+          { label: 'Automated cards', color: '#4a9e6b', bg: 'rgba(74,158,107,0.08)',  border: 'rgba(74,158,107,0.3)',  types: ['Automated'] },
+          { label: 'Active cards',    color: '#5b8dd9', bg: 'rgba(91,141,217,0.08)',  border: 'rgba(91,141,217,0.3)',  types: ['Active'] },
+          { label: 'Event cards',     color: '#e05535', bg: 'rgba(224,85,53,0.08)',   border: 'rgba(224,85,53,0.3)',   types: ['Event'] },
         ]
         const toggleSection = (label: string) =>
           setCollapsedCardSections(prev => { const s = new Set(prev); s.has(label) ? s.delete(label) : s.add(label); return s })
         return (
-          <div style={{ marginBottom: '28px' }}>
+          <div className="mb-7">
             <SectionHeading>Cards played · {playerCards.length} unique</SectionHeading>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-
-              {/* Top 10 across all types */}
-              <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', padding: '10px 14px', marginBottom: '4px' }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: '8px' }}>
+            <div className="flex flex-col gap-2">
+              <div className="bg-card border border-border rounded-[6px] px-3.5 py-2.5 mb-1">
+                <div className="font-display font-semibold text-[0.72rem] tracking-[0.1em] uppercase text-[var(--text-3)] mb-2">
                   Top 10 Most Played
                 </div>
                 <DataTable compact columns={cardColumns} rows={sortCards(top10)} rowKey={c => c.card_name} sortKey={cardSortKey} sortDir={cardSortDir} onSort={handleCardSort} />
               </div>
-
-              {/* Colour sections — collapsed by default */}
               {sections.map(({ label, color, bg, border, types }) => {
                 const rows = playerCards.filter(c => {
                   const canonical = CARD_NAME_CORRECTIONS[c.card_name] ?? c.card_name
@@ -933,13 +933,14 @@ export default function PlayerDetail() {
                   <div key={label}>
                     <button
                       onClick={() => toggleSection(label)}
-                      style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 14px', background: bg, border: `1px solid ${border}`, borderRadius: collapsed ? '6px' : '6px 6px 0 0', cursor: 'pointer' }}
+                      className={cn('w-full flex justify-between items-center px-3.5 py-2 cursor-pointer', collapsed ? 'rounded-[6px]' : 'rounded-t-[6px]')}
+                      style={{ background: bg, border: `1px solid ${border}` }}
                     >
-                      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', color }}>{label} · {rows.length}</span>
-                      <span style={{ fontSize: '0.7rem', color, transform: collapsed ? 'none' : 'rotate(180deg)', transition: 'transform 0.15s' }}>▼</span>
+                      <span className="font-display font-semibold text-[0.72rem] tracking-[0.1em] uppercase" style={{ color }}>{label} · {rows.length}</span>
+                      <span className={cn('text-[0.7rem] transition-transform duration-150', !collapsed && 'rotate-180')} style={{ color }}>▼</span>
                     </button>
                     {!collapsed && (
-                      <div style={{ border: `1px solid ${border}`, borderTop: 'none', borderRadius: '0 0 6px 6px', overflow: 'hidden' }}>
+                      <div className="border-t-0 rounded-b-[6px] overflow-hidden" style={{ border: `1px solid ${border}` }}>
                         <DataTable compact columns={cardColumns} rows={sortCards(rows)} rowKey={c => c.card_name} sortKey={cardSortKey} sortDir={cardSortDir} onSort={handleCardSort} />
                       </div>
                     )}
@@ -953,39 +954,45 @@ export default function PlayerDetail() {
 
       {/* Favourites */}
       {(topTags.length > 0 || topCorpTags.length > 0 || topPreludeTags.length > 0 || topCardTypes.length > 0) && (
-        <div style={{ marginBottom: '28px' }}>
+        <div className="mb-7">
           <SectionHeading>Favourites</SectionHeading>
-          <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden' }}>
-
-            {/* Toggle — left aligned */}
-            <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--bd-panel)', display: 'flex', gap: '4px' }}>
+          <div className="bg-card border border-border rounded-[6px] overflow-hidden">
+            <div className="px-4 py-2 border-b border-border flex gap-1">
               {([['Official-Cards', true], ['Unofficial-Fan-Cards', false]] as const).map(([label, val]) => {
                 const active = officialOnly === val
                 return (
-                  <button key={label} onClick={() => setOfficialOnly(val)} style={{ padding: '3px 10px', borderRadius: '4px', border: `1px solid ${active ? '#5b8dd9' : 'var(--bd-secondary)'}`, background: active ? 'rgba(91,141,217,0.12)' : 'transparent', color: active ? '#5b8dd9' : 'var(--text-4)', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.12s' }}>
+                  <button
+                    key={label}
+                    onClick={() => setOfficialOnly(val)}
+                    className={cn(
+                      'px-2.5 py-[3px] rounded font-mono text-[0.65rem] font-bold cursor-pointer transition-all',
+                      active
+                        ? 'border border-[#5b8dd9] bg-[rgba(91,141,217,0.12)] text-[#5b8dd9]'
+                        : 'border border-border bg-transparent text-[var(--text-4)]'
+                    )}
+                  >
                     {label}
                   </button>
                 )
               })}
             </div>
 
-            {/* Tags on Project Cards — full width, 5 per column */}
             {topTags.length > 0 && (
-              <div style={{ padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>Tags on Project Cards</div>
-                <div style={{ display: 'flex', gap: '0', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <div className="px-4 py-2.5 flex flex-col gap-2.5">
+                <div className="font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[var(--text-4)]">Tags on Project Cards</div>
+                <div className="flex gap-0 items-start flex-wrap">
                   {Array.from({ length: Math.ceil(topTags.length / 5) }, (_, col) => (
-                    <div key={col} style={{ display: 'flex', alignItems: 'stretch' }}>
-                      {col > 0 && <div style={{ width: '1px', background: 'var(--bd-panel)', margin: '0 31px', alignSelf: 'stretch' }} />}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '165px' }}>
+                    <div key={col} className="flex items-stretch">
+                      {col > 0 && <div className="w-px bg-border mx-[31px] self-stretch" />}
+                      <div className="flex flex-col gap-2.5 min-w-[165px]">
                         {topTags.slice(col * 5, col * 5 + 5).map(({ tag, plays, affinity }, i) => {
                           const rank = col * 5 + i + 1
                           return (
-                            <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-5)', minWidth: '18px', textAlign: 'right' }}>{rank}.</span>
+                            <div key={tag} className="flex items-center gap-2.5">
+                              <span className="font-mono text-[0.65rem] text-[var(--text-5)] min-w-[18px] text-right">{rank}.</span>
                               <Tag name={tag} />
-                              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-2)' }}>{affinity.toFixed(2)}×</span>
-                              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-5)' }}>({plays})</span>
+                              <span className="font-mono font-bold text-[0.82rem] text-secondary-foreground">{affinity.toFixed(2)}×</span>
+                              <span className="font-mono text-[0.7rem] text-[var(--text-5)]">({plays})</span>
                             </div>
                           )
                         })}
@@ -996,33 +1003,32 @@ export default function PlayerDetail() {
               </div>
             )}
 
-            {/* Corporations + Preludes row */}
             {(topCorpTags.length > 0 || topPreludeTags.length > 0) && (
-              <div style={{ borderTop: '1px solid var(--bd-panel)', padding: '10px 16px', display: 'flex', gap: '0', alignItems: 'stretch' }}>
+              <div className="border-t border-border px-4 py-2.5 flex gap-0 items-stretch">
                 {topCorpTags.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '165px' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>Corporations</div>
+                  <div className="flex flex-col gap-2.5 min-w-[165px]">
+                    <div className="font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[var(--text-4)]">Corporations</div>
                     {topCorpTags.map(({ tag, plays, affinity }, i) => (
-                      <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-5)', minWidth: '18px', textAlign: 'right' }}>{i + 1}.</span>
+                      <div key={tag} className="flex items-center gap-2.5">
+                        <span className="font-mono text-[0.65rem] text-[var(--text-5)] min-w-[18px] text-right">{i + 1}.</span>
                         <Tag name={tag} />
-                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-2)' }}>{affinity.toFixed(2)}×</span>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-5)' }}>({plays})</span>
+                        <span className="font-mono font-bold text-[0.82rem] text-secondary-foreground">{affinity.toFixed(2)}×</span>
+                        <span className="font-mono text-[0.7rem] text-[var(--text-5)]">({plays})</span>
                       </div>
                     ))}
                   </div>
                 )}
                 {topPreludeTags.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'stretch', flexShrink: 0 }}>
-                    {topCorpTags.length > 0 && <div style={{ width: '1px', background: 'var(--bd-panel)', margin: '0 31px', alignSelf: 'stretch' }} />}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>Preludes</div>
+                  <div className="flex items-stretch shrink-0">
+                    {topCorpTags.length > 0 && <div className="w-px bg-border mx-[31px] self-stretch" />}
+                    <div className="flex flex-col gap-2.5">
+                      <div className="font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[var(--text-4)]">Preludes</div>
                       {topPreludeTags.map(({ tag, plays, affinity }, i) => (
-                        <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-5)', minWidth: '18px', textAlign: 'right' }}>{i + 1}.</span>
+                        <div key={tag} className="flex items-center gap-2.5">
+                          <span className="font-mono text-[0.65rem] text-[var(--text-5)] min-w-[18px] text-right">{i + 1}.</span>
                           <Tag name={tag} />
-                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-2)' }}>{affinity.toFixed(2)}×</span>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-5)' }}>({plays})</span>
+                          <span className="font-mono font-bold text-[0.82rem] text-secondary-foreground">{affinity.toFixed(2)}×</span>
+                          <span className="font-mono text-[0.7rem] text-[var(--text-5)]">({plays})</span>
                         </div>
                       ))}
                     </div>
@@ -1031,24 +1037,22 @@ export default function PlayerDetail() {
               </div>
             )}
 
-            {/* Card Type — vertical list */}
             {topCardTypes.length > 0 && (
-              <div style={{ borderTop: '1px solid var(--bd-panel)', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-4)' }}>Card Type</div>
+              <div className="border-t border-border px-4 py-2.5 flex flex-col gap-2.5">
+                <div className="font-mono text-[0.72rem] tracking-[0.08em] uppercase text-[var(--text-4)]">Card Type</div>
                 {topCardTypes.map(({ type, plays, affinity }, i) => (
-                  <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: 'var(--text-5)', minWidth: '18px', textAlign: 'right' }}>{i + 1}.</span>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', fontWeight: 600, color: TYPE_COLORS[type]?.color, minWidth: '80px' }}>{type}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-2)' }}>{affinity.toFixed(2)}×</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-5)' }}>({plays})</span>
+                  <div key={type} className="flex items-center gap-2.5">
+                    <span className="font-mono text-[0.65rem] text-[var(--text-5)] min-w-[18px] text-right">{i + 1}.</span>
+                    <span className="font-body text-[0.8rem] font-semibold min-w-[80px]" style={{ color: TYPE_COLORS[type]?.color }}>{type}</span>
+                    <span className="font-mono font-bold text-[0.82rem] text-secondary-foreground">{affinity.toFixed(2)}×</span>
+                    <span className="font-mono text-[0.7rem] text-[var(--text-5)]">({plays})</span>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Footer */}
-            <div style={{ borderTop: '1px solid var(--bd-panel)', padding: '8px 16px' }}>
-              <span style={{ fontFamily: 'var(--font-body)', color: 'var(--text-5)', fontStyle: 'italic', lineHeight: 1.6, fontSize: '0.78rem' }}>
+            <div className="border-t border-border px-4 py-2">
+              <span className="font-body text-[var(--text-5)] italic leading-[1.6] text-[0.78rem]">
                 All sections are ranked by affinity. How much more often you play a tag or type compared to its share of the relevant card pool. Tags and Card Type are calculated from project cards (Automated, Active, Event) only. Corporations and Preludes each use their own separate pools. Toggle to exclude fan-expansion cards (Ares, CEO, The Moon, Pathfinders).<br /><br />For example, if 10% of all project cards have the Jovian tag but 25% of your plays involve Jovian cards, your affinity is 2.50×. Likewise, if Automated cards make up 40% of the pool but 60% of your plays are Automated, your affinity is 1.50×. A score above 1.0× indicates a genuine preference beyond what random card selection would produce.
               </span>
             </div>
@@ -1069,25 +1073,23 @@ export default function PlayerDetail() {
           return years.map(year => {
             const open = openYears.has(year)
             return (
-              <div key={year} style={{ marginBottom: '8px' }}>
+              <div key={year} className="mb-2">
                 <button
                   onClick={() => setOpenYears(prev => { const s = new Set(prev); s.has(year) ? s.delete(year) : s.add(year); return s })}
-                  style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: open ? '6px 6px 0 0' : '6px', cursor: 'pointer', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.82rem', letterSpacing: '0.08em', color: 'var(--text-3)' }}
+                  className={cn(
+                    'w-full flex justify-between items-center px-4 py-2.5 bg-card border border-border cursor-pointer font-display font-semibold text-[0.82rem] tracking-[0.08em] text-[var(--text-3)]',
+                    open ? 'rounded-t-[6px]' : 'rounded-[6px]'
+                  )}
                 >
                   <span>{year}</span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-5)', fontWeight: 400 }}>{byYear[year].length} games</span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-5)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
+                  <span className="flex items-center gap-2.5">
+                    <span className="font-mono text-[0.7rem] text-[var(--text-5)] font-normal">{byYear[year].length} games</span>
+                    <span className={cn('text-[0.7rem] text-[var(--text-5)] transition-transform duration-150', open && 'rotate-180')}>▼</span>
                   </span>
                 </button>
                 {open && (
-                  <div style={{ border: '1px solid var(--bd-panel)', borderTop: 'none', borderRadius: '0 0 6px 6px', overflow: 'hidden' }}>
-                    <DataTable
-                      compact
-                      columns={gameHistoryColumns}
-                      rows={byYear[year]}
-                      rowKey={r => r.id}
-                    />
+                  <div className="border border-border border-t-0 rounded-b-[6px] overflow-hidden">
+                    <DataTable compact columns={gameHistoryColumns} rows={byYear[year]} rowKey={r => r.id} />
                   </div>
                 )}
               </div>
@@ -1097,10 +1099,4 @@ export default function PlayerDetail() {
       </div>
     </div>
   )
-}
-
-const loadingStyle: React.CSSProperties = {
-  padding: '32px 36px',
-  color: 'var(--text-4)',
-  fontFamily: 'var(--font-body)',
 }

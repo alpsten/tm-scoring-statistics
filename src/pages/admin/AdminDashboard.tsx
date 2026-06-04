@@ -2,103 +2,71 @@ import { Link } from 'react-router-dom'
 import PageHeader from '../../components/ui/PageHeader'
 import { useAuth } from '../../context/useAuth'
 
+const CARDS = [
+  {
+    to: '/admin/games/new',
+    icon: '＋',
+    iconColor: 'text-mars-500',
+    borderClass: 'border-mars-500/20 hover:border-mars-500/40',
+    title: 'Add game',
+    desc: 'Log a new game session with players, scores, and cards',
+  },
+  {
+    to: '/admin/parse-log',
+    icon: '⌨',
+    iconColor: 'text-mars-500',
+    borderClass: 'border-mars-500/20 hover:border-mars-500/40',
+    title: 'Parse game log',
+    desc: 'Import cards played and milestones from a game log',
+  },
+  {
+    to: '/admin/players/profiles',
+    icon: '◉',
+    iconColor: 'text-violet-500',
+    borderClass: 'border-[#3e325e] hover:border-violet-500/30',
+    title: 'Player profiles',
+    desc: 'Colors, playing styles, rivals, and trivia',
+  },
+  {
+    to: '/admin/cards/reference',
+    icon: '▣',
+    iconColor: 'text-[#2e8b8b]',
+    borderClass: 'border-[#3e325e] hover:border-[rgba(46,139,139,0.3)]',
+    title: 'Card reference',
+    desc: 'Manage the card database — tags, types, expansions',
+  },
+]
+
 export default function AdminDashboard() {
   const { user } = useAuth()
 
   return (
-    <div className="page-enter" style={{ padding: '32px 36px' }}>
-      <PageHeader
-        title="Admin"
-        subtitle={`Signed in as ${user?.email}`}
-      />
+    <div className="page-enter py-8 px-9 min-h-full bg-[#0c0e12]">
+      <PageHeader title="Admin" subtitle={`Signed in as ${user?.email}`} />
 
-      <div className="admin-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', maxWidth: '600px' }}>
-        <Link
-          to="/admin/games/new"
-          style={{
-            display: 'block',
-            padding: '24px',
-            background: '#1e1835',
-            border: '1px solid rgba(224, 85, 53, 0.2)',
-            borderRadius: '6px',
-            textDecoration: 'none',
-            transition: 'border-color 0.15s',
-          }}
-          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(224, 85, 53, 0.4)')}
-          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(224, 85, 53, 0.2)')}
-        >
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.4rem', color: '#e05535', marginBottom: '8px' }}>＋</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.92rem', color: '#ece6ff', marginBottom: '4px' }}>Add game</div>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#625c7c' }}>Log a new game session with players, scores, and cards</div>
-        </Link>
-
-        <Link
-          to="/admin/parse-log"
-          style={{
-            display: 'block',
-            padding: '24px',
-            background: '#1e1835',
-            border: '1px solid rgba(224, 85, 53, 0.2)',
-            borderRadius: '6px',
-            textDecoration: 'none',
-            transition: 'border-color 0.15s',
-          }}
-          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(224, 85, 53, 0.4)')}
-          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(224, 85, 53, 0.2)')}
-        >
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.4rem', color: '#e05535', marginBottom: '8px' }}>⌨</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.92rem', color: '#ece6ff', marginBottom: '4px' }}>Parse game log</div>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#625c7c' }}>Import cards played and milestones from a game log</div>
-        </Link>
-
-        <Link
-          to="/admin/players/profiles"
-          style={{
-            display: 'block',
-            padding: '24px',
-            background: '#1e1835',
-            border: '1px solid #282042',
-            borderRadius: '6px',
-            textDecoration: 'none',
-            transition: 'border-color 0.15s',
-          }}
-          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(155,80,240,0.3)')}
-          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = '#282042')}
-        >
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.4rem', color: '#9b50f0', marginBottom: '8px' }}>◉</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.92rem', color: '#ece6ff', marginBottom: '4px' }}>Player profiles</div>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#625c7c' }}>Colors, playing styles, rivals, and trivia</div>
-        </Link>
-
-        <Link
-          to="/admin/cards/reference"
-          style={{
-            display: 'block',
-            padding: '24px',
-            background: '#1e1835',
-            border: '1px solid #282042',
-            borderRadius: '6px',
-            textDecoration: 'none',
-            transition: 'border-color 0.15s',
-          }}
-          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(46, 139, 139, 0.3)')}
-          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.borderColor = '#282042')}
-        >
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.4rem', color: '#2e8b8b', marginBottom: '8px' }}>▣</div>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.92rem', color: '#ece6ff', marginBottom: '4px' }}>Card reference</div>
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#625c7c' }}>Manage the card database — tags, types, expansions</div>
-        </Link>
+      <div className="admin-links-grid grid grid-cols-2 gap-4 max-w-[600px]">
+        {CARDS.map(({ to, icon, iconColor, borderClass, title, desc }) => (
+          <Link
+            key={to}
+            to={to}
+            className={`block p-6 bg-[#282042] border rounded-[6px] no-underline transition-colors ${borderClass}`}
+          >
+            <div className={`font-display font-bold text-[1.4rem] mb-2 ${iconColor}`}>{icon}</div>
+            <div className="font-display font-semibold text-[0.92rem] text-[#ece6ff] mb-1">{title}</div>
+            <div className="font-body text-[0.75rem] text-[#625c7c]">{desc}</div>
+          </Link>
+        ))}
       </div>
 
       {!import.meta.env.VITE_SUPABASE_URL && (
-        <div style={{ marginTop: '32px', padding: '18px 20px', background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', maxWidth: '600px' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', letterSpacing: '0.08em', color: '#504270', marginBottom: '10px', textTransform: 'uppercase' }}>
+        <div className="mt-8 px-5 py-[18px] bg-[#282042] border border-[#3e325e] rounded-[6px] max-w-[600px]">
+          <div className="font-mono text-[0.7rem] tracking-[0.08em] text-[#504270] mb-2.5 uppercase">
             Setup required
           </div>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: '#625c7c', margin: 0, lineHeight: 1.6 }}>
-            Add <code style={{ background: '#171228', padding: '2px 6px', borderRadius: '3px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#ece6ff' }}>VITE_SUPABASE_URL</code> and{' '}
-            <code style={{ background: '#171228', padding: '2px 6px', borderRadius: '3px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#ece6ff' }}>VITE_SUPABASE_ANON_KEY</code> to{' '}
-            <code style={{ background: '#171228', padding: '2px 6px', borderRadius: '3px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#ece6ff' }}>.env.local</code> to connect to Supabase.
+          <p className="font-body text-[0.8rem] text-[#625c7c] m-0 leading-[1.6]">
+            Add <code className="bg-[#171228] px-1.5 py-[2px] rounded-[3px] font-mono text-[0.75rem] text-[#ece6ff]">VITE_SUPABASE_URL</code> and{' '}
+            <code className="bg-[#171228] px-1.5 py-[2px] rounded-[3px] font-mono text-[0.75rem] text-[#ece6ff]">VITE_SUPABASE_ANON_KEY</code> to{' '}
+            <code className="bg-[#171228] px-1.5 py-[2px] rounded-[3px] font-mono text-[0.75rem] text-[#ece6ff]">.env.local</code> to connect to Supabase.
             Until then, the public site shows mock data.
           </p>
         </div>

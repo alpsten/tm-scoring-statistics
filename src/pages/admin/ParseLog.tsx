@@ -22,26 +22,8 @@ const MILESTONE_DISAMBIGUATION: Record<string, string[]> = {
   'Tycoon':     ['Tycoon10', 'Tycoon15'],
 }
 
-const sectionLabel: React.CSSProperties = {
-  fontFamily: 'var(--font-mono)',
-  fontSize: '0.62rem',
-  letterSpacing: '0.1em',
-  textTransform: 'uppercase',
-  color: '#504270',
-  marginBottom: '8px',
-}
-
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  background: '#110d1e',
-  border: '1px solid #3e325e',
-  borderRadius: '4px',
-  color: '#ece6ff',
-  padding: '7px 10px',
-  fontFamily: 'var(--font-body)',
-  fontSize: '0.82rem',
-}
+const sectionLabelClass = 'font-mono text-[0.62rem] tracking-[0.1em] uppercase text-[#504270] mb-2'
+const inputClass = 'w-full bg-[#110d1e] border border-[#3e325e] rounded text-[#ece6ff] px-2.5 py-[7px] font-body text-[0.82rem] outline-none focus:border-violet-500/60 transition-colors'
 
 export default function ParseLog() {
   const qc = useQueryClient()
@@ -143,31 +125,31 @@ export default function ParseLog() {
   // ── Done ────────────────────────────────────────────────────────────────────
   if (step === 'done' && importResult) {
     return (
-      <div className="page-enter" style={{ padding: '32px 36px' }}>
-        <div style={{ marginBottom: '24px' }}>
-          <Link to="/admin" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', textDecoration: 'none' }}>← Admin</Link>
+      <div className="page-enter py-8 px-9 min-h-full bg-[#0c0e12]">
+        <div className="mb-6">
+          <Link to="/admin" className="font-body text-[0.78rem] text-[#625c7c] no-underline">← Admin</Link>
         </div>
         <PageHeader title="Import complete" subtitle="Log data saved successfully" />
-        <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
-          <div style={{ background: '#1e1835', border: '1px solid rgba(155,80,240,0.25)', borderRadius: '6px', padding: '20px 28px', textAlign: 'center' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.6rem', fontWeight: 700, color: '#b87aff' }}>{importResult.cards}</div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#504270', marginTop: '4px' }}>cards imported</div>
+        <div className="flex gap-4 mb-8">
+          <div className="bg-[#282042] border border-violet-500/25 rounded-[6px] px-7 py-5 text-center">
+            <div className="font-mono text-[1.6rem] font-bold text-[#b87aff]">{importResult.cards}</div>
+            <div className="font-body text-[0.75rem] text-[#504270] mt-1">cards imported</div>
           </div>
-          <div style={{ background: '#1e1835', border: '1px solid rgba(46,139,139,0.25)', borderRadius: '6px', padding: '20px 28px', textAlign: 'center' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.6rem', fontWeight: 700, color: '#3bbfbf' }}>{importResult.milestones}</div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: '#504270', marginTop: '4px' }}>milestones imported</div>
+          <div className="bg-[#282042] border border-[rgba(46,139,139,0.25)] rounded-[6px] px-7 py-5 text-center">
+            <div className="font-mono text-[1.6rem] font-bold text-[#3bbfbf]">{importResult.milestones}</div>
+            <div className="font-body text-[0.75rem] text-[#504270] mt-1">milestones imported</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="flex gap-2.5">
           <button
             onClick={() => { setStep('input'); setRawLog(''); setParsed(null); setImportResult(null) }}
-            style={{ padding: '9px 20px', background: 'rgba(155,80,240,0.12)', border: '1px solid rgba(155,80,240,0.4)', borderRadius: '4px', color: '#b87aff', fontFamily: 'var(--font-body)', fontSize: '0.83rem', cursor: 'pointer' }}
+            className="px-5 py-[9px] bg-violet-500/15 border border-violet-500/40 rounded text-[#b87aff] font-body text-[0.83rem] cursor-pointer"
           >
             Parse another log
           </button>
           <Link
             to="/admin"
-            style={{ padding: '9px 20px', background: 'transparent', border: '1px solid #282042', borderRadius: '4px', color: '#625c7c', fontFamily: 'var(--font-body)', fontSize: '0.83rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+            className="px-5 py-[9px] bg-transparent border border-[#3e325e] rounded text-[#625c7c] font-body text-[0.83rem] no-underline inline-flex items-center"
           >
             Back to admin
           </Link>
@@ -205,9 +187,9 @@ export default function ParseLog() {
       .sort()
 
     return (
-      <div className="page-enter" style={{ padding: '32px 36px' }}>
-        <div style={{ marginBottom: '24px' }}>
-          <button onClick={() => setStep('input')} style={{ background: 'none', border: 'none', color: '#625c7c', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '0.78rem', padding: 0 }}>← Edit log</button>
+      <div className="page-enter py-8 px-9 min-h-full bg-[#0c0e12]">
+        <div className="mb-6">
+          <button onClick={() => setStep('input')} className="bg-transparent border-none text-[#625c7c] cursor-pointer font-body text-[0.78rem] p-0">← Edit log</button>
         </div>
 
         <PageHeader
@@ -217,13 +199,13 @@ export default function ParseLog() {
 
         {/* Unknown card names warning */}
         {unknownCards.length > 0 && (
-          <div style={{ background: 'rgba(224,85,53,0.07)', border: '1px solid rgba(224,85,53,0.35)', borderRadius: '6px', padding: '14px 18px', marginBottom: '24px' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#e05535', marginBottom: '10px' }}>
+          <div className="bg-mars-500/7 border border-mars-500/35 rounded-[6px] px-[18px] py-3.5 mb-6">
+            <div className="font-mono text-[0.62rem] tracking-[0.1em] uppercase text-mars-500 mb-2.5">
               {unknownCards.length} card{unknownCards.length !== 1 ? 's' : ''} not found in card reference — possible spelling errors
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            <div className="flex flex-wrap gap-1.5">
               {unknownCards.map(name => (
-                <span key={name} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '3px', background: 'rgba(224,85,53,0.1)', color: '#e05535', border: '1px solid rgba(224,85,53,0.25)' }}>
+                <span key={name} className="font-mono text-[0.72rem] px-2 py-[2px] rounded-[3px] bg-mars-500/10 text-mars-500 border border-mars-500/25">
                   {name}
                 </span>
               ))}
@@ -231,20 +213,16 @@ export default function ParseLog() {
           </div>
         )}
 
-        {/* Summary row */}
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '28px' }}>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        <div className="grid grid-cols-2 gap-6">
 
           {/* Left column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div className="flex flex-col gap-6">
 
             {/* Game session selector */}
             <div>
-              <div style={sectionLabel}>Attach to game session *</div>
+              <div className={sectionLabelClass}>Attach to game session *</div>
               <select
-                style={{ ...inputStyle, height: '38px' }}
+                className={`${inputClass} h-[38px]`}
                 value={selectedGameId}
                 onChange={e => { setSelectedGameId(e.target.value); setMilestoneResolutions({}) }}
               >
@@ -259,16 +237,16 @@ export default function ParseLog() {
 
             {/* Player name mapping */}
             <div>
-              <div style={sectionLabel}>Player name mapping</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className={sectionLabelClass}>Player name mapping</div>
+              <div className="flex flex-col gap-2">
                 {parsed.players.map(logName => (
-                  <div key={logName} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#8e87a8', minWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div key={logName} className="flex items-center gap-2.5">
+                    <div className="font-mono text-[0.75rem] text-[#8e87a8] min-w-[160px] overflow-hidden text-ellipsis whitespace-nowrap">
                       {logName}
                     </div>
-                    <div style={{ color: '#504270', fontSize: '0.7rem' }}>→</div>
+                    <div className="text-[#504270] text-[0.7rem]">→</div>
                     <select
-                      style={{ ...inputStyle, flex: 1, height: '34px' }}
+                      className={`${inputClass} flex-1 h-[34px]`}
                       value={playerMap[logName] ?? ''}
                       onChange={e => setPlayerMap(prev => ({ ...prev, [logName]: e.target.value }))}
                     >
@@ -282,7 +260,7 @@ export default function ParseLog() {
                 ))}
               </div>
               {parsed.players.some(p => !playerMap[p]) && (
-                <div style={{ marginTop: '8px', fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#e05535' }}>
+                <div className="mt-2 font-body text-[0.72rem] text-mars-500">
                   All players must be mapped before importing.
                 </div>
               )}
@@ -291,16 +269,16 @@ export default function ParseLog() {
             {/* Milestone disambiguation */}
             {milestoneAmbiguities.length > 0 && (
               <div>
-                <div style={{ ...sectionLabel, color: '#d4a820' }}>Milestone disambiguation</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="font-mono text-[0.62rem] tracking-[0.1em] uppercase text-[#d4a820] mb-2">Milestone disambiguation</div>
+                <div className="flex flex-col gap-2">
                   {milestoneAmbiguities.map(({ logName, options }) => (
-                    <div key={logName} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#d4a820', minWidth: '120px' }}>
+                    <div key={logName} className="flex items-center gap-2.5">
+                      <div className="font-mono text-[0.75rem] text-[#d4a820] min-w-[120px]">
                         "{logName}"
                       </div>
-                      <div style={{ color: '#504270', fontSize: '0.7rem' }}>→</div>
+                      <div className="text-[#504270] text-[0.7rem]">→</div>
                       <select
-                        style={{ ...inputStyle, flex: 1, height: '34px', borderColor: milestoneResolutions[logName] ? '#3e325e' : '#d4a820' }}
+                        className={`${inputClass} flex-1 h-[34px] ${milestoneResolutions[logName] ? '' : 'border-[#d4a820]'}`}
                         value={milestoneResolutions[logName] ?? ''}
                         onChange={e => setMilestoneResolutions(prev => ({ ...prev, [logName]: e.target.value }))}
                       >
@@ -311,7 +289,7 @@ export default function ParseLog() {
                   ))}
                 </div>
                 {ambiguousUnresolved && (
-                  <div style={{ marginTop: '8px', fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#d4a820' }}>
+                  <div className="mt-2 font-body text-[0.72rem] text-[#d4a820]">
                     Resolve all milestone versions before importing.
                   </div>
                 )}
@@ -321,20 +299,20 @@ export default function ParseLog() {
             {/* Milestones */}
             {parsed.milestones.length > 0 && (
               <div>
-                <div style={sectionLabel}>Milestones ({parsed.milestones.length})</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div className={sectionLabelClass}>Milestones ({parsed.milestones.length})</div>
+                <div className="flex flex-col gap-1.5">
                   {parsed.milestones.map((m, i) => {
                     const resolved = resolveMilestoneName(m.milestone_name)
                     const wasResolved = resolved !== m.milestone_name
                     return (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 12px', background: '#1e1835', borderRadius: '4px', border: '1px solid #282042' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: '#ece6ff' }}>{resolved}</span>
+                      <div key={i} className="flex justify-between px-3 py-[7px] bg-[#282042] rounded border border-[#3e325e]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-body text-[0.82rem] text-[#ece6ff]">{resolved}</span>
                           {wasResolved && (
-                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#504270' }}>({m.milestone_name})</span>
+                            <span className="font-mono text-[0.6rem] text-[#504270]">({m.milestone_name})</span>
                           )}
                         </div>
-                        <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c' }}>{playerMap[m.player_name] || m.player_name}</span>
+                        <span className="font-body text-[0.78rem] text-[#625c7c]">{playerMap[m.player_name] || m.player_name}</span>
                       </div>
                     )
                   })}
@@ -345,23 +323,12 @@ export default function ParseLog() {
             {/* Import button */}
             <div>
               {saveError && (
-                <div style={{ marginBottom: '10px', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#e05535' }}>{saveError}</div>
+                <div className="mb-2.5 font-mono text-[0.72rem] text-mars-500">{saveError}</div>
               )}
               <button
                 onClick={handleImport}
                 disabled={!canImport || saving}
-                style={{
-                  padding: '10px 28px',
-                  background: canImport ? 'rgba(155,80,240,0.15)' : 'rgba(100,100,100,0.08)',
-                  border: `1px solid ${canImport ? 'rgba(155,80,240,0.5)' : '#282042'}`,
-                  borderRadius: '4px',
-                  color: canImport ? '#b87aff' : '#3e325e',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 600,
-                  fontSize: '0.88rem',
-                  cursor: canImport && !saving ? 'pointer' : 'not-allowed',
-                  opacity: saving ? 0.6 : 1,
-                }}
+                className={`px-7 py-[10px] rounded font-display font-semibold text-[0.88rem] transition-colors ${canImport ? 'bg-violet-500/15 border border-violet-500/50 text-[#b87aff] cursor-pointer' : 'bg-white/4 border border-[#3e325e] text-[#3e325e] cursor-not-allowed'} ${saving ? 'opacity-60' : ''}`}
               >
                 {saving ? 'Importing…' : `Import ${parsed.cards.length} cards + ${parsed.milestones.length} milestones`}
               </button>
@@ -370,31 +337,31 @@ export default function ParseLog() {
 
           {/* Right column — cards per player */}
           <div>
-            <div style={sectionLabel}>Cards played ({parsed.cards.length} total)</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div className={sectionLabelClass}>Cards played ({parsed.cards.length} total)</div>
+            <div className="flex flex-col gap-2.5">
               {Object.entries(cardsByPlayer).map(([player, cards]) => {
                 const expanded = expandedPlayers.has(player)
                 return (
-                  <div key={player} style={{ background: '#1e1835', border: '1px solid #282042', borderRadius: '6px', overflow: 'hidden' }}>
+                  <div key={player} className="bg-[#282042] border border-[#3e325e] rounded-[6px] overflow-hidden">
                     <button
                       type="button"
                       onClick={() => toggleExpand(player)}
-                      style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                      className="w-full flex justify-between items-center px-3.5 py-[10px] bg-transparent border-none cursor-pointer text-left"
                     >
-                      <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '0.85rem', color: '#ece6ff' }}>
+                      <span className="font-display font-semibold text-[0.85rem] text-[#ece6ff]">
                         {playerMap[player] || player}
                       </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#b87aff' }}>{cards.length} cards</span>
-                        <span style={{ color: '#504270', fontSize: '0.65rem' }}>{expanded ? '▲' : '▼'}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="font-mono text-[0.72rem] text-[#b87aff]">{cards.length} cards</span>
+                        <span className="text-[#504270] text-[0.65rem]">{expanded ? '▲' : '▼'}</span>
                       </span>
                     </button>
                     {expanded && (
-                      <div style={{ borderTop: '1px solid #282042', maxHeight: '320px', overflowY: 'auto', padding: '8px 0' }}>
+                      <div className="border-t border-[#3e325e] max-h-[320px] overflow-y-auto py-2">
                         {cards.map((c, i) => (
-                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 14px', gap: '8px' }}>
-                            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#bbb4d0' }}>{c.card_name}</span>
-                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#504270', whiteSpace: 'nowrap' }}>gen {c.generation}</span>
+                          <div key={i} className="flex justify-between items-center px-3.5 py-1 gap-2">
+                            <span className="font-body text-[0.78rem] text-[#bbb4d0]">{c.card_name}</span>
+                            <span className="font-mono text-[0.65rem] text-[#504270] whitespace-nowrap">gen {c.generation}</span>
                           </div>
                         ))}
                       </div>
@@ -412,51 +379,28 @@ export default function ParseLog() {
 
   // ── Input ────────────────────────────────────────────────────────────────────
   return (
-    <div className="page-enter" style={{ padding: '32px 36px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <Link to="/admin" style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: '#625c7c', textDecoration: 'none' }}>← Admin</Link>
+    <div className="page-enter py-8 px-9 min-h-full bg-[#0c0e12]">
+      <div className="mb-6">
+        <Link to="/admin" className="font-body text-[0.78rem] text-[#625c7c] no-underline">← Admin</Link>
       </div>
       <PageHeader title="Parse game log" subtitle="Paste the game log from the Terraforming Mars app" />
 
-      <div style={{ maxWidth: '720px' }}>
+      <div className="max-w-[720px]">
         <textarea
           value={rawLog}
           onChange={e => setRawLog(e.target.value)}
           placeholder={'Paste the full game log here…\n\nGameLog - 57\nFirst player this generation is …\n…'}
-          style={{
-            width: '100%',
-            minHeight: '360px',
-            background: '#1e1835',
-            border: '1px solid #3e325e',
-            borderRadius: '6px',
-            color: '#ece6ff',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.75rem',
-            padding: '16px',
-            resize: 'vertical',
-            lineHeight: 1.6,
-            outline: 'none',
-          }}
+          className="w-full min-h-[360px] bg-[#282042] border border-[#3e325e] rounded-[6px] text-[#ece6ff] font-mono text-[0.75rem] p-4 resize-y leading-[1.6] outline-none focus:border-violet-500/60 transition-colors"
         />
-        <div style={{ marginTop: '12px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className="mt-3 flex gap-2.5 items-center">
           <button
             onClick={handleParse}
             disabled={!rawLog.trim()}
-            style={{
-              padding: '10px 28px',
-              background: rawLog.trim() ? 'rgba(155,80,240,0.15)' : 'rgba(100,100,100,0.08)',
-              border: `1px solid ${rawLog.trim() ? 'rgba(155,80,240,0.5)' : '#282042'}`,
-              borderRadius: '4px',
-              color: rawLog.trim() ? '#b87aff' : '#3e325e',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 600,
-              fontSize: '0.88rem',
-              cursor: rawLog.trim() ? 'pointer' : 'not-allowed',
-            }}
+            className={`px-7 py-[10px] rounded font-display font-semibold text-[0.88rem] ${rawLog.trim() ? 'bg-violet-500/15 border border-violet-500/50 text-[#b87aff] cursor-pointer' : 'bg-white/4 border border-[#3e325e] text-[#3e325e] cursor-not-allowed'}`}
           >
             Parse log
           </button>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#3e325e' }}>
+          <span className="font-body text-[0.72rem] text-[#3e325e]">
             Encoding issues (Ã¶ etc.) are fixed automatically.
           </span>
         </div>
