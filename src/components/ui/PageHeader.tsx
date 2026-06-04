@@ -8,27 +8,13 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, subtitle, action }: PageHeaderProps) {
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'flex-end',
-      justifyContent: 'space-between',
-      marginBottom: '28px',
-      paddingBottom: '20px',
-      borderBottom: '1px solid var(--bd-panel)',
-    }}>
+    <div className="flex items-end justify-between mb-7 pb-5 border-b border-border">
       <div>
-        <h1 style={{
-          fontFamily: 'var(--font-display)',
-          fontWeight: 700,
-          fontSize: '1.6rem',
-          color: 'var(--text-1)',
-          margin: 0,
-          letterSpacing: '-0.01em',
-        }}>
+        <h1 className="font-display font-bold text-[1.6rem] text-foreground m-0 tracking-[-0.01em]">
           {title}
         </h1>
         {subtitle && (
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-4)', margin: '4px 0 0', letterSpacing: '0.01em' }}>
+          <p className="font-body text-[0.82rem] text-[var(--text-4)] mt-1 mb-0 tracking-[0.01em]">
             {subtitle}
           </p>
         )}

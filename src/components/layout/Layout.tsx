@@ -1,15 +1,14 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
-
-const footerCard: React.CSSProperties = { padding: '10px 14px', background: 'rgba(210,120,50,0.08)', border: '1px solid rgba(210,120,50,0.25)', borderRadius: '4px', fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: '#d07832', lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: '6px' }
-const orangeBtn: React.CSSProperties = { padding: '2px 8px', background: 'rgba(224,85,53,0.15)', border: '1px solid rgba(224,85,53,0.5)', borderRadius: '3px', color: '#e05535', textDecoration: 'none', fontWeight: 600, fontSize: '0.68rem' }
+import HexBackground from './HexBackground'
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="flex min-h-screen">
+      <HexBackground />
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Mobile backdrop */}
@@ -30,27 +29,20 @@ export default function Layout() {
         <span />
       </button>
 
-      <main
-        className="grid-bg"
-        style={{
-          flex: 1,
-          background: 'var(--bg-main)',
-        }}
-      >
+      <main className="flex-1">
         <Outlet />
 
-        <footer style={{ borderTop: '1px solid var(--bd-panel)', padding: '24px 36px' }}>
-          <div style={{ display: 'inline-flex', flexDirection: 'row', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-            <div style={footerCard}>
-              Not affiliated with or endorsed by FryxGames — but you should buy
-              <a href="https://fryxgames.se/product/terraforming-mars/" target="_blank" rel="noopener noreferrer" style={orangeBtn}>THEIR GAME</a>
-            </div>
-            <div style={footerCard}>
-              This site was made possible with help from the
-              <a href="https://github.com/terraforming-mars/terraforming-mars" target="_blank" rel="noopener noreferrer" style={orangeBtn}>Terraforming Mars Community</a>
-            </div>
-
-          </div>
+        <footer className="border-t border-border px-9 py-5">
+          <p className="font-body text-[0.8rem] text-[var(--text-4)] m-0 leading-relaxed">
+            Not affiliated with or endorsed by{' '}
+            <a href="https://fryxgames.se/product/terraforming-mars/" target="_blank" rel="noopener noreferrer" className="text-[var(--text-3)] no-underline hover:text-foreground transition-colors">
+              FryxGames
+            </a>
+            {' '}· Made with help from the{' '}
+            <a href="https://github.com/terraforming-mars/terraforming-mars" target="_blank" rel="noopener noreferrer" className="text-[var(--text-3)] no-underline hover:text-foreground transition-colors">
+              Terraforming Mars Community
+            </a>
+          </p>
         </footer>
       </main>
     </div>

@@ -1,6 +1,5 @@
 import { TAG_ICONS } from '../../lib/expansions'
-
-// Renders a single TM tag name as an icon (if available) or styled text badge
+import { cn } from '@/lib/utils'
 
 const TAG_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   'Animal':   { bg: 'rgba(74, 158, 107, 0.1)',  text: '#4a9e6b', border: 'rgba(74, 158, 107, 0.25)' },
@@ -35,26 +34,17 @@ export default function Tag({ name }: TagProps) {
         src={icon}
         alt={name}
         title={name}
-        style={{ width: '18px', height: '18px', objectFit: 'contain', display: 'inline-block', verticalAlign: 'middle' }}
+        className="w-[18px] h-[18px] object-contain inline-block align-middle"
       />
     )
   }
 
   const colors = TAG_COLORS[name] ?? DEFAULT_TAG_COLOR
   return (
-    <span style={{
-      display: 'inline-block',
-      fontFamily: 'var(--font-body)',
-      fontSize: '0.68rem',
-      fontWeight: 500,
-      letterSpacing: '0.04em',
-      padding: '2px 7px',
-      borderRadius: '3px',
-      background: colors.bg,
-      color: colors.text,
-      border: `1px solid ${colors.border}`,
-      whiteSpace: 'nowrap',
-    }}>
+    <span
+      className={cn('inline-block font-body text-[0.68rem] font-medium tracking-[0.04em] px-[7px] py-[2px] rounded-[3px] whitespace-nowrap border')}
+      style={{ background: colors.bg, color: colors.text, borderColor: colors.border }}
+    >
       {name}
     </span>
   )

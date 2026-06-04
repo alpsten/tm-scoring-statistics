@@ -1,4 +1,14 @@
 import type { ReactNode, CSSProperties } from 'react'
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { cn } from '@/lib/utils'
 
 export interface DataTableColumn<T> {
   key: string
@@ -27,6 +37,12 @@ interface DataTableProps<T> {
   wrapperStyle?: CSSProperties
 }
 
+const ALIGN_CLASS: Record<string, string> = {
+  left:   'text-left',
+  center: 'text-center',
+  right:  'text-right',
+}
+
 export default function DataTable<T>({
   columns,
   rows,
@@ -38,73 +54,65 @@ export default function DataTable<T>({
   className,
   wrapperStyle,
 }: DataTableProps<T>) {
-  const hPad = compact ? '8px 16px' : '11px 18px'
-  const rPad = compact ? '9px 16px' : '13px 18px'
-  const hSize = compact ? '0.66rem' : '0.68rem'
-  const hWeight = compact ? 500 : 600
-
   return (
-    <div className={className} style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '6px', overflow: 'hidden', ...wrapperStyle }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ borderBottom: '1px solid var(--bd-panel)' }}>
+    <div
+      className={cn('bg-card border border-border rounded-[6px] overflow-hidden', className)}
+      style={wrapperStyle}
+    >
+      <Table>
+        <TableHeader>
+          <TableRow className="border-border hover:bg-transparent">
             {columns.map(col => (
-              <th
+              <TableHead
                 key={col.key}
                 onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
-                style={{
-                  padding: hPad,
-                  textAlign: col.align ?? 'left',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: hSize,
-                  fontWeight: hWeight,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  color: sortKey === col.key ? 'var(--text-3)' : 'var(--text-4)',
-                  cursor: col.sortable ? 'pointer' : 'default',
-                  userSelect: 'none',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {col.label}
-                {col.sortable && onSort && (
-                  sortKey === col.key
-                    ? <span style={{ color: 'var(--sort-active)', marginLeft: '3px' }}>{sortDir === 'asc' ? '▲' : '▼'}</span>
-                    : <span style={{ color: 'var(--bd-secondary)', marginLeft: '3px' }}>⇅</span>
+                className={cn(
+                  'font-mono tracking-[0.08em] uppercase whitespace-nowrap select-none border-border',
+                  compact ? 'text-[0.72rem] font-medium py-2 px-4' : 'text-[0.75rem] font-semibold py-[11px] px-[18px]',
+                  col.sortable && onSort ? 'cursor-pointer' : 'cursor-default',
+                  sortKey === col.key ? 'text-muted-foreground' : 'text-[var(--text-4)]',
+                  ALIGN_CLASS[col.align ?? 'left'],
                 )}
-              </th>
+              >
+                <span className="inline-flex items-center gap-1">
+                  {col.label}
+                  {col.sortable && onSort && (
+                    sortKey === col.key
+                      ? (sortDir === 'asc'
+                          ? <ArrowUp className="size-3 text-foreground" />
+                          : <ArrowDown className="size-3 text-foreground" />)
+                      : <ArrowUpDown className="size-3 text-[var(--bd-secondary)]" />
+                  )}
+                </span>
+              </TableHead>
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => (
-            <tr
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map(row => (
+            <TableRow
               key={rowKey(row)}
-              style={{ borderBottom: i < rows.length - 1 ? '1px solid var(--bd-panel)' : 'none', transition: 'background 0.1s', background: 'var(--bg-row)' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-row-hover)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-row)')}
+              className="border-border bg-secondary hover:bg-accent transition-colors duration-100"
             >
               {columns.map(col => (
-                <td
+                <TableCell
                   key={col.key}
-                  style={{
-                    padding: rPad,
-                    textAlign: col.align ?? 'left',
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.85rem',
-                    color: 'var(--text-2)',
-                    ...col.tdStyle,
-                  }}
+                  className={cn(
+                    'font-mono text-[0.85rem] text-secondary-foreground',
+                    compact ? 'py-[9px] px-4' : 'py-[13px] px-[18px]',
+                    ALIGN_CLASS[col.align ?? 'left'],
+                  )}
+                  style={col.tdStyle}
                 >
                   {col.render
                     ? col.render(row)
                     : String((row as Record<string, unknown>)[col.key] ?? '')}
-                </td>
+                </TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

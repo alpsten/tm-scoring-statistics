@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { Code2, LogIn, LogOut, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../../context/useAuth'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { cn } from '@/lib/utils'
 
 interface SidebarProps {
   open: boolean
@@ -8,21 +18,20 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { to: '/',             label: 'Overview'         },
-  { to: '/leaderboard',  label: 'Leaderboard'      },
-  { to: '/games',        label: 'Games'            },
-  { to: '/players',      label: 'Players'          },
-  { to: '/corporations', label: 'Corporations'     },
-  { to: '/cards',        label: 'Cards'            },
-  { to: '/ceos',         label: 'CEOs'             },
-  { to: '/ma',           label: 'Milestones/Awards'},
-  { to: '/setup',        label: 'Setup'            },
-  { to: '/notes',        label: 'Notes'            },
-  { to: '/scoresheet',   label: 'Score Sheet'      },
+  { to: '/',             label: 'Overview'          },
+  { to: '/leaderboard',  label: 'Leaderboard'       },
+  { to: '/games',        label: 'Games'             },
+  { to: '/players',      label: 'Players'           },
+  { to: '/corporations', label: 'Corporations'      },
+  { to: '/cards',        label: 'Cards'             },
+  { to: '/ceos',         label: 'CEOs'              },
+  { to: '/ma',           label: 'Milestones/Awards' },
+  { to: '/setup',        label: 'Setup'             },
+  { to: '/under-development', label: 'Under Development' },
+  { to: '/scoresheet',   label: 'Score Sheet'       },
 ]
 
 const NAV_PILL = '/tm-scoring-statistics/misc/standard-project-blank.png'
-
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { user, signOut } = useAuth()
@@ -35,7 +44,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   useEffect(() => {
     const meta = document.querySelector('meta[name="viewport"]')
     if (meta) {
-      meta.setAttribute('content', viewMode === 'desktop' ? 'width=1280' : 'width=device-width, initial-scale=1.0')
+      meta.setAttribute(
+        'content',
+        viewMode === 'desktop' ? 'width=1280' : 'width=device-width, initial-scale=1.0'
+      )
     }
     localStorage.setItem('viewportMode', viewMode)
   }, [viewMode])
@@ -47,75 +59,46 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
   return (
     <aside
-      className={`sidebar${open ? ' sidebar--open' : ''}`}
-      style={{
-        width: '220px',
-        minWidth: '220px',
-        background: 'var(--bg-sidebar)',
-        borderRight: '1px solid var(--bd-sidebar)',
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100vh',
-        position: 'sticky',
-        top: 0,
-        overflowX: 'hidden',
-        overflowY: 'auto',
-      }}
+      className={cn(
+        'sidebar w-[220px] min-w-[220px] flex flex-col h-screen sticky top-0 overflow-x-hidden overflow-y-auto',
+        'bg-[var(--bg-sidebar)] border-r border-border',
+        open && 'sidebar--open'
+      )}
     >
       {/* Logo / title */}
-      <div style={{ padding: '52px 20px 20px', borderBottom: '1px solid var(--bd-sidebar)', position: 'relative', textAlign: 'center' }}>
-        {/* Mobile close button */}
-        <button
-          className="sidebar-close-btn"
-          onClick={onClose}
-          aria-label="Close menu"
-        >
+      <div className="relative pt-[52px] pb-5 px-5 border-b border-border text-center">
+        <button className="sidebar-close-btn" onClick={onClose} aria-label="Close menu">
           ✕
         </button>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--text-4)', textTransform: 'uppercase', marginBottom: '6px' }}>
+        <div className="font-display text-[0.65rem] tracking-[0.2em] text-[var(--text-4)] uppercase mb-1.5">
           Mission log
         </div>
-        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: '#e05535', lineHeight: 1.1, textTransform: 'uppercase' }}>
-          <div style={{ fontSize: '1.25rem' }}>Terraforming</div>
-          <div style={{ fontSize: '2.3rem', lineHeight: 0.95 }}>Mars</div>
+        <div className="font-display font-bold text-mars-500 uppercase leading-[1.1]">
+          <div className="text-[1.25rem]">Terraforming</div>
+          <div className="text-[2.3rem] leading-[0.95]">Mars</div>
         </div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-4)', marginTop: '8px', letterSpacing: '0.05em' }}>
+        <div className="font-mono text-[0.6rem] text-[var(--text-4)] mt-2 tracking-[0.05em]">
           STATISTICS v1.0
         </div>
       </div>
 
       {/* Navigation */}
-      <nav style={{ padding: '12px 0', flex: '0 0 auto' }}>
+      <nav className="py-3 flex-none">
         {NAV_ITEMS.map(({ to, label }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/'}
             onClick={onClose}
-            style={({ isActive }) => ({
-              display: 'block',
-              position: 'relative',
-              margin: '3px 24px',
-              textDecoration: 'none',
-              borderRight: 'none',
-              opacity: isActive ? 1 : 0.55,
-              transition: 'opacity 0.15s',
-            })}
+            className={({ isActive }) =>
+              cn(
+                'block relative mx-6 my-[3px] no-underline transition-opacity duration-150',
+                isActive ? 'opacity-100' : 'opacity-55 hover:opacity-75'
+              )
+            }
           >
-            <img src={NAV_PILL} alt="" aria-hidden style={{ width: '100%', height: '36px', objectFit: 'fill', display: 'block' }} />
-            <span style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: 'var(--font-display)',
-              fontWeight: 700,
-              fontSize: '0.78rem',
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: '#1a0a00',
-            }}>
+            <img src={NAV_PILL} alt="" aria-hidden className="w-full h-9 object-fill block" />
+            <span className="absolute inset-0 flex items-center justify-center font-display font-bold text-[0.78rem] tracking-[0.06em] uppercase text-[#1a0a00]">
               {label}
             </span>
           </NavLink>
@@ -123,26 +106,25 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       </nav>
 
       {/* View mode toggle */}
-      <div style={{ padding: '12px 20px', borderTop: '1px solid var(--bd-sidebar)', borderBottom: '1px solid var(--bd-sidebar)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--text-4)', textTransform: 'uppercase' }}>View</span>
-          <div style={{ display: 'flex', gap: '4px' }}>
+      <div className="px-5 py-3 border-t border-b border-border">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="font-mono text-[0.55rem] tracking-[0.12em] text-[var(--text-4)] uppercase">
+            View
+          </span>
+          <div className="flex gap-1">
             {(['desktop', 'mobile'] as const).map(mode => (
               <button
                 key={mode}
-                onClick={() => { if (mode === 'mobile') { setShowMobileDisclaimer(true) } else { setViewMode(mode) } }}
-                style={{
-                  padding: '2px 8px',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.55rem',
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  cursor: 'pointer',
-                  borderRadius: '3px',
-                  border: `1px solid ${viewMode === mode ? '#5b8dd9' : 'var(--bd-sidebar)'}`,
-                  background: viewMode === mode ? 'rgba(91,141,217,0.15)' : 'transparent',
-                  color: viewMode === mode ? '#5b8dd9' : 'var(--text-4)',
+                onClick={() => {
+                  if (mode === 'mobile') setShowMobileDisclaimer(true)
+                  else setViewMode(mode)
                 }}
+                className={cn(
+                  'px-2 py-0.5 font-mono text-[0.55rem] tracking-[0.08em] uppercase cursor-pointer rounded-[3px] border transition-colors',
+                  viewMode === mode
+                    ? 'border-[#5b8dd9] bg-[rgba(91,141,217,0.15)] text-[#5b8dd9]'
+                    : 'border-border text-[var(--text-4)] bg-transparent hover:text-muted-foreground'
+                )}
               >
                 {mode}
               </button>
@@ -150,113 +132,93 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </div>
         </div>
         {viewMode === 'mobile' && (
-          <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.62rem', color: '#c9a030', fontStyle: 'italic', lineHeight: 1.4 }}>
+          <p className="font-body text-[0.62rem] text-score-400 italic leading-[1.4]">
             Mobile view is still in development — some layouts may appear unexpected.
-          </div>
+          </p>
         )}
-        <div style={{ borderTop: '1px solid var(--bd-sidebar)', marginTop: '10px', paddingTop: '10px' }}>
+        <div className="border-t border-border mt-2.5 pt-2.5">
           <a
             href="https://github.com/alpsten/tm-scoring-statistics"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ display: 'block', padding: '4px 8px', background: 'rgba(74,158,107,0.1)', border: '1px solid rgba(74,158,107,0.35)', borderRadius: '3px', color: '#4a9e6b', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', textDecoration: 'none', textAlign: 'center' }}
+            className="flex items-center justify-center gap-1.5 py-1 px-2 bg-win-500/10 border border-win-500/35 rounded-[3px] text-win-500 font-mono text-[0.6rem] font-semibold tracking-[0.08em] uppercase no-underline hover:bg-win-500/20 transition-colors"
           >
+            <Code2 className="size-3" />
             Source Code
           </a>
         </div>
       </div>
 
       {/* Admin / auth section */}
-      <div style={{ padding: '14px 20px' }}>
+      <div className="px-5 py-[14px]">
         {user ? (
-          <div>
+          <div className="flex flex-col gap-2">
             <NavLink
               to="/admin"
               onClick={onClose}
-              style={({ isActive }) => ({
-                display: 'block',
-                padding: '8px 12px',
-                marginBottom: '8px',
-                background: isActive ? 'rgba(210,120,50,0.25)' : 'rgba(210,120,50,0.15)',
-                border: '1px solid rgba(210,120,50,0.5)',
-                borderRadius: '4px',
-                color: '#d07832',
-                fontSize: '0.78rem',
-                fontFamily: 'var(--font-body)',
-                fontWeight: 600,
-                textDecoration: 'none',
-                textAlign: 'center',
-                letterSpacing: '0.03em',
-              })}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center justify-center gap-1.5 py-2 px-3 border rounded text-[0.78rem] font-body font-semibold no-underline text-center tracking-[0.03em] transition-colors',
+                  isActive
+                    ? 'bg-[rgba(210,120,50,0.25)] border-[rgba(210,120,50,0.5)] text-[#d07832]'
+                    : 'bg-[rgba(210,120,50,0.15)] border-[rgba(210,120,50,0.5)] text-[#d07832] hover:bg-[rgba(210,120,50,0.25)]'
+                )
+              }
             >
+              <ShieldCheck className="size-3.5" />
               ADMIN
             </NavLink>
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleSignOut}
-              style={{
-                width: '100%',
-                padding: '6px',
-                background: 'transparent',
-                border: '1px solid var(--bd-sidebar)',
-                borderRadius: '4px',
-                color: 'var(--text-4)',
-                fontSize: '0.72rem',
-                fontFamily: 'var(--font-body)',
-                cursor: 'pointer',
-                letterSpacing: '0.03em',
-              }}
+              className="w-full text-[var(--text-4)] text-[0.72rem] border border-border hover:text-foreground"
             >
+              <LogOut className="size-3.5" />
               Sign out
-            </button>
+            </Button>
           </div>
         ) : (
           <NavLink
             to="/admin/login"
-            style={{
-              display: 'block',
-              padding: '7px 12px',
-              background: 'transparent',
-              border: '1px solid var(--bd-sidebar)',
-              borderRadius: '4px',
-              color: 'var(--text-4)',
-              fontSize: '0.75rem',
-              fontFamily: 'var(--font-body)',
-              textDecoration: 'none',
-              textAlign: 'center',
-              letterSpacing: '0.03em',
-            }}
+            className="flex items-center justify-center gap-1.5 py-1.5 px-3 bg-transparent border border-border rounded text-[var(--text-4)] text-[0.75rem] font-body no-underline text-center tracking-[0.03em] hover:text-foreground transition-colors"
           >
+            <LogIn className="size-3.5" />
             Admin login
           </NavLink>
         )}
       </div>
 
-      {showMobileDisclaimer && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div style={{ background: 'var(--bg-panel)', border: '1px solid var(--bd-panel)', borderRadius: '8px', padding: '28px 24px', maxWidth: '320px', width: '100%' }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '0.9rem', color: '#c9a030', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '12px' }}>
+      {/* Mobile disclaimer dialog */}
+      <Dialog open={showMobileDisclaimer} onOpenChange={setShowMobileDisclaimer}>
+        <DialogContent className="max-w-[320px]">
+          <DialogHeader>
+            <DialogTitle className="font-display text-score-400 tracking-[0.06em] uppercase text-[0.9rem]">
               ⚠ Mobile View
-            </div>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 20px' }}>
-              Mobile view is currently under development. Some layouts and elements may not appear as expected.
-            </p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={() => setShowMobileDisclaimer(false)}
-                style={{ flex: 1, padding: '8px', background: 'transparent', border: '1px solid var(--bd-sidebar)', borderRadius: '4px', color: 'var(--text-4)', fontFamily: 'var(--font-body)', fontSize: '0.78rem', cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => { setViewMode('mobile'); setShowMobileDisclaimer(false) }}
-                style={{ flex: 1, padding: '8px', background: 'rgba(201,160,48,0.15)', border: '1px solid rgba(201,160,48,0.4)', borderRadius: '4px', color: '#c9a030', fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer' }}
-              >
-                Continue anyway
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="font-body text-[0.82rem] text-muted-foreground leading-relaxed">
+            Mobile view is currently under development. Some layouts and elements may not appear as
+            expected.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setShowMobileDisclaimer(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-score-400 border-score-400/40 bg-score-400/10 hover:bg-score-400/20"
+              onClick={() => {
+                setViewMode('mobile')
+                setShowMobileDisclaimer(false)
+              }}
+            >
+              Continue anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </aside>
   )
 }

@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils'
+
 interface FilterPillProps {
   label?: string
   tooltip?: string
@@ -8,34 +10,29 @@ interface FilterPillProps {
 }
 
 export default function FilterPill({ label, tooltip, icon, active, color = '#888888', onClick }: FilterPillProps) {
-  const activeBg = color + '1e'
   return (
     <button
       onClick={onClick}
       title={tooltip ?? label}
+      className={cn(
+        'inline-flex items-center justify-center shrink-0 rounded-[5px] border transition-all duration-[120ms] cursor-pointer',
+        icon ? 'size-[34px] p-0' : 'h-[34px] px-2.5',
+      )}
       style={{
-        height: '34px',
-        width: icon ? '34px' : undefined,
-        padding: icon ? 0 : '0 10px',
-        minWidth: '34px',
-        background: active ? activeBg : 'transparent',
-        border: `1px solid ${active ? color : 'var(--bd-secondary)'}`,
-        borderRadius: '5px',
-        cursor: 'pointer',
-        transition: 'all 0.12s',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        opacity: active ? 1 : 0.6,
-        flexShrink: 0,
+        background: active ? `${color}1e` : 'var(--card)',
+        borderColor: active ? color : 'var(--border)',
       }}
     >
-      {icon
-        ? <img src={icon} alt={tooltip ?? label ?? ''} style={{ width: '20px', height: '20px', objectFit: 'contain', display: 'block' }} />
-        : <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', fontWeight: 700, color: active ? color : 'var(--text-4)', letterSpacing: 0, userSelect: 'none', lineHeight: 1, whiteSpace: 'nowrap' }}>
-            {label}
-          </span>
-      }
+      {icon ? (
+        <img src={icon} alt={tooltip ?? label ?? ''} className={cn('w-5 h-5 object-contain block transition-opacity', active ? 'opacity-100' : 'opacity-50')} />
+      ) : (
+        <span
+          className="font-mono text-[0.65rem] font-normal tracking-[0] select-none leading-none whitespace-nowrap"
+          style={{ color: active ? color : 'var(--text-4)' }}
+        >
+          {label}
+        </span>
+      )}
     </button>
   )
 }
