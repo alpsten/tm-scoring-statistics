@@ -1,26 +1,69 @@
-/* ── Theme tokens ───────────────────────────────────────────── */
-:root {
-  --bg-body:     #111111;
-  --bg-main:     #141414;
-  --bg-sidebar:  #1a1a1a;
-  --bd-sidebar:  #2a2a2a;
-  --bg-panel:    #1e1e1e;
-  --bd-panel:    #2a2a2a;
-  --bg-row:      #1c1c1c;
-  --bg-row-hover:#252525;
-  --bg-input:    #1c1c1c;
-  --bd-input:    #2e2e2e;
-  --text-1:      #e8e6e3;
-  --text-2:      #b0aeaa;
-  --text-3:      #888888;
-  --text-4:      #606060;
-  --text-5:      #484848;
-  --bd-secondary:#3a3a3a;
-  --sort-active: #e8e6e3;
-}
-
 @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap');
 @import "tailwindcss";
+
+/* ── shadcn/ui CSS variables (single source of truth) ───────── */
+:root {
+  --background:          #181614;
+  --foreground:          #f0eee9;
+  --card:                #302d2a;
+  --card-foreground:     #f0eee9;
+  --popover:             #302d2a;
+  --popover-foreground:  #f0eee9;
+  --primary:             #e05535;
+  --primary-foreground:  #1a0a00;
+  --secondary:           #201e1c;
+  --secondary-foreground:#b0aeaa;
+  --muted:               #201e1c;
+  --muted-foreground:    #888888;
+  --accent:              #38342f;
+  --accent-foreground:   #e8e6e3;
+  --destructive:         #e05535;
+  --border:              rgba(255, 255, 255, 0.10);
+  --input:               #2b2927;
+  --ring:                #e05535;
+  --radius:              6px;
+
+  /* Legacy aliases — kept for gradual migration */
+  --bg-body:     var(--background);
+  --bg-main:     #1c1a18;
+  --bg-sidebar:  var(--card);
+  --bd-sidebar:  var(--border);
+  --bg-panel:    var(--card);
+  --bd-panel:    var(--border);
+  --bg-row:      var(--secondary);
+  --bg-row-hover:var(--accent);
+  --bg-input:    var(--input);
+  --bd-input:    #2b2927;
+  --text-1:      var(--foreground);
+  --text-2:      var(--secondary-foreground);
+  --text-3:      var(--muted-foreground);
+  --text-4:      #908c88;
+  --text-5:      #484848;
+  --bd-secondary:rgba(255, 255, 255, 0.09);
+  --sort-active: var(--foreground);
+}
+
+/* ── Map shadcn CSS vars → Tailwind v4 color utilities ───────── */
+@theme inline {
+  --color-background:         var(--background);
+  --color-foreground:         var(--foreground);
+  --color-card:               var(--card);
+  --color-card-foreground:    var(--card-foreground);
+  --color-popover:            var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary:            var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary:          var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:              var(--muted);
+  --color-muted-foreground:   var(--muted-foreground);
+  --color-accent:             var(--accent);
+  --color-accent-foreground:  var(--accent-foreground);
+  --color-destructive:        var(--destructive);
+  --color-border:             var(--border);
+  --color-input:              var(--input);
+  --color-ring:               var(--ring);
+}
 
 @theme {
   /* Mars: red-orange (wins, highlights) */
@@ -57,10 +100,18 @@
   --color-surface-300: #606060;
 
   /* Ink: warm-neutral text */
-  --color-ink-100: #e8e6e3;
-  --color-ink-200: #b0aeaa;
-  --color-ink-300: #888888;
-  --color-ink-400: #606060;
+  --color-ink-100: #f0eee9;
+  --color-ink-200: #bab6b2;
+  --color-ink-300: #9c9894;
+  --color-ink-400: #908c88;
+
+  /* Win: forest green (high win rate = positive performance) */
+  --color-win-400: #5db37e;
+  --color-win-500: #4a9e6b;
+  --color-win-600: #3a8057;
+
+  /* Bronze: leaderboard */
+  --color-bronze-400: #c97b3a;
 
   --font-display: 'Exo 2', sans-serif;
   --font-mono: 'Space Mono', monospace;
@@ -77,12 +128,17 @@ html, body, #root {
   padding: 0;
 }
 
+html {
+  background-color: var(--bg-body);
+}
+
 body {
   font-family: var(--font-body);
-  background-color: var(--bg-body);
+  background-color: transparent;
   color: var(--text-1);
   -webkit-font-smoothing: antialiased;
 }
+
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg-sidebar); }
@@ -93,21 +149,15 @@ body {
 .font-mono    { font-family: var(--font-mono); }
 .font-body    { font-family: var(--font-body); }
 
-/* Subtle grid background texture */
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(200, 200, 200, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(200, 200, 200, 0.025) 1px, transparent 1px);
-  background-size: 48px 48px;
-}
+/* Canvas-based hex background handles the pattern — no CSS needed here */
 
 /* Panel hover interaction */
 .panel-hover {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .panel-hover:hover {
-  border-color: rgba(200, 200, 200, 0.2) !important;
-  box-shadow: 0 0 0 1px rgba(200, 200, 200, 0.07), 0 8px 32px rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.20) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 /* Page enter animation */
