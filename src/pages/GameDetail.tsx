@@ -3,12 +3,14 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getCorps } from '../types/database'
 import { useQueryClient } from '@tanstack/react-query'
 import { SkeletonHeader, SkeletonTable } from '../components/ui/PageSkeleton'
-import { useGame, useGameByNumber, deleteGame, useGameCards, useGameMilestones, useGameAwards, useCardReference } from '../lib/hooks'
+import { useGame, useGameByNumber, deleteGame, useGameCards, useGameMilestones, useGameAwards, useCardReference, useCardStats } from '../lib/hooks'
 import { useAuth } from '../context/useAuth'
 import { EXPANSION_ICONS, TYPE_COLORS } from '../lib/expansions'
 import Tag from '../components/ui/Tag'
 import { parseTags } from '../components/ui/tagUtils'
 import SectionHeading from '../components/ui/SectionHeading'
+import DataTable from '../components/ui/DataTable'
+import type { DataTableColumn } from '../components/ui/DataTable'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -35,12 +37,15 @@ export default function GameDetail() {
   const { data: gameMilestones = [] } = useGameMilestones(dbId ?? '')
   const { data: gameAwards = [] } = useGameAwards(dbId ?? '')
   const { data: cardRef = [] } = useCardReference()
+  const { data: globalCardStats = [] } = useCardStats()
   const { user } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [expandedPlayers, setExpandedPlayers] = useState<Set<string>>(new Set())
+  const [cardSortKey, setCardSortKey] = useState<string | null>(null)
+  const [cardSortDir, setCardSortDir] = useState<'asc' | 'desc'>('asc')
 
   async function handleDelete() {
     setDeleting(true)
@@ -75,9 +80,127 @@ export default function GameDetail() {
   const winner = sorted[0]
   const gameNum = game?.game_number ?? null
   const cardRefMap = Object.fromEntries(cardRef.map(c => [c.card_name.toLowerCase(), c]))
+  const statsMap = Object.fromEntries(globalCardStats.map(s => [s.card_name.toLowerCase(), s]))
 
   const GEN_COLORS = ['#707070', '#3bbfbf', '#b87aff', '#c9a030', '#e05535', '#4a9e6b', '#9b50f0', '#2e8b8b']
   const genColor = (gen: number) => GEN_COLORS[(gen - 1) % GEN_COLORS.length]
+
+  function handleCardSort(key: string) {
+    if (key === cardSortKey) setCardSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setCardSortKey(key); setCardSortDir(key === 'generation' ? 'asc' : 'desc') }
+  }
+
+  function sortCards(cards: typeof gameCards) {
+    if (!cardSortKey) return cards
+    return [...cards].sort((a, b) => {
+      let vA: number, vB: number
+      if (cardSortKey === 'generation')    { vA = a.generation ?? -1; vB = b.generation ?? -1 }
+      else if (cardSortKey === 'mc_cost')  { vA = cardRefMap[a.card_name.toLowerCase()]?.mc_cost ?? -1; vB = cardRefMap[b.card_name.toLowerCase()]?.mc_cost ?? -1 }
+      else if (cardSortKey === 'win_rate') { vA = statsMap[a.card_name.toLowerCase()]?.win_rate ?? -1; vB = statsMap[b.card_name.toLowerCase()]?.win_rate ?? -1 }
+      else                                 { vA = a.vp_from_card ?? -1; vB = b.vp_from_card ?? -1 }
+      return cardSortDir === 'asc' ? vA - vB : vB - vA
+    })
+  }
+
+  const cardColumns: DataTableColumn<typeof gameCards[0]>[] = [
+    {
+      key: 'generation',
+      label: 'Gen',
+      sortable: true,
+      tdStyle: { fontFamily: 'var(--font-mono)', fontSize: '0.72rem' },
+      render: c => c.generation != null
+        ? <span style={{ color: genColor(c.generation) }}>G{c.generation}</span>
+        : <span className="text-[var(--text-5)]">—</span>,
+    },
+    {
+      key: 'card_name',
+      label: 'Card',
+      render: c => (
+        <Link to={`/cards/${encodeURIComponent(c.card_name)}`} className="font-body text-[0.8rem] text-foreground no-underline hover:text-mars-400 transition-colors">
+          {c.card_name}
+        </Link>
+      ),
+    },
+    {
+      key: 'card_type',
+      label: 'Type',
+      align: 'center',
+      render: c => {
+        const ref = cardRefMap[c.card_name.toLowerCase()]
+        const tc = ref?.card_type ? TYPE_COLORS[ref.card_type] : null
+        if (!tc) return <span className="text-[var(--text-5)]">—</span>
+        return (
+          <span className="font-body text-[0.62rem] font-medium px-[5px] py-[1px] rounded-[3px] whitespace-nowrap" style={{ background: tc.bg, color: tc.color }}>
+            {ref!.card_type}
+          </span>
+        )
+      },
+    },
+    {
+      key: 'tags',
+      label: 'Tags',
+      align: 'center',
+      render: c => {
+        const tags = parseTags(cardRefMap[c.card_name.toLowerCase()]?.tags ?? null)
+        if (tags.length === 0) return <span className="text-[var(--text-5)]">—</span>
+        return (
+          <span className="inline-flex gap-[3px] flex-wrap justify-center">
+            {tags.map((t, i) => <Tag key={`${t}-${i}`} name={t} />)}
+          </span>
+        )
+      },
+    },
+    {
+      key: 'expansion',
+      label: 'Expansion',
+      align: 'center',
+      render: c => {
+        const exps = cardRefMap[c.card_name.toLowerCase()]?.expansions ?? []
+        if (exps.length === 0) return <span className="text-[var(--text-5)]">—</span>
+        return (
+          <span className="inline-flex gap-[3px] flex-wrap justify-center">
+            {exps.map(exp => EXPANSION_ICONS[exp]
+              ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} className="w-4 h-4 object-contain" />
+              : <span key={exp} className="font-mono text-[0.55rem] text-[var(--text-4)]">{exp.slice(0, 3).toUpperCase()}</span>
+            )}
+          </span>
+        )
+      },
+    },
+    {
+      key: 'mc_cost',
+      label: 'Cost',
+      align: 'center',
+      sortable: true,
+      tdStyle: { fontFamily: 'var(--font-mono)', fontSize: '0.78rem' },
+      render: c => {
+        const cost = cardRefMap[c.card_name.toLowerCase()]?.mc_cost
+        return <span>{cost ?? '/'}</span>
+      },
+    },
+    {
+      key: 'win_rate',
+      label: 'Win Rate',
+      align: 'center',
+      sortable: true,
+      tdStyle: { fontSize: '0.78rem' },
+      render: c => {
+        const wr = statsMap[c.card_name.toLowerCase()]?.win_rate
+        if (wr == null) return <span className="text-[var(--text-5)]">—</span>
+        return <span className={wr >= 50 ? 'text-win-500' : wr > 33 ? 'text-score-400' : 'text-mars-500'}>{Math.round(wr)}%</span>
+      },
+    },
+    {
+      key: 'vp_from_card',
+      label: 'VP',
+      align: 'center',
+      sortable: true,
+      tdStyle: { fontFamily: 'var(--font-mono)', fontSize: '0.78rem' },
+      render: c => c.vp_from_card != null
+        ? <span className="text-score-400">{c.vp_from_card}</span>
+        : <span className="text-[var(--text-5)]">—</span>,
+    },
+  ]
 
   const scoreFields: { key: keyof typeof winner; label: string; short: string }[] = [
     { key: 'tr',           label: 'TR',         short: 'TR' },
@@ -489,42 +612,17 @@ export default function GameDetail() {
                       </div>
                     </button>
                     {isExpanded && (
-                      <div className="border-t border-border py-1">
-                        {cards.map((c, i) => (
-                          <div key={i} className="flex justify-between items-center px-3.5 py-1 gap-2 hover:bg-accent transition-colors">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Link to={`/cards/${encodeURIComponent(c.card_name)}`} className="font-body text-[0.78rem] text-secondary-foreground no-underline leading-[1.5] hover:text-mars-400 transition-colors">
-                                {c.card_name}
-                              </Link>
-                              {(() => {
-                                const ref = cardRefMap[c.card_name.toLowerCase()]
-                                if (!ref) return null
-                                const tc = ref.card_type ? TYPE_COLORS[ref.card_type] : null
-                                const tags = parseTags(ref.tags)
-                                return (
-                                  <>
-                                    {tc && (
-                                      <span className="font-body text-[0.62rem] font-medium px-[5px] py-[1px] rounded-[3px] whitespace-nowrap shrink-0" style={{ background: tc.bg, color: tc.color }}>
-                                        {ref.card_type}
-                                      </span>
-                                    )}
-                                    <div className="flex gap-[3px] items-center">
-                                      {tags.map((tag, i) => <Tag key={`${tag}-${i}`} name={tag} />)}
-                                    </div>
-                                  </>
-                                )
-                              })()}
-                            </div>
-                            <div className="flex gap-1.5 items-center shrink-0">
-                              {c.vp_from_card != null && (
-                                <span className="font-mono text-[0.65rem] text-score-400">{c.vp_from_card}VP</span>
-                              )}
-                              {c.generation != null && (
-                                <span className="font-mono text-[0.6rem]" style={{ color: genColor(c.generation) }}>G{c.generation}</span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                      <div className="border-t border-border">
+                        <DataTable
+                          compact
+                          columns={cardColumns}
+                          rows={sortCards(cards)}
+                          rowKey={c => `${c.card_order}-${c.card_name}`}
+                          sortKey={cardSortKey ?? undefined}
+                          sortDir={cardSortDir}
+                          onSort={handleCardSort}
+                          className="rounded-none border-0"
+                        />
                       </div>
                     )}
                   </div>

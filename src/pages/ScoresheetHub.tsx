@@ -7,6 +7,8 @@ const OFFICIAL_EXPANSIONS = [
   'Prelude', 'Prelude 2', 'Colonies', 'Venus Next', 'Turmoil', 'Promos',
 ]
 const FAN_EXPANSIONS = ['Ares', 'CEO', 'The Moon', 'Pathfinders']
+const PLAYER_COUNTS = [1, 2, 3, 4, 5]
+const DUO_THRESHOLD = 2
 
 interface Inclusion {
   label: string
@@ -74,9 +76,18 @@ export default function ScoresheetHub() {
     }
   })
 
+  const [players, setPlayers] = useState<number>(() => {
+    const stored = Number(localStorage.getItem('tm_scoresheet_players'))
+    return Number.isFinite(stored) && PLAYER_COUNTS.includes(stored) ? stored : 5
+  })
+
   useEffect(() => {
     localStorage.setItem('tm_scoresheet_exp', JSON.stringify([...selected]))
   }, [selected])
+
+  useEffect(() => {
+    localStorage.setItem('tm_scoresheet_players', String(players))
+  }, [players])
 
   function toggle(exp: string) {
     setSelected(prev => {
@@ -89,10 +100,14 @@ export default function ScoresheetHub() {
 
   function openSheet() {
     const base = `${import.meta.env.BASE_URL}scoresheet/print`
-    const expParam = [...selected].join(',')
-    const url = expParam ? `${base}?exp=${encodeURIComponent(expParam)}` : base
-    window.open(url, '_blank')
+    const qs = new URLSearchParams()
+    if (selected.size > 0) qs.set('exp', [...selected].join(','))
+    if (players !== 5) qs.set('players', String(players))
+    const query = qs.toString()
+    window.open(query ? `${base}?${query}` : base, '_blank')
   }
+
+  const isDuo = players <= DUO_THRESHOLD
 
   const activeInclusions = INCLUSIONS.filter(i => i.condition(selected))
 
@@ -106,9 +121,36 @@ export default function ScoresheetHub() {
 
       <div className="bg-card border border-border rounded-[8px] px-[22px] py-5 mb-4">
         <p className="font-body text-[0.83rem] text-[var(--text-4)] leading-[1.55] mt-0 mb-5">
-          Select the expansions you are playing with. The score sheet adapts based on your selection
-          and opens in a new tab ready to print (A4 landscape).
+          Select the number of players and the expansions you are playing with. The score sheet adapts
+          based on your selection and opens in a new tab ready to print (A4 landscape).
         </p>
+
+        <div className="mb-5">
+          <div className="font-mono text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-[var(--text-4)] mb-2.5">
+            Players
+          </div>
+          <div className="flex gap-2">
+            {PLAYER_COUNTS.map(n => (
+              <button
+                key={n}
+                onClick={() => setPlayers(n)}
+                className={cn(
+                  'w-[38px] h-[38px] rounded-[5px] border cursor-pointer transition-all flex items-center justify-center shrink-0 font-body font-semibold text-[0.9rem]',
+                  players === n
+                    ? 'border-score-400/55 bg-score-400/10 text-score-400'
+                    : 'border-[var(--bd-secondary)] bg-transparent text-[var(--text-4)] opacity-60 hover:opacity-90'
+                )}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          {isDuo && (
+            <p className="font-body text-[0.72rem] text-[var(--text-4)] mt-2 mb-0 leading-[1.5]">
+              {players} player{players === 1 ? '' : 's'} → two sheets are printed side by side on one A4 page to save paper.
+            </p>
+          )}
+        </div>
 
         <ExpansionGroup title="Official Expansions" expansions={OFFICIAL_EXPANSIONS} selected={selected} toggle={toggle} />
         <ExpansionGroup title="Fan Expansions"      expansions={FAN_EXPANSIONS}      selected={selected} toggle={toggle} />
