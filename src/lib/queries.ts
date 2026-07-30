@@ -1,5 +1,8 @@
 import { supabase } from './supabase'
 import { normalizeExpansion } from './expansions'
+import { evaluateCardEffects, aggregateCardEffects } from './cardEffectRules'
+import type { CardEffectAggregateStat } from './cardEffectRules'
+import { basePoints, milestoneAwardBonus, pairRandomRound, pairByStandings, determineFinalists } from './tournamentRules'
 import type { GameWithResults, PlayerStats, CorporationStats, CardStats, CardReference, PlayerProfile } from '../types/database'
 
 // ── Raw shape returned by Supabase nested selects ─────────────────────────────
@@ -14,6 +17,7 @@ interface RawGame {
   notes: string | null
   format: 'Physical' | 'Digital' | null
   created_at: string
+  raw_log: string | null
   parameter_contributions?: Array<{
     id: string
     game_id: string
@@ -236,6 +240,211 @@ export async function fetchGameCards(gameId: string): Promise<GameCardEntry[]> {
     .order('card_order', { ascending: true })
   if (error) throw error
   return data as GameCardEntry[]
+}
+
+export async function fetchAllGameCards(): Promise<(GameCardEntry & { game_id: string })[]> {
+  const { data, error } = await supabase
+    .from('cards_played')
+    .select('game_id, player_name, card_name, card_order, generation, vp_from_card')
+    .limit(10000)
+  if (error) throw error
+  return data as (GameCardEntry & { game_id: string })[]
+}
+
+export async function fetchCardEffectStatsGlobal(): Promise<CardEffectAggregateStat[]> {
+  const [allCards, cardRef] = await Promise.all([fetchAllGameCards(), fetchCardReference()])
+  const cardRefMap = Object.fromEntries(cardRef.map(c => [c.card_name.toLowerCase(), c]))
+  const byGame: Record<string, typeof allCards> = {}
+  for (const c of allCards) (byGame[c.game_id] ??= []).push(c)
+  const perGame = Object.values(byGame).map(cards => evaluateCardEffects(cards, cardRefMap))
+  return aggregateCardEffects(perGame)
+}
+
+export interface CardEffectEventStat {
+  card_name: string
+  event_type: string
+  gamesPlayed: number
+  totalAmount: number
+  avgPerGame: number
+  maxInGame: number
+}
+
+export interface GameCardEffectEvent {
+  player_name: string
+  card_name: string
+  event_type: string
+  amount: number
+  generation: number | null
+  event_order: number
+  resource_type: string | null
+  source_card: string | null
+}
+
+export async function fetchGameCardEffectEvents(gameId: string): Promise<GameCardEffectEvent[]> {
+  const { data, error } = await supabase
+    .from('card_effect_events')
+    .select('player_name, card_name, event_type, amount, generation, event_order, resource_type, source_card')
+    .eq('game_id', gameId)
+    .order('event_order', { ascending: true })
+  if (error) throw error
+  return data as GameCardEffectEvent[]
+}
+
+// Cards whose 'resource_added' total needs grouping by trigger reason rather than by
+// literal source card — e.g. Venusian Animals accumulates from *any* science-tag play,
+// so those are bucketed together instead of listing every distinct science card.
+export const RESOURCE_ADD_GROUP_TAG: Record<string, string> = {
+  'Venusian Animals': 'Science',
+  'Carbon Nanosystems': 'Science',
+}
+
+// Cards whose 'resource_removed' events represent a resource being spent for a fixed
+// MC-equivalent value rather than a card action — e.g. Carbon Nanosystems' graphenes,
+// spendable as 4 M€ each toward space/city tag cards.
+export const RESOURCE_REMOVE_MC_VALUE: Record<string, number> = {
+  'Carbon Nanosystems': 4,
+}
+
+export interface CardResourceRemovalStat {
+  card_name: string
+  gamesTriggered: number
+  avgGained: number
+  avgResourceTotal: number
+  maxResourceTotal: number
+  avgMcSaved: number
+  maxMcSaved: number
+}
+
+// Only cards with an explicit MC-per-resource rate (RESOURCE_REMOVE_MC_VALUE) get an
+// "MC saved" stat — other cards' resource_removed events don't represent a fixed-value
+// spend (e.g. Red Spot Observatory's stray removal isn't a discount at all).
+export async function fetchCardResourceRemovalStats(): Promise<CardResourceRemovalStat[]> {
+  const discountCards = Object.keys(RESOURCE_REMOVE_MC_VALUE)
+  if (discountCards.length === 0) return []
+
+  const [{ data: removed, error: removedErr }, { data: added, error: addedErr }] = await Promise.all([
+    supabase.from('card_effect_events').select('game_id, player_name, card_name, amount')
+      .eq('event_type', 'resource_removed').in('card_name', discountCards).limit(10000),
+    supabase.from('card_effect_events').select('game_id, player_name, card_name, amount')
+      .eq('event_type', 'resource_added').in('card_name', discountCards).limit(10000),
+  ])
+  if (removedErr) throw removedErr
+  if (addedErr) throw addedErr
+
+  const removedByPlayInGame: Record<string, number> = {}
+  for (const row of removed ?? []) {
+    const key = `${row.card_name}::${row.game_id}::${row.player_name}`
+    removedByPlayInGame[key] = (removedByPlayInGame[key] ?? 0) + row.amount
+  }
+  const addedByPlayInGame: Record<string, number> = {}
+  for (const row of added ?? []) {
+    const key = `${row.card_name}::${row.game_id}::${row.player_name}`
+    addedByPlayInGame[key] = (addedByPlayInGame[key] ?? 0) + row.amount
+  }
+
+  const byCard: Record<string, { totals: number[]; gained: number[] }> = {}
+  for (const [key, total] of Object.entries(removedByPlayInGame)) {
+    const card_name = key.split('::')[0]
+    const entry = (byCard[card_name] ??= { totals: [], gained: [] })
+    entry.totals.push(total)
+    entry.gained.push(addedByPlayInGame[key] ?? 0)
+  }
+
+  return Object.entries(byCard).map(([card_name, { totals, gained }]) => {
+    const mcPer = RESOURCE_REMOVE_MC_VALUE[card_name]
+    const mcValues = totals.map(t => t * mcPer)
+    return {
+      card_name,
+      gamesTriggered: totals.length,
+      avgGained: gained.reduce((s, v) => s + v, 0) / gained.length,
+      avgResourceTotal: totals.reduce((s, v) => s + v, 0) / totals.length,
+      maxResourceTotal: Math.max(...totals),
+      avgMcSaved: mcValues.reduce((s, v) => s + v, 0) / mcValues.length,
+      maxMcSaved: Math.max(...mcValues),
+    }
+  })
+}
+
+export interface CardResourceStat {
+  card_name: string
+  resource_type: string | null
+  gamesTriggered: number
+  avgResourceTotal: number
+  maxResourceTotal: number
+  avgVp: number
+  maxVp: number
+}
+
+export async function fetchCardResourceStats(): Promise<CardResourceStat[]> {
+  const [{ data, error }, cardRef] = await Promise.all([
+    supabase
+      .from('card_effect_events')
+      .select('game_id, player_name, card_name, amount, resource_type')
+      .eq('event_type', 'resource_added')
+      .limit(10000),
+    fetchCardReference(),
+  ])
+  if (error) throw error
+  const cardRefMap = Object.fromEntries(cardRef.map(c => [c.card_name.toLowerCase(), c]))
+
+  const byPlayInGame: Record<string, { total: number; resource_type: string | null }> = {}
+  for (const row of data ?? []) {
+    const key = `${row.card_name}::${row.game_id}::${row.player_name}`
+    const entry = (byPlayInGame[key] ??= { total: 0, resource_type: row.resource_type })
+    entry.total += row.amount
+  }
+
+  const byCard: Record<string, { totals: number[]; resource_type: string | null }> = {}
+  for (const [key, { total, resource_type }] of Object.entries(byPlayInGame)) {
+    const card_name = key.split('::')[0]
+    const entry = (byCard[card_name] ??= { totals: [], resource_type })
+    entry.totals.push(total)
+  }
+
+  return Object.entries(byCard)
+    // Only cards that actually convert this resource into VP — e.g. Red Spot
+    // Observatory's floaters just enable a draw action, no VP tied to the count.
+    .filter(([card_name]) => cardRefMap[card_name.toLowerCase()]?.resource_vp_type != null)
+    .map(([card_name, { totals, resource_type }]) => {
+      const vpPer = cardRefMap[card_name.toLowerCase()]?.resource_vp_per ?? 1
+      // VP is always floored — there's no such thing as half a VP.
+      const vps = totals.map(t => Math.floor(t / vpPer))
+      return {
+        card_name,
+        resource_type,
+        gamesTriggered: totals.length,
+        avgResourceTotal: totals.reduce((s, v) => s + v, 0) / totals.length,
+        maxResourceTotal: Math.max(...totals),
+        avgVp: vps.reduce((s, v) => s + v, 0) / vps.length,
+        maxVp: Math.max(...vps),
+      }
+    })
+}
+
+export async function fetchCardEffectEventStats(): Promise<CardEffectEventStat[]> {
+  const { data, error } = await supabase
+    .from('card_effect_events')
+    .select('game_id, card_name, event_type, amount')
+    .limit(10000)
+  if (error) throw error
+
+  const byCardType: Record<string, { perGame: Record<string, number> }> = {}
+  for (const row of data) {
+    const key = `${row.card_name}::${row.event_type}`
+    byCardType[key] ??= { perGame: {} }
+    byCardType[key].perGame[row.game_id] = (byCardType[key].perGame[row.game_id] ?? 0) + row.amount
+  }
+  return Object.entries(byCardType).map(([key, { perGame }]) => {
+    const [card_name, event_type] = key.split('::')
+    const totals = Object.values(perGame)
+    return {
+      card_name, event_type,
+      gamesPlayed: totals.length,
+      totalAmount: totals.reduce((s, v) => s + v, 0),
+      avgPerGame: totals.reduce((s, v) => s + v, 0) / totals.length,
+      maxInGame: Math.max(...totals),
+    }
+  })
 }
 
 export async function fetchPlayerCardStats(playerName: string): Promise<PlayerCardStat[]> {
@@ -499,5 +708,266 @@ export async function updateNote(id: string, patch: Partial<Pick<SiteNote, 'cate
 export async function deleteNote(id: string): Promise<void> {
   const { error } = await supabase.from('site_notes').delete().eq('id', id)
   if (error) throw error
+}
+
+// ── Tournaments ────────────────────────────────────────────────────────────
+// A tournament match is recorded directly (placement + TR + milestone/award
+// counts per player) rather than through the full game_sessions/player_results
+// flow — see tournamentRules.ts for the scoring and pairing math. Pairings are
+// persisted the moment they're generated (createRoundMatches) so a round can
+// never be silently reshuffled; only saveMatchResults touches results after
+// that, and it can be called again to correct a mistake.
+
+export interface Tournament {
+  id: string
+  name: string
+  status: 'qualifying' | 'final' | 'completed'
+  created_at: string
+}
+
+export interface TournamentStanding {
+  player_name: string
+  tp: number
+  games_played: number
+  active: boolean
+}
+
+export interface TournamentMatchPlayer {
+  player_name: string
+  position: number | null
+  milestones_claimed: number
+  awards_won: number
+}
+
+export interface TournamentMatch {
+  id: string
+  round: number
+  players: TournamentMatchPlayer[]
+}
+
+export interface TournamentPlayerEntry {
+  player_name: string
+  active: boolean
+}
+
+export async function fetchTournaments(): Promise<Tournament[]> {
+  const { data, error } = await supabase
+    .from('tournaments')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data as Tournament[]
+}
+
+export async function fetchTournament(id: string): Promise<Tournament> {
+  const { data, error } = await supabase.from('tournaments').select('*').eq('id', id).single()
+  if (error) throw error
+  return data as Tournament
+}
+
+export async function updateTournamentStatus(id: string, status: Tournament['status']): Promise<void> {
+  const { error } = await supabase.from('tournaments').update({ status }).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteTournament(id: string): Promise<void> {
+  const { error } = await supabase.from('tournaments').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function createTournament(name: string, playerNames: string[]): Promise<string> {
+  const { data, error } = await supabase.from('tournaments').insert({ name }).select('id').single()
+  if (error) throw error
+  const tournamentId = (data as { id: string }).id
+
+  const rows = playerNames.map(player_name => ({ tournament_id: tournamentId, player_name }))
+  const { error: playersError } = await supabase.from('tournament_players').insert(rows)
+  if (playersError) throw playersError
+
+  return tournamentId
+}
+
+export async function fetchTournamentPlayers(tournamentId: string): Promise<TournamentPlayerEntry[]> {
+  const { data, error } = await supabase
+    .from('tournament_players')
+    .select('player_name, active')
+    .eq('tournament_id', tournamentId)
+  if (error) throw error
+  return data as TournamentPlayerEntry[]
+}
+
+/** Excludes a withdrawn player from future round pairings — already-recorded results are untouched. */
+export async function setTournamentPlayerActive(tournamentId: string, playerName: string, active: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('tournament_players')
+    .update({ active })
+    .eq('tournament_id', tournamentId)
+    .eq('player_name', playerName)
+  if (error) throw error
+}
+
+/**
+ * Fixes a typo'd player name — updates the roster entry and every match row
+ * they've already been recorded in, so past results and standings stay
+ * attributed to the corrected name instead of forking into two players.
+ */
+export async function renameTournamentPlayer(tournamentId: string, oldName: string, newName: string): Promise<void> {
+  const trimmed = newName.trim()
+  if (!trimmed || trimmed === oldName) return
+
+  const players = await fetchTournamentPlayers(tournamentId)
+  if (players.some(p => p.player_name === trimmed)) {
+    throw new Error(`${trimmed} is already in this tournament.`)
+  }
+
+  const { error: playerError } = await supabase
+    .from('tournament_players')
+    .update({ player_name: trimmed })
+    .eq('tournament_id', tournamentId)
+    .eq('player_name', oldName)
+  if (playerError) throw playerError
+
+  const matchIds = (await fetchTournamentMatches(tournamentId)).map(m => m.id)
+  if (matchIds.length > 0) {
+    const { error: matchPlayerError } = await supabase
+      .from('tournament_match_players')
+      .update({ player_name: trimmed })
+      .in('match_id', matchIds)
+      .eq('player_name', oldName)
+    if (matchPlayerError) throw matchPlayerError
+  }
+}
+
+export async function fetchTournamentMatches(tournamentId: string): Promise<TournamentMatch[]> {
+  const { data, error } = await supabase
+    .from('tournament_matches')
+    .select('id, round, tournament_match_players(player_name, position, milestones_claimed, awards_won)')
+    .eq('tournament_id', tournamentId)
+    .order('round', { ascending: true })
+  if (error) throw error
+
+  type RawRow = { id: string; round: number; tournament_match_players: TournamentMatchPlayer[] }
+  return (data as unknown as RawRow[]).map(m => ({
+    id: m.id,
+    round: m.round,
+    players: m.tournament_match_players,
+  }))
+}
+
+async function fetchActivePlayerNames(tournamentId: string): Promise<Set<string>> {
+  const players = await fetchTournamentPlayers(tournamentId)
+  return new Set(players.filter(p => p.active).map(p => p.player_name))
+}
+
+/**
+ * Generates and immediately persists the pairings for a round — round 1 is
+ * random, rounds 2-3 group players with similar standings, and round 99 (the
+ * final) takes the qualifying finalists. Withdrawn players are excluded.
+ * Throws if the round already has matches, since pairings are never
+ * reshuffled once created.
+ */
+export async function createRoundMatches(tournamentId: string, round: 1 | 2 | 3 | 99): Promise<void> {
+  const existing = await fetchTournamentMatches(tournamentId)
+  if (existing.some(m => m.round === round)) {
+    throw new Error(`Round ${round === 99 ? 'Final' : round} already has pairings — edit results instead of regenerating.`)
+  }
+
+  const activeNames = await fetchActivePlayerNames(tournamentId)
+
+  let groups: string[][]
+  if (round === 1) {
+    groups = pairRandomRound([...activeNames])
+  } else if (round === 99) {
+    groups = [await fetchTournamentFinalists(tournamentId)]
+  } else {
+    const standings = (await fetchTournamentStandings(tournamentId)).filter(s => activeNames.has(s.player_name))
+    groups = pairByStandings(standings)
+  }
+
+  for (const group of groups) {
+    const { data, error } = await supabase
+      .from('tournament_matches')
+      .insert({ tournament_id: tournamentId, round })
+      .select('id')
+      .single()
+    if (error) throw error
+    const matchId = (data as { id: string }).id
+
+    const rows = group.map(player_name => ({ match_id: matchId, player_name }))
+    const { error: playersError } = await supabase.from('tournament_match_players').insert(rows)
+    if (playersError) throw playersError
+  }
+}
+
+/**
+ * Deletes a round's pairings so they can be regenerated — e.g. round 2 was
+ * paired using round 1 standings, then a mistake in round 1 got corrected
+ * afterward. Only allowed while the round is untouched (no player in any of
+ * its matches has a recorded position yet); once a table has been played,
+ * its pairing is permanent.
+ */
+export async function deleteRoundMatches(tournamentId: string, round: number): Promise<void> {
+  const matches = (await fetchTournamentMatches(tournamentId)).filter(m => m.round === round)
+  if (matches.some(m => m.players.some(p => p.position != null))) {
+    throw new Error('This round already has recorded results — it can no longer be regenerated.')
+  }
+
+  const { error } = await supabase
+    .from('tournament_matches')
+    .delete()
+    .eq('tournament_id', tournamentId)
+    .eq('round', round)
+  if (error) throw error
+}
+
+/** Saves (or re-saves) a match's results — safe to call again to correct a mistake. */
+export async function saveMatchResults(matchId: string, results: TournamentMatchPlayer[]): Promise<void> {
+  for (const r of results) {
+    const { error } = await supabase
+      .from('tournament_match_players')
+      .update({
+        position: r.position,
+        milestones_claimed: r.milestones_claimed,
+        awards_won: r.awards_won,
+      })
+      .eq('match_id', matchId)
+      .eq('player_name', r.player_name)
+    if (error) throw error
+  }
+}
+
+export async function fetchTournamentStandings(tournamentId: string): Promise<TournamentStanding[]> {
+  const [matches, activeNames] = await Promise.all([
+    fetchTournamentMatches(tournamentId),
+    fetchActivePlayerNames(tournamentId),
+  ])
+
+  const standings = new Map<string, TournamentStanding>()
+  for (const match of matches) {
+    if (match.round < 1 || match.round > 3) continue // only qualifying rounds count toward standings
+    const playerCount = match.players.length
+    if (playerCount !== 3 && playerCount !== 4) continue
+
+    for (const p of match.players) {
+      if (p.position == null) continue // result not recorded yet
+
+      const tp = basePoints(p.position, playerCount) + milestoneAwardBonus(p.milestones_claimed, p.awards_won)
+      const existing = standings.get(p.player_name)
+        ?? { player_name: p.player_name, tp: 0, games_played: 0, active: activeNames.has(p.player_name) }
+      existing.tp += tp
+      existing.games_played += 1
+      standings.set(p.player_name, existing)
+    }
+  }
+
+  return Array.from(standings.values()).sort((a, b) => b.tp - a.tp)
+}
+
+export async function fetchTournamentFinalists(tournamentId: string): Promise<string[]> {
+  const [standings, activeNames] = await Promise.all([
+    fetchTournamentStandings(tournamentId),
+    fetchActivePlayerNames(tournamentId),
+  ])
+  return determineFinalists(standings.filter(s => activeNames.has(s.player_name)))
 }
 

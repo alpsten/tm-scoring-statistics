@@ -18,9 +18,30 @@ import {
   fetchMergerStats,
   fetchNotes,
   fetchCardPlays,
+  fetchCardEffectStatsGlobal,
+  fetchCardEffectEventStats,
+  fetchGameCardEffectEvents,
+  fetchCardResourceStats,
+  fetchCardResourceRemovalStats,
+  fetchTournaments,
+  fetchTournament,
+  fetchTournamentPlayers,
+  fetchTournamentStandings,
+  fetchTournamentMatches,
 } from './queries'
 
 export { deleteGame, addNote, updateNote, deleteNote } from './queries'
+export {
+  createTournament,
+  createRoundMatches,
+  deleteRoundMatches,
+  saveMatchResults,
+  fetchTournamentFinalists,
+  updateTournamentStatus,
+  deleteTournament,
+  setTournamentPlayerActive,
+  renameTournamentPlayer,
+} from './queries'
 
 export function useGames() {
   return useQuery({ queryKey: ['games'], queryFn: fetchGames })
@@ -68,6 +89,30 @@ export function useGameCards(gameId: string) {
     queryFn: () => fetchGameCards(gameId),
     enabled: !!gameId,
   })
+}
+
+export function useCardEffectStatsGlobal() {
+  return useQuery({ queryKey: ['card-effect-stats-global'], queryFn: fetchCardEffectStatsGlobal })
+}
+
+export function useCardEffectEventStats() {
+  return useQuery({ queryKey: ['card-effect-event-stats'], queryFn: fetchCardEffectEventStats })
+}
+
+export function useGameCardEffectEvents(gameId: string) {
+  return useQuery({
+    queryKey: ['game-card-effect-events', gameId],
+    queryFn: () => fetchGameCardEffectEvents(gameId),
+    enabled: !!gameId,
+  })
+}
+
+export function useCardResourceStats() {
+  return useQuery({ queryKey: ['card-resource-stats'], queryFn: fetchCardResourceStats })
+}
+
+export function useCardResourceRemovalStats() {
+  return useQuery({ queryKey: ['card-resource-removal-stats'], queryFn: fetchCardResourceRemovalStats })
 }
 
 export function useGameMilestones(gameId: string) {
@@ -119,5 +164,41 @@ export function useCardPlays(cardName: string) {
     queryKey: ['card-plays', cardName],
     queryFn: () => fetchCardPlays(cardName),
     enabled: !!cardName,
+  })
+}
+
+export function useTournaments() {
+  return useQuery({ queryKey: ['tournaments'], queryFn: fetchTournaments })
+}
+
+export function useTournament(id: string) {
+  return useQuery({
+    queryKey: ['tournament', id],
+    queryFn: () => fetchTournament(id),
+    enabled: !!id,
+  })
+}
+
+export function useTournamentPlayers(tournamentId: string) {
+  return useQuery({
+    queryKey: ['tournament-players', tournamentId],
+    queryFn: () => fetchTournamentPlayers(tournamentId),
+    enabled: !!tournamentId,
+  })
+}
+
+export function useTournamentStandings(tournamentId: string) {
+  return useQuery({
+    queryKey: ['tournament-standings', tournamentId],
+    queryFn: () => fetchTournamentStandings(tournamentId),
+    enabled: !!tournamentId,
+  })
+}
+
+export function useTournamentMatches(tournamentId: string) {
+  return useQuery({
+    queryKey: ['tournament-matches', tournamentId],
+    queryFn: () => fetchTournamentMatches(tournamentId),
+    enabled: !!tournamentId,
   })
 }
