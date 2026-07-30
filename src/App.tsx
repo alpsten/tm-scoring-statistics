@@ -22,6 +22,8 @@ const Leaderboard      = lazy(() => import('./pages/Leaderboard'))
 const Notes            = lazy(() => import('./pages/Notes'))
 const ScoresheetHub    = lazy(() => import('./pages/ScoresheetHub'))
 const PrintScoresheet  = lazy(() => import('./pages/PrintScoresheet'))
+const Tournaments      = lazy(() => import('./pages/Tournaments'))
+const TournamentDetail = lazy(() => import('./pages/TournamentDetail'))
 
 // Admin pages
 const AdminLogin          = lazy(() => import('./pages/admin/AdminLogin'))
@@ -30,6 +32,7 @@ const AddGame             = lazy(() => import('./pages/admin/AddGame'))
 const CardReferenceAdmin  = lazy(() => import('./pages/admin/CardReferenceAdmin'))
 const PlayerProfileAdmin  = lazy(() => import('./pages/admin/PlayerProfileAdmin'))
 const ParseLog            = lazy(() => import('./pages/admin/ParseLog'))
+const TournamentAdmin     = lazy(() => import('./pages/admin/TournamentAdmin'))
 
 function CorpDetailRedirect() {
   const { name } = useParams<{ name: string }>()
@@ -81,6 +84,8 @@ export default function App() {
                   <Route path="leaderboard"      element={<Leaderboard />}      />
                   <Route path="under-development" element={<Notes />}            />
                   <Route path="scoresheet"       element={<ScoresheetHub />}    />
+                  <Route path="tournaments"      element={<Tournaments />}      />
+                  <Route path="tournaments/:id"  element={<TournamentDetail />} />
 
                   {/* Protected admin routes */}
                   <Route path="admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
@@ -89,6 +94,7 @@ export default function App() {
                   <Route path="admin/cards/reference" element={<AdminGuard><CardReferenceAdmin /></AdminGuard>} />
                   <Route path="admin/players/profiles" element={<AdminGuard><PlayerProfileAdmin /></AdminGuard>} />
                   <Route path="admin/parse-log" element={<AdminGuard><ParseLog /></AdminGuard>} />
+                  <Route path="admin/tournaments" element={<AdminGuard><TournamentAdmin /></AdminGuard>} />
                 </Route>
               </Routes>
             </Suspense>

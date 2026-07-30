@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   { to: '/cards',        label: 'Cards'             },
   { to: '/ceos',         label: 'CEOs'              },
   { to: '/ma',           label: 'Milestones/Awards' },
+  { to: '/tournaments',  label: 'Tournaments'       },
   { to: '/setup',        label: 'Setup'             },
   { to: '/under-development', label: 'Under Development' },
   { to: '/scoresheet',   label: 'Score Sheet'       },
