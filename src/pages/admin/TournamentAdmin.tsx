@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import PositionBadge from '../../components/ui/PositionBadge'
+import TournamentPositionBadge from '../../components/ui/TournamentPositionBadge'
 import {
   useTournaments,
   useTournament,
@@ -28,7 +28,8 @@ import {
   setTournamentPlayerActive,
   renameTournamentPlayer,
 } from '../../lib/hooks'
-import type { Tournament, TournamentMatch, TournamentPlayerEntry } from '../../lib/queries'
+import type { Tournament, TournamentMatch, TournamentPlayerEntry, TournamentStanding } from '../../lib/queries'
+import { basePoints, milestoneAwardBonus, pointsTierStyle } from '../../lib/tournamentRules'
 
 const inputClass = 'w-full bg-[#110d1e] border border-[#3e325e] rounded text-[#ece6ff] px-2.5 py-[7px] font-body text-[0.82rem] outline-none focus:border-violet-500/60 transition-colors'
 const labelClass = 'block font-mono text-[0.65rem] tracking-[0.08em] uppercase text-[#504270] mb-1'
@@ -39,6 +40,23 @@ const ROUND_LABEL: Record<number, string> = { 1: 'Round 1', 2: 'Round 2', 3: 'Ro
 function isRoundComplete(matches: TournamentMatch[], round: number): boolean {
   const roundMatches = matches.filter(m => m.round === round)
   return roundMatches.length > 0 && roundMatches.every(m => m.players.every(p => p.position != null))
+}
+
+function RoundCell({ standing, roundIndex }: { standing: TournamentStanding; roundIndex: number }) {
+  const position = standing.roundPlacements[roundIndex]
+  if (position == null) return <span className="text-[#504270]">—</span>
+  const style = pointsTierStyle(standing.roundBasePoints[roundIndex])
+  return (
+    <div className="flex items-center justify-center gap-1.5">
+      <TournamentPositionBadge position={position} tableSize={standing.roundTableSize[roundIndex]} compact />
+      <span
+        className="inline-block font-mono text-[0.68rem] font-semibold rounded px-[6px] py-[2px] border"
+        style={{ color: style.color, backgroundColor: style.bg, borderColor: style.border }}
+      >
+        {standing.roundTp[roundIndex].toFixed(1)}
+      </span>
+    </div>
+  )
 }
 
 // ─── Create tournament ──────────────────────────────────────────────────────
@@ -252,16 +270,19 @@ function MatchCard({ tournamentId, match, tableNumber }: { tournamentId: string;
   }
 
   return (
-    <div className="bg-[#110d1e] border border-[#3e325e] rounded-[6px] px-4 py-3.5">
-      <div className="flex items-center justify-between mb-3">
-        <div className="font-mono text-[0.68rem] tracking-[0.08em] uppercase text-[#a89ec0]">
-          Table {tableNumber} <span className="text-[#504270]">· {tableSize} players</span>
-          {isComplete && <span className="text-win-500 ml-2">✓ recorded</span>}
+    <div className="bg-[#110d1e] border border-[#3e325e] rounded-[6px] px-6 py-5">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center mb-6">
+        <span />
+        <div className="justify-self-center flex items-center gap-2">
+          <span className="inline-block font-mono text-[0.9rem] tracking-[0.06em] uppercase text-[#c4bedc] bg-white/10 border border-white/20 rounded px-2.5 py-1">
+            Table {tableNumber} <span className="text-[#504270]">· {tableSize} players</span>
+          </span>
+          {isComplete && <span className="font-mono text-[0.8rem] uppercase text-win-500">✓ recorded</span>}
         </div>
         {!editing && (
           <button
             type="button"
-            className="font-mono text-[0.65rem] tracking-[0.06em] uppercase text-[#5b8dd9] hover:underline"
+            className="justify-self-end font-mono text-[0.65rem] tracking-[0.06em] uppercase text-[#5b8dd9] hover:underline"
             onClick={() => setEditing(true)}
           >
             Edit
@@ -317,12 +338,17 @@ function MatchCard({ tournamentId, match, tableNumber }: { tournamentId: string;
       ) : (
         <div className="flex flex-col divide-y divide-[#241d38]">
           {[...match.players].sort((a, b) => (a.position ?? 99) - (b.position ?? 99)).map(p => (
-            <div key={p.player_name} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+            <div key={p.player_name} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
               <div className="flex items-center gap-2.5 min-w-0">
-                {p.position != null && <PositionBadge position={p.position} />}
+                {p.position != null && <TournamentPositionBadge position={p.position} tableSize={tableSize} />}
                 <span className="font-body font-semibold text-[0.92rem] text-[#ece6ff] truncate">{p.player_name}</span>
               </div>
               <span className="font-mono text-[0.72rem] text-[#625c7c] whitespace-nowrap">
+                {p.position != null && (tableSize === 3 || tableSize === 4) && (
+                  <span className="text-[#ece6ff] font-semibold">
+                    {(basePoints(p.position, tableSize) + milestoneAwardBonus(p.milestones_claimed, p.awards_won)).toFixed(1)} pts ·{' '}
+                  </span>
+                )}
                 {p.milestones_claimed} milestones · {p.awards_won} awards
               </span>
             </div>
@@ -410,7 +436,7 @@ function RoundSection({ tournamentId, round, matches, canGenerate, blockedReason
           <p className="font-body text-[0.78rem] text-[#504270]">{blockedReason}</p>
         )
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {error && <p className="font-body text-[0.72rem] text-mars-500">{error}</p>}
           {matches.map((m, i) => <MatchCard key={m.id} tournamentId={tournamentId} match={m} tableNumber={i + 1} />)}
         </div>
@@ -527,6 +553,39 @@ function PlayersPanel({ tournamentId, players }: { tournamentId: string; players
   )
 }
 
+// ─── Final panel ────────────────────────────────────────────────────────────
+// Promoted above Standings once it exists — the headline result, not just
+// one more round.
+
+function FinalPanel({ tournamentId, matches, qualifyingComplete }: {
+  tournamentId: string
+  matches: TournamentMatch[]
+  qualifyingComplete: boolean
+}) {
+  const finalMatches = matches.filter(m => m.round === 99)
+  const champion = finalMatches[0]?.players.find(p => p.position === 1)
+
+  if (!qualifyingComplete && finalMatches.length === 0) return null
+
+  return (
+    <div className={cn(panelClass, 'border-[#d4a820]/40')}>
+      {champion && (
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-xl">🏆</span>
+          <span className="font-display font-bold text-win-500 text-[1.1rem]">Champion: {champion.player_name}</span>
+        </div>
+      )}
+      <RoundSection
+        tournamentId={tournamentId}
+        round={99}
+        matches={finalMatches}
+        canGenerate={finalMatches.length === 0 && qualifyingComplete}
+        blockedReason="Complete all 3 qualifying rounds first."
+      />
+    </div>
+  )
+}
+
 // ─── Tournament panel ───────────────────────────────────────────────────────
 
 function TournamentPanel({ tournamentId }: { tournamentId: string }) {
@@ -577,6 +636,8 @@ function TournamentPanel({ tournamentId }: { tournamentId: string }) {
 
       <PlayersPanel tournamentId={tournamentId} players={players} />
 
+      <FinalPanel tournamentId={tournamentId} matches={matches} qualifyingComplete={qualifyingComplete} />
+
       <div className={panelClass}>
         <div className="font-display font-semibold text-[0.85rem] text-[#ece6ff] mb-3">Standings</div>
         {standings.length === 0 ? (
@@ -586,6 +647,9 @@ function TournamentPanel({ tournamentId }: { tournamentId: string }) {
             <thead>
               <tr className="border-b border-[#3e325e]">
                 <th className="text-left font-mono text-[0.65rem] tracking-[0.06em] uppercase text-[#504270] pb-2">Player</th>
+                <th className="text-center font-mono text-[0.65rem] tracking-[0.06em] uppercase text-[#504270] pb-2">R1</th>
+                <th className="text-center font-mono text-[0.65rem] tracking-[0.06em] uppercase text-[#504270] pb-2">R2</th>
+                <th className="text-center font-mono text-[0.65rem] tracking-[0.06em] uppercase text-[#504270] pb-2">R3</th>
                 <th className="text-right font-mono text-[0.65rem] tracking-[0.06em] uppercase text-[#504270] pb-2">TP</th>
                 <th className="text-right font-mono text-[0.65rem] tracking-[0.06em] uppercase text-[#504270] pb-2">Games</th>
               </tr>
@@ -599,6 +663,9 @@ function TournamentPanel({ tournamentId }: { tournamentId: string }) {
                       <span className="font-mono text-[0.62rem] tracking-[0.06em] uppercase text-[#504270] ml-2">withdrew</span>
                     )}
                   </td>
+                  <td className="text-center font-mono text-[0.8rem] py-1.5 whitespace-nowrap"><RoundCell standing={s} roundIndex={0} /></td>
+                  <td className="text-center font-mono text-[0.8rem] py-1.5 whitespace-nowrap"><RoundCell standing={s} roundIndex={1} /></td>
+                  <td className="text-center font-mono text-[0.8rem] py-1.5 whitespace-nowrap"><RoundCell standing={s} roundIndex={2} /></td>
                   <td className="text-right font-mono text-[0.83rem] text-[#ece6ff] py-1.5">{s.tp.toFixed(1)}</td>
                   <td className="text-right font-mono text-[0.8rem] text-[#625c7c] py-1.5">{s.games_played}</td>
                 </tr>
@@ -610,7 +677,7 @@ function TournamentPanel({ tournamentId }: { tournamentId: string }) {
 
       <div className={panelClass}>
         <div className="font-display font-semibold text-[0.85rem] text-[#ece6ff] mb-4">Rounds</div>
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-8">
           <RoundSection
             tournamentId={tournamentId}
             round={1}
@@ -631,13 +698,6 @@ function TournamentPanel({ tournamentId }: { tournamentId: string }) {
             matches={matchesByRound(3)}
             canGenerate={matchesByRound(3).length === 0 && isRoundComplete(matches, 2)}
             blockedReason="Complete round 2 first."
-          />
-          <RoundSection
-            tournamentId={tournamentId}
-            round={99}
-            matches={matchesByRound(99)}
-            canGenerate={matchesByRound(99).length === 0 && qualifyingComplete}
-            blockedReason="Complete all 3 qualifying rounds first."
           />
         </div>
       </div>

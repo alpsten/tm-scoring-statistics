@@ -17,6 +17,29 @@ export function milestoneAwardBonus(milestonesClaimed: number, awardsWon: number
   return 0.1 * (milestonesClaimed + awardsWon)
 }
 
+// Shared tier colors for base points earned (4/3/2/1) — used by both the
+// tournament match-card badges and the Standings table's R1/R2/R3 cells, so
+// they always match. A 3-player table's 2nd place only earns 2 points — the
+// same as a 4-player table's 3rd place — so both get the same color.
+export const POINT_TIER_STYLE: Record<number, { color: string; bg: string; border: string }> = {
+  4: { color: '#4a9e6b', bg: 'rgba(74,158,107,0.1)', border: 'rgba(74,158,107,0.3)' }, // green (winner)
+  3: { color: '#d4a820', bg: 'rgba(212,168,32,0.1)', border: 'rgba(212,168,32,0.3)' }, // yellow
+  2: { color: '#d07832', bg: 'rgba(210,120,50,0.1)', border: 'rgba(210,120,50,0.3)' }, // orange
+  1: { color: '#e05535', bg: 'rgba(224,85,53,0.1)', border: 'rgba(224,85,53,0.3)' },   // red
+}
+
+export function pointsTierColor(points: number): string {
+  if (points >= 4) return 'var(--color-win-500)'
+  if (points === 3) return POINT_TIER_STYLE[3].color
+  if (points === 2) return POINT_TIER_STYLE[2].color
+  return 'var(--color-mars-500)'
+}
+
+/** Full tier style (text/bg/border) for a round's base points — falls back to the 1-point (red) tier for anything unrecognized. */
+export function pointsTierStyle(points: number): { color: string; bg: string; border: string } {
+  return POINT_TIER_STYLE[points] ?? POINT_TIER_STYLE[1]
+}
+
 /**
  * Splits `n` players into tables of 3 or 4, using as few 3-tables as possible.
  * Throws if no valid split exists — the one real edge case is n === 5.

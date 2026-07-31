@@ -732,6 +732,12 @@ export interface TournamentStanding {
   active: boolean
   /** This player's tp earned in each completed qualifying round, in round order — used to break ties. */
   roundTp: number[]
+  /** This player's table placement in each completed qualifying round, in round order. */
+  roundPlacements: number[]
+  /** This player's base points (position only, no milestone/award bonus) each round — determines the tier color. */
+  roundBasePoints: number[]
+  /** Table size (3 or 4) each round was played at — needed to render the placement badge correctly. */
+  roundTableSize: number[]
 }
 
 export interface TournamentMatchPlayer {
@@ -944,9 +950,10 @@ export async function fetchTournamentStandings(tournamentId: string): Promise<To
     fetchActivePlayerNames(tournamentId),
   ])
 
-  // tp per player per round, so ties can be broken by standing before the
-  // round that produced them instead of arbitrarily — see compareStandings.
-  const roundTpByPlayer = new Map<string, Map<number, number>>()
+  // tp + placement per player per round, so ties can be broken by standing
+  // before the round that produced them (see compareStandings) and the UI
+  // can show a per-round placement column.
+  const roundDataByPlayer = new Map<string, Map<number, { tp: number; position: number; base: number; tableSize: number }>>()
   for (const match of matches) {
     if (match.round < 1 || match.round > 3) continue // only qualifying rounds count toward standings
     const playerCount = match.players.length
@@ -955,23 +962,30 @@ export async function fetchTournamentStandings(tournamentId: string): Promise<To
     for (const p of match.players) {
       if (p.position == null) continue // result not recorded yet
 
-      const tp = basePoints(p.position, playerCount) + milestoneAwardBonus(p.milestones_claimed, p.awards_won)
-      const perRound = roundTpByPlayer.get(p.player_name) ?? new Map<number, number>()
-      perRound.set(match.round, (perRound.get(match.round) ?? 0) + tp)
-      roundTpByPlayer.set(p.player_name, perRound)
+      const base = basePoints(p.position, playerCount)
+      const tp = base + milestoneAwardBonus(p.milestones_claimed, p.awards_won)
+      const perRound = roundDataByPlayer.get(p.player_name) ?? new Map<number, { tp: number; position: number; base: number; tableSize: number }>()
+      perRound.set(match.round, { tp, position: p.position, base, tableSize: playerCount })
+      roundDataByPlayer.set(p.player_name, perRound)
     }
   }
 
   const standings: TournamentStanding[] = []
-  for (const [player_name, perRound] of roundTpByPlayer) {
+  for (const [player_name, perRound] of roundDataByPlayer) {
     const rounds = [...perRound.keys()].sort((a, b) => a - b)
-    const roundTp = rounds.map(r => perRound.get(r)!)
+    const roundTp = rounds.map(r => perRound.get(r)!.tp)
+    const roundPlacements = rounds.map(r => perRound.get(r)!.position)
+    const roundBasePoints = rounds.map(r => perRound.get(r)!.base)
+    const roundTableSize = rounds.map(r => perRound.get(r)!.tableSize)
     standings.push({
       player_name,
       tp: roundTp.reduce((sum, v) => sum + v, 0),
       games_played: rounds.length,
       active: activeNames.has(player_name),
       roundTp,
+      roundPlacements,
+      roundBasePoints,
+      roundTableSize,
     })
   }
 
