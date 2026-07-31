@@ -50,18 +50,45 @@ function bucket<T>(items: T[], sizes: TableSize[]): T[][] {
   return groups
 }
 
+export interface RankedStanding {
+  player_name: string
+  tp: number
+  /** This player's tp earned in each completed qualifying round, in round order. */
+  roundTp: number[]
+}
+
+/**
+ * Ranks by total tp, but a tie is broken by whichever player was ahead
+ * before the round that produced the tie — never by chance. If the standing
+ * before that round was also tied, keep looking further back; if the whole
+ * score history is identical, fall back to name for a stable order.
+ */
+export function compareStandings(a: RankedStanding, b: RankedStanding): number {
+  let cumA = a.tp
+  let cumB = b.tp
+  const rounds = Math.max(a.roundTp.length, b.roundTp.length)
+
+  for (let i = rounds - 1; i >= 0; i--) {
+    if (cumA !== cumB) return cumB - cumA
+    cumA -= a.roundTp[i] ?? 0
+    cumB -= b.roundTp[i] ?? 0
+  }
+  return cumA !== cumB ? cumB - cumA : a.player_name.localeCompare(b.player_name)
+}
+
 /** Round 1: random seeding into tables of 3/4. */
 export function pairRandomRound(playerNames: string[]): string[][] {
   return bucket(shuffle(playerNames), tableSizes(playerNames.length))
 }
 
 /**
- * Rounds 2-3: sort by current tp (desc) and bucket into consecutive tables, so
- * each table is a cluster of players with similar standing. Ties are shuffled
- * before sorting so the same standings don't always split the same way.
+ * Rounds 2-3: rank by standing (see compareStandings) and bucket into
+ * consecutive tables, so each table is a cluster of players with similar
+ * standing — and a tie can never shuffle someone into a tougher or easier
+ * table than the player they're actually tied with deserves.
  */
-export function pairByStandings(standings: { player_name: string; tp: number }[]): string[][] {
-  const sorted = shuffle(standings).sort((a, b) => b.tp - a.tp)
+export function pairByStandings(standings: RankedStanding[]): string[][] {
+  const sorted = [...standings].sort(compareStandings)
   return bucket(sorted.map(s => s.player_name), tableSizes(sorted.length))
 }
 
@@ -72,8 +99,8 @@ export function pairByStandings(standings: { player_name: string; tp: number }[]
  * it advance — per the tournament rules, which favor a playable final over
  * including everyone tied at the cutoff.
  */
-export function determineFinalists(standings: { player_name: string; tp: number }[]): string[] {
-  const sorted = [...standings].sort((a, b) => b.tp - a.tp)
+export function determineFinalists(standings: RankedStanding[]): string[] {
+  const sorted = [...standings].sort(compareStandings)
   if (sorted.length <= 4) return sorted.map(s => s.player_name)
 
   const fourthTp = sorted[3].tp

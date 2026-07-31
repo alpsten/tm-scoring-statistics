@@ -2,7 +2,7 @@ import { supabase } from './supabase'
 import { normalizeExpansion } from './expansions'
 import { evaluateCardEffects, aggregateCardEffects } from './cardEffectRules'
 import type { CardEffectAggregateStat } from './cardEffectRules'
-import { basePoints, milestoneAwardBonus, pairRandomRound, pairByStandings, determineFinalists } from './tournamentRules'
+import { basePoints, milestoneAwardBonus, pairRandomRound, pairByStandings, determineFinalists, compareStandings } from './tournamentRules'
 import type { GameWithResults, PlayerStats, CorporationStats, CardStats, CardReference, PlayerProfile } from '../types/database'
 
 // ── Raw shape returned by Supabase nested selects ─────────────────────────────
@@ -730,6 +730,8 @@ export interface TournamentStanding {
   tp: number
   games_played: number
   active: boolean
+  /** This player's tp earned in each completed qualifying round, in round order — used to break ties. */
+  roundTp: number[]
 }
 
 export interface TournamentMatchPlayer {
@@ -942,7 +944,9 @@ export async function fetchTournamentStandings(tournamentId: string): Promise<To
     fetchActivePlayerNames(tournamentId),
   ])
 
-  const standings = new Map<string, TournamentStanding>()
+  // tp per player per round, so ties can be broken by standing before the
+  // round that produced them instead of arbitrarily — see compareStandings.
+  const roundTpByPlayer = new Map<string, Map<number, number>>()
   for (const match of matches) {
     if (match.round < 1 || match.round > 3) continue // only qualifying rounds count toward standings
     const playerCount = match.players.length
@@ -952,15 +956,26 @@ export async function fetchTournamentStandings(tournamentId: string): Promise<To
       if (p.position == null) continue // result not recorded yet
 
       const tp = basePoints(p.position, playerCount) + milestoneAwardBonus(p.milestones_claimed, p.awards_won)
-      const existing = standings.get(p.player_name)
-        ?? { player_name: p.player_name, tp: 0, games_played: 0, active: activeNames.has(p.player_name) }
-      existing.tp += tp
-      existing.games_played += 1
-      standings.set(p.player_name, existing)
+      const perRound = roundTpByPlayer.get(p.player_name) ?? new Map<number, number>()
+      perRound.set(match.round, (perRound.get(match.round) ?? 0) + tp)
+      roundTpByPlayer.set(p.player_name, perRound)
     }
   }
 
-  return Array.from(standings.values()).sort((a, b) => b.tp - a.tp)
+  const standings: TournamentStanding[] = []
+  for (const [player_name, perRound] of roundTpByPlayer) {
+    const rounds = [...perRound.keys()].sort((a, b) => a - b)
+    const roundTp = rounds.map(r => perRound.get(r)!)
+    standings.push({
+      player_name,
+      tp: roundTp.reduce((sum, v) => sum + v, 0),
+      games_played: rounds.length,
+      active: activeNames.has(player_name),
+      roundTp,
+    })
+  }
+
+  return standings.sort(compareStandings)
 }
 
 export async function fetchTournamentFinalists(tournamentId: string): Promise<string[]> {
