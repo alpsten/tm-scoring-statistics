@@ -97,11 +97,10 @@ function MatchTable({ match, tableNumber }: { match: TournamentMatch; tableNumbe
   )
 }
 
-export default function TournamentDetail() {
-  const { id = '' } = useParams<{ id: string }>()
-  const { data: tournament, isLoading: loadingTournament } = useTournament(id)
-  const { data: standings = [], isLoading: loadingStandings } = useTournamentStandings(id)
-  const { data: matches = [] } = useTournamentMatches(id)
+export function TournamentDetailBody({ tournamentId, showBackLink }: { tournamentId: string; showBackLink: boolean }) {
+  const { data: tournament, isLoading: loadingTournament } = useTournament(tournamentId)
+  const { data: standings = [], isLoading: loadingStandings } = useTournamentStandings(tournamentId)
+  const { data: matches = [] } = useTournamentMatches(tournamentId)
 
   if (loadingTournament || loadingStandings) return (
     <div className="page-enter py-8 px-9">
@@ -123,9 +122,11 @@ export default function TournamentDetail() {
 
   return (
     <div className="page-enter py-8 px-9">
-      <Link to="/tournaments" className="font-mono text-[0.7rem] tracking-[0.06em] uppercase text-[var(--text-4)] no-underline hover:text-mars-400 transition-colors">
-        ← Tournaments
-      </Link>
+      {showBackLink && (
+        <Link to="/tournaments" className="font-mono text-[0.7rem] tracking-[0.06em] uppercase text-[var(--text-4)] no-underline hover:text-mars-400 transition-colors">
+          ← Tournaments
+        </Link>
+      )}
       <PageHeader
         title={tournament.name}
         subtitle={`Status: ${tournament.status}`}
@@ -178,4 +179,9 @@ export default function TournamentDetail() {
       )}
     </div>
   )
+}
+
+export default function TournamentDetail() {
+  const { id = '' } = useParams<{ id: string }>()
+  return <TournamentDetailBody tournamentId={id} showBackLink />
 }

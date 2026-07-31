@@ -24,6 +24,7 @@ const ScoresheetHub    = lazy(() => import('./pages/ScoresheetHub'))
 const PrintScoresheet  = lazy(() => import('./pages/PrintScoresheet'))
 const Tournaments      = lazy(() => import('./pages/Tournaments'))
 const TournamentDetail = lazy(() => import('./pages/TournamentDetail'))
+const TournamentKioskView = lazy(() => import('./pages/TournamentKioskView'))
 
 // Admin pages
 const AdminLogin          = lazy(() => import('./pages/admin/AdminLogin'))
@@ -65,6 +66,7 @@ export default function App() {
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/scoresheet/print" element={<PrintScoresheet />} />
                 <Route path="/scoresheet/base"  element={<PrintScoresheet />} />
+                <Route path="/tournaments/:id/view" element={<TournamentKioskView />} />
 
                 {/* Sidebar layout wraps all other routes via Outlet */}
                 <Route element={<Layout />}>
