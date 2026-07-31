@@ -464,53 +464,58 @@ function PlayersPanel({ tournamentId, players }: { tournamentId: string; players
     }
   }
 
+  const sortedPlayers = [...players].sort((a, b) => a.player_name.localeCompare(b.player_name))
+
   return (
     <div className={panelClass}>
       <div className="font-display font-semibold text-[0.85rem] text-[#ece6ff] mb-3">Players</div>
-      <div className="flex flex-wrap gap-1.5">
-        {players.map(p => (
-          editingPlayer === p.player_name ? (
-            <input
-              key={p.player_name}
-              autoFocus
-              value={editValue}
-              onChange={e => setEditValue(e.target.value)}
-              onBlur={commitEdit}
-              onKeyDown={e => {
-                if (e.key === 'Enter') { e.preventDefault(); commitEdit() }
-                if (e.key === 'Escape') { e.preventDefault(); setEditingPlayer(null) }
-              }}
-              className="w-[140px] bg-[#110d1e] border border-violet-500/50 rounded px-2 py-1 font-body text-[0.78rem] text-[#ece6ff] outline-none"
-            />
-          ) : (
-            <span
-              key={p.player_name}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded px-2 py-1 font-body text-[0.78rem] border',
-                p.active
-                  ? 'bg-violet-500/10 border-violet-500/30 text-[#ece6ff]'
-                  : 'bg-transparent border-[#3e325e] text-[#504270] line-through'
-              )}
-            >
-              {p.player_name}
-              <button
-                type="button"
-                onClick={() => startEdit(p.player_name)}
-                className="no-underline text-[#625c7c] hover:text-[#5b8dd9]"
-                aria-label={`Rename ${p.player_name}`}
-              >
-                ✎
-              </button>
-              <button
-                type="button"
-                onClick={() => toggle(p.player_name, !p.active)}
-                className="no-underline text-[#625c7c] hover:text-mars-400"
-                aria-label={p.active ? `Remove ${p.player_name}` : `Restore ${p.player_name}`}
-              >
-                {p.active ? '✕' : '↺'}
-              </button>
-            </span>
-          )
+      <div style={{ columnWidth: '170px', columnGap: '0.5rem' }}>
+        {sortedPlayers.map(p => (
+          <div
+            key={p.player_name}
+            className={cn(
+              'flex items-center justify-between gap-2 rounded px-2.5 py-2 mb-2 font-body text-[0.82rem] border break-inside-avoid',
+              p.active
+                ? 'bg-violet-500/10 border-violet-500/30 text-[#ece6ff]'
+                : 'bg-transparent border-[#3e325e] text-[#504270]'
+            )}
+          >
+            {editingPlayer === p.player_name ? (
+              <input
+                autoFocus
+                value={editValue}
+                onChange={e => setEditValue(e.target.value)}
+                onBlur={commitEdit}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { e.preventDefault(); commitEdit() }
+                  if (e.key === 'Escape') { e.preventDefault(); setEditingPlayer(null) }
+                }}
+                className="min-w-0 flex-1 bg-[#110d1e] border border-violet-500/50 rounded px-2 py-1 font-body text-[0.78rem] text-[#ece6ff] outline-none"
+              />
+            ) : (
+              <>
+                <span className={cn('truncate', !p.active && 'line-through')}>{p.player_name}</span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => startEdit(p.player_name)}
+                    className="size-7 flex items-center justify-center rounded border border-transparent text-[#8b81a8] hover:text-[#5b8dd9] hover:border-[#5b8dd9]/40 hover:bg-[#5b8dd9]/10 transition-colors"
+                    aria-label={`Rename ${p.player_name}`}
+                  >
+                    ✎
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggle(p.player_name, !p.active)}
+                    className="size-5 flex items-center justify-center rounded text-[0.72rem] text-[#504270] hover:text-mars-400 transition-colors"
+                    aria-label={p.active ? `Remove ${p.player_name}` : `Restore ${p.player_name}`}
+                  >
+                    {p.active ? '✕' : '↺'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         ))}
       </div>
       {renameError && <p className="font-body text-[0.72rem] text-mars-500 mt-2">{renameError}</p>}

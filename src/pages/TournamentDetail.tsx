@@ -38,13 +38,13 @@ function MatchTable({ match, tableNumber }: { match: TournamentMatch; tableNumbe
       </div>
       <div className="flex flex-col divide-y divide-border">
         {[...match.players].sort((a, b) => (a.position ?? 99) - (b.position ?? 99)).map(p => (
-          <div key={p.player_name} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+          <div key={p.player_name} className="flex flex-col gap-1 py-2 first:pt-0 last:pb-0">
             <div className="flex items-center gap-2.5 min-w-0">
               {p.position != null && <PositionBadge position={p.position} />}
               <span className="font-body font-semibold text-[0.92rem] text-foreground truncate">{p.player_name}</span>
             </div>
             {p.position != null && (
-              <span className="font-mono text-[0.72rem] text-[var(--text-4)] whitespace-nowrap">
+              <span className="font-mono text-[0.68rem] text-[var(--text-4)]">
                 {p.milestones_claimed} milestones · {p.awards_won} awards
               </span>
             )}
@@ -109,7 +109,7 @@ export default function TournamentDetail() {
                 <div className="font-mono text-[0.68rem] tracking-[0.08em] uppercase text-[#d07832] mb-1.5">
                   {ROUND_LABEL[round] ?? `Round ${round}`}
                 </div>
-                <div className="flex flex-col gap-3">
+                <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
                   {(matchesByRound.get(round) ?? []).map((m, i) => <MatchTable key={m.id} match={m} tableNumber={i + 1} />)}
                 </div>
               </div>
