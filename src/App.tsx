@@ -7,6 +7,7 @@ import Layout from './components/layout/Layout'
 import AdminGuard from './pages/admin/AdminGuard'
 
 // Public pages — each becomes its own JS chunk
+const Home             = lazy(() => import('./pages/Home'))
 const Dashboard        = lazy(() => import('./pages/Dashboard'))
 const Games            = lazy(() => import('./pages/Games'))
 const GameDetail       = lazy(() => import('./pages/GameDetail'))
@@ -70,7 +71,8 @@ export default function App() {
 
                 {/* Sidebar layout wraps all other routes via Outlet */}
                 <Route element={<Layout />}>
-                  <Route index                    element={<Dashboard />}         />
+                  <Route index                    element={<Home />}              />
+                  <Route path="overview"          element={<Dashboard />}         />
                   <Route path="games"             element={<Games />}             />
                   <Route path="games/:id"         element={<GameDetail />}        />
                   <Route path="players"           element={<Players />}           />

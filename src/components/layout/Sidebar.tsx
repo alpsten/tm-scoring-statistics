@@ -18,7 +18,8 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { to: '/',             label: 'Overview'          },
+  { to: '/',             label: 'Home'              },
+  { to: '/overview',     label: 'Overview'          },
   { to: '/leaderboard',  label: 'Leaderboard'       },
   { to: '/games',        label: 'Games'             },
   { to: '/players',      label: 'Players'           },
