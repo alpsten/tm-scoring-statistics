@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { useGames, usePlayerStats, useCardReference } from '../../lib/hooks'
@@ -27,21 +27,44 @@ const inputClass = 'w-full bg-[#110d1e] border border-[#3e325e] rounded text-[#e
 
 export default function ParseLog() {
   const qc = useQueryClient()
+  const [searchParams] = useSearchParams()
   const [step, setStep] = useState<Step>('input')
   const [rawLog, setRawLog] = useState('')
   const [parsed, setParsed] = useState<ParsedLog | null>(null)
   const [playerMap, setPlayerMap] = useState<Record<string, string>>({})
   const [selectedGameId, setSelectedGameId] = useState('')
+  const [loadedGameId, setLoadedGameId] = useState('')
   const [expandedPlayers, setExpandedPlayers] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [importResult, setImportResult] = useState<{ cards: number; milestones: number; cardEffects: number } | null>(null)
   const [milestoneResolutions, setMilestoneResolutions] = useState<Record<string, string>>({})
+  const [autoMatchedPlayers, setAutoMatchedPlayers] = useState<Set<string>>(new Set())
+  const [autoMatchedMilestones, setAutoMatchedMilestones] = useState<Set<string>>(new Set())
 
   const { data: games = [] } = useGames()
   const { data: playerStats = [] } = usePlayerStats()
   const { data: cardRef = [] } = useCardReference()
   const allDbPlayers = [...new Set(playerStats.map(p => p.player_name))].sort()
+
+  const sortedGames = [...games].sort((a, b) => (b.game_number ?? 0) - (a.game_number ?? 0))
+
+  // Deep-link from a game's "Edit log" button: preselect that game and load its stored log
+  useEffect(() => {
+    const gameParam = searchParams.get('game')
+    if (!gameParam || loadedGameId) return
+    const g = games.find(g => g.id === gameParam)
+    if (g) {
+      setLoadedGameId(g.id)
+      setRawLog(g.raw_log ?? '')
+    }
+  }, [searchParams, games, loadedGameId])
+
+  function handleLoadGame(gameId: string) {
+    setLoadedGameId(gameId)
+    const g = games.find(g => g.id === gameId)
+    setRawLog(g?.raw_log ?? '')
+  }
 
   function handleParse() {
     if (!rawLog.trim()) return
@@ -54,12 +77,82 @@ export default function ParseLog() {
       map[logPlayer] = allDbPlayers.includes(logPlayer) ? logPlayer : ''
     }
     setPlayerMap(map)
-    setSelectedGameId('')
+    setSelectedGameId(loadedGameId)
     setMilestoneResolutions({})
+    setAutoMatchedPlayers(new Set())
+    setAutoMatchedMilestones(new Set())
     setSaveError(null)
     setExpandedPlayers(new Set())
     setStep('preview')
   }
+
+  // When re-parsing an already-imported game, suggest the player-name mapping and
+  // milestone-version resolutions from what's already stored, instead of making the
+  // user redo them from scratch every time they tweak the log.
+  useEffect(() => {
+    if (!selectedGameId || !parsed) return
+    let cancelled = false
+    ;(async () => {
+      const [{ data: existingCards }, { data: existingMilestones }] = await Promise.all([
+        supabase.from('cards_played').select('player_name, card_name').eq('game_id', selectedGameId),
+        supabase.from('game_milestones').select('player_name, milestone_name').eq('game_id', selectedGameId),
+      ])
+      if (cancelled) return
+
+      if (existingCards && existingCards.length > 0) {
+        const parsedByPlayer: Record<string, string[]> = {}
+        for (const c of parsed.cards) (parsedByPlayer[c.player_name] ??= []).push(c.card_name)
+        const existingByPlayer: Record<string, string[]> = {}
+        for (const c of existingCards) (existingByPlayer[c.player_name] ??= []).push(c.card_name)
+
+        const overlapScore = (a: string[], b: string[]) => {
+          const bCount: Record<string, number> = {}
+          for (const name of b) bCount[name] = (bCount[name] ?? 0) + 1
+          let score = 0
+          for (const name of a) {
+            if (bCount[name] > 0) { score++; bCount[name]-- }
+          }
+          return score
+        }
+
+        const pairs: { logPlayer: string; dbPlayer: string; score: number }[] = []
+        for (const logPlayer of Object.keys(parsedByPlayer)) {
+          for (const dbPlayer of Object.keys(existingByPlayer)) {
+            pairs.push({ logPlayer, dbPlayer, score: overlapScore(parsedByPlayer[logPlayer], existingByPlayer[dbPlayer]) })
+          }
+        }
+        pairs.sort((a, b) => b.score - a.score)
+
+        const usedLog = new Set<string>()
+        const usedDb = new Set<string>()
+        const suggested: Record<string, string> = {}
+        for (const { logPlayer, dbPlayer, score } of pairs) {
+          if (score === 0 || usedLog.has(logPlayer) || usedDb.has(dbPlayer)) continue
+          suggested[logPlayer] = dbPlayer
+          usedLog.add(logPlayer)
+          usedDb.add(dbPlayer)
+        }
+        if (Object.keys(suggested).length > 0) {
+          setPlayerMap(prev => ({ ...prev, ...suggested }))
+          setAutoMatchedPlayers(new Set(Object.keys(suggested)))
+        }
+      }
+
+      if (existingMilestones && existingMilestones.length > 0) {
+        const existingNames = new Set(existingMilestones.map(m => m.milestone_name))
+        const suggestedMilestones: Record<string, string> = {}
+        for (const [bareName, options] of Object.entries(MILESTONE_DISAMBIGUATION)) {
+          const match = options.find(opt => existingNames.has(opt))
+          if (match) suggestedMilestones[bareName] = match
+        }
+        if (Object.keys(suggestedMilestones).length > 0) {
+          setMilestoneResolutions(prev => ({ ...prev, ...suggestedMilestones }))
+          setAutoMatchedMilestones(new Set(Object.keys(suggestedMilestones)))
+        }
+      }
+    })()
+    return () => { cancelled = true }
+  }, [selectedGameId, parsed])
 
   async function handleImport() {
     if (!selectedGameId || !parsed) return
@@ -120,11 +213,18 @@ export default function ParseLog() {
         if (error) throw error
       }
 
+      const { error: logErr } = await supabase
+        .from('game_sessions')
+        .update({ raw_log: rawLog })
+        .eq('id', selectedGameId)
+      if (logErr) throw logErr
+
       await qc.invalidateQueries({ queryKey: ['card-stats'] })
       await qc.invalidateQueries({ queryKey: ['card-effect-stats-global'] })
       await qc.invalidateQueries({ queryKey: ['card-effect-event-stats'] })
       await qc.invalidateQueries({ queryKey: ['card-resource-stats'] })
       await qc.invalidateQueries({ queryKey: ['card-resource-removal-stats'] })
+      await qc.invalidateQueries({ queryKey: ['games'] })
 
       setImportResult({ cards: parsed.cards.length, milestones: parsed.milestones.length, cardEffects: parsed.cardEffects.length })
       setStep('done')
@@ -170,7 +270,7 @@ export default function ParseLog() {
         </div>
         <div className="flex gap-2.5">
           <button
-            onClick={() => { setStep('input'); setRawLog(''); setParsed(null); setImportResult(null) }}
+            onClick={() => { setStep('input'); setRawLog(''); setParsed(null); setImportResult(null); setLoadedGameId('') }}
             className="px-5 py-[9px] bg-violet-500/15 border border-violet-500/40 rounded text-[#b87aff] font-body text-[0.83rem] cursor-pointer"
           >
             Parse another log
@@ -252,10 +352,15 @@ export default function ParseLog() {
               <select
                 className={`${inputClass} h-[38px]`}
                 value={selectedGameId}
-                onChange={e => { setSelectedGameId(e.target.value); setMilestoneResolutions({}) }}
+                onChange={e => {
+                  setSelectedGameId(e.target.value)
+                  setMilestoneResolutions({})
+                  setAutoMatchedPlayers(new Set())
+                  setAutoMatchedMilestones(new Set())
+                }}
               >
                 <option value="">— select a game —</option>
-                {[...games].sort((a, b) => (b.game_number ?? 0) - (a.game_number ?? 0)).map(g => (
+                {sortedGames.map(g => (
                   <option key={g.id} value={g.id}>
                     {g.date} · {g.map_name ?? 'No map'}{g.game_number != null ? ` · #${g.game_number}` : ''}
                   </option>
@@ -274,7 +379,7 @@ export default function ParseLog() {
                     </div>
                     <div className="text-[#504270] text-[0.7rem]">→</div>
                     <select
-                      className={`${inputClass} flex-1 h-[34px]`}
+                      className={`${inputClass} flex-1 h-[34px] ${autoMatchedPlayers.has(logName) ? 'border-[#3bbfbf]' : ''}`}
                       value={playerMap[logName] ?? ''}
                       onChange={e => setPlayerMap(prev => ({ ...prev, [logName]: e.target.value }))}
                     >
@@ -284,6 +389,9 @@ export default function ParseLog() {
                       ))}
                       <option value={logName}>Use as-is: {logName}</option>
                     </select>
+                    {autoMatchedPlayers.has(logName) && (
+                      <span className="font-mono text-[0.62rem] text-[#3bbfbf] whitespace-nowrap">matched</span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -306,13 +414,16 @@ export default function ParseLog() {
                       </div>
                       <div className="text-[#504270] text-[0.7rem]">→</div>
                       <select
-                        className={`${inputClass} flex-1 h-[34px] ${milestoneResolutions[logName] ? '' : 'border-[#d4a820]'}`}
+                        className={`${inputClass} flex-1 h-[34px] ${milestoneResolutions[logName] ? (autoMatchedMilestones.has(logName) ? 'border-[#3bbfbf]' : '') : 'border-[#d4a820]'}`}
                         value={milestoneResolutions[logName] ?? ''}
                         onChange={e => setMilestoneResolutions(prev => ({ ...prev, [logName]: e.target.value }))}
                       >
                         <option value="">— choose version —</option>
                         {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                       </select>
+                      {autoMatchedMilestones.has(logName) && (
+                        <span className="font-mono text-[0.62rem] text-[#3bbfbf] whitespace-nowrap">matched</span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -414,6 +525,26 @@ export default function ParseLog() {
       <PageHeader title="Parse game log" subtitle="Paste the game log from the Terraforming Mars app" />
 
       <div className="max-w-[720px]">
+        <div className="mb-4">
+          <div className={sectionLabelClass}>Load an existing game's stored log to update it</div>
+          <select
+            className={`${inputClass} h-[38px]`}
+            value={loadedGameId}
+            onChange={e => handleLoadGame(e.target.value)}
+          >
+            <option value="">— start with a blank log —</option>
+            {sortedGames.map(g => (
+              <option key={g.id} value={g.id}>
+                {g.date} · {g.map_name ?? 'No map'}{g.game_number != null ? ` · #${g.game_number}` : ''}{g.raw_log ? '' : ' (no log saved yet)'}
+              </option>
+            ))}
+          </select>
+          {loadedGameId && !rawLog && (
+            <div className="mt-2 font-body text-[0.72rem] text-[#3e325e]">
+              This game has no log saved yet — paste one below.
+            </div>
+          )}
+        </div>
         <textarea
           value={rawLog}
           onChange={e => setRawLog(e.target.value)}

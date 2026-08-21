@@ -49,6 +49,7 @@ export default function GameDetail() {
   const [expandedPlayers, setExpandedPlayers] = useState<Set<string>>(new Set())
   const [cardSortKey, setCardSortKey] = useState<string | null>(null)
   const [cardSortDir, setCardSortDir] = useState<'asc' | 'desc'>('asc')
+  const [logExpanded, setLogExpanded] = useState(false)
 
   async function handleDelete() {
     setDeleting(true)
@@ -240,6 +241,12 @@ export default function GameDetail() {
               className="px-3.5 py-[5px] bg-violet-500/8 border border-violet-500/30 rounded font-body text-[0.78rem] text-violet-400 no-underline hover:bg-violet-500/15 transition-colors"
             >
               Edit
+            </Link>
+            <Link
+              to={`/admin/parse-log?game=${dbId}`}
+              className="px-3.5 py-[5px] bg-violet-500/8 border border-violet-500/30 rounded font-body text-[0.78rem] text-violet-400 no-underline hover:bg-violet-500/15 transition-colors"
+            >
+              {game.raw_log ? 'Edit log' : 'Add log'}
             </Link>
             {!showDeleteConfirm ? (
               <Button
@@ -757,6 +764,25 @@ export default function GameDetail() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Raw game log */}
+      {game.raw_log && (
+        <div className="mt-8">
+          <button
+            type="button"
+            onClick={() => setLogExpanded(v => !v)}
+            className="w-full flex justify-between items-center bg-transparent border-none p-0 cursor-pointer text-left"
+          >
+            <SectionHeading>Game log</SectionHeading>
+            <span className={cn('font-mono text-[0.6rem] text-[var(--text-4)] transition-transform duration-150 mb-3', logExpanded && 'rotate-180')}>▼</span>
+          </button>
+          {logExpanded && (
+            <pre className="bg-card border border-border rounded px-4 py-3 font-mono text-[0.72rem] text-[var(--text-3)] leading-[1.6] whitespace-pre-wrap max-h-[480px] overflow-y-auto">
+              {game.raw_log}
+            </pre>
+          )}
         </div>
       )}
     </div>

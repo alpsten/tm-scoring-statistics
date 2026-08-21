@@ -11,6 +11,7 @@ export interface GameSession {
   format: 'Physical' | 'Digital' | null
   turn_order: string[] | null
   created_at: string
+  raw_log: string | null
 }
 
 export interface PlayerResult {
