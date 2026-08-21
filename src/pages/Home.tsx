@@ -32,7 +32,7 @@ export default function Home() {
           to="/overview"
           className="inline-block mt-9 font-display font-bold uppercase tracking-[0.08em] text-[0.9rem] text-[#1a0a00] bg-mars-500 hover:bg-mars-400 transition-colors rounded px-7 py-3 no-underline"
         >
-          View Stats →
+          Welcome
         </Link>
       </div>
     </div>
