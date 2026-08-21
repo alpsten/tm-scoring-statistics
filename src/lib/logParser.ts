@@ -16,11 +16,27 @@ export const CARD_NAME_CORRECTIONS: Record<string, string> = {
   'CO² Reducers': 'CO2 Reducers',
 }
 
-// Fix UTF-8 text that was mis-decoded as Latin-1 (mojibake)
-// e.g. "RÃ¶nnegÃ¥rd" → "Rönnegård"
+// Windows-1252 byte values for the 0x80-0x9F range that differ from plain Latin-1 — the TM
+// app's log export mis-decodes UTF-8 as Windows-1252, not Latin-1, so characters in this
+// range (notably € itself) need an explicit reverse mapping back to their original byte.
+const CP1252_HIGH_CHARS: Record<string, number> = {
+  '€': 0x80, '‚': 0x82, 'ƒ': 0x83, '„': 0x84, '…': 0x85,
+  '†': 0x86, '‡': 0x87, 'ˆ': 0x88, '‰': 0x89, 'Š': 0x8A,
+  '‹': 0x8B, 'Œ': 0x8C, 'Ž': 0x8E, '‘': 0x91, '’': 0x92,
+  '“': 0x93, '”': 0x94, '•': 0x95, '–': 0x96, '—': 0x97,
+  '˜': 0x98, '™': 0x99, 'š': 0x9A, '›': 0x9B, 'œ': 0x9C,
+  'ž': 0x9E, 'Ÿ': 0x9F,
+}
+
+// Fix UTF-8 text that was mis-decoded as Windows-1252 (mojibake)
+// e.g. "RÃ¶nnegÃ¥rd" → "Rönnegård", "Mâ‚¬" → "M€"
+// Note: the previous decodeURIComponent(escape(s)) approach silently failed (and returned
+// the ENTIRE string unfixed) whenever € appeared, since escape() can't represent U+201A —
+// one of the three characters € mojibakes into — breaking every "M€" match downstream.
 function fixEncoding(s: string): string {
   try {
-    return decodeURIComponent(escape(s))
+    const bytes = Uint8Array.from(Array.from(s, ch => CP1252_HIGH_CHARS[ch] ?? ch.charCodeAt(0)))
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
   } catch {
     return s
   }
