@@ -35,7 +35,7 @@ export default function ParseLog() {
   const [expandedPlayers, setExpandedPlayers] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [importResult, setImportResult] = useState<{ cards: number; milestones: number } | null>(null)
+  const [importResult, setImportResult] = useState<{ cards: number; milestones: number; cardEffects: number } | null>(null)
   const [milestoneResolutions, setMilestoneResolutions] = useState<Record<string, string>>({})
 
   const { data: games = [] } = useGames()
@@ -70,6 +70,7 @@ export default function ParseLog() {
       // Only delete log-claimed rows (player_name IS NOT NULL) — preserve config entries (player_name IS NULL)
       await supabase.from('cards_played').delete().eq('game_id', selectedGameId)
       await supabase.from('game_milestones').delete().eq('game_id', selectedGameId).not('player_name', 'is', null)
+      await supabase.from('card_effect_events').delete().eq('game_id', selectedGameId)
 
       const resolvedName = (logName: string) => playerMap[logName] || logName
 
@@ -102,9 +103,30 @@ export default function ParseLog() {
         if (error) throw error
       }
 
-      await qc.invalidateQueries({ queryKey: ['card-stats'] })
+      if (parsed.cardEffects.length > 0) {
+        const { error } = await supabase.from('card_effect_events').insert(
+          parsed.cardEffects.map(e => ({
+            game_id: selectedGameId,
+            player_name: resolvedName(e.player_name),
+            card_name: e.card_name,
+            event_type: e.event_type,
+            amount: e.amount,
+            generation: e.generation,
+            event_order: e.event_order,
+            resource_type: e.resource_type ?? null,
+            source_card: e.source_card ?? null,
+          }))
+        )
+        if (error) throw error
+      }
 
-      setImportResult({ cards: parsed.cards.length, milestones: parsed.milestones.length })
+      await qc.invalidateQueries({ queryKey: ['card-stats'] })
+      await qc.invalidateQueries({ queryKey: ['card-effect-stats-global'] })
+      await qc.invalidateQueries({ queryKey: ['card-effect-event-stats'] })
+      await qc.invalidateQueries({ queryKey: ['card-resource-stats'] })
+      await qc.invalidateQueries({ queryKey: ['card-resource-removal-stats'] })
+
+      setImportResult({ cards: parsed.cards.length, milestones: parsed.milestones.length, cardEffects: parsed.cardEffects.length })
       setStep('done')
     } catch (err) {
       const msg = err instanceof Error ? err.message : (err as { message?: string })?.message
@@ -139,6 +161,12 @@ export default function ParseLog() {
             <div className="font-mono text-[1.6rem] font-bold text-[#3bbfbf]">{importResult.milestones}</div>
             <div className="font-body text-[0.75rem] text-[#504270] mt-1">milestones imported</div>
           </div>
+          {importResult.cardEffects > 0 && (
+            <div className="bg-[#282042] border border-score-400/25 rounded-[6px] px-7 py-5 text-center">
+              <div className="font-mono text-[1.6rem] font-bold text-score-400">{importResult.cardEffects}</div>
+              <div className="font-body text-[0.75rem] text-[#504270] mt-1">card effects imported</div>
+            </div>
+          )}
         </div>
         <div className="flex gap-2.5">
           <button
@@ -330,7 +358,7 @@ export default function ParseLog() {
                 disabled={!canImport || saving}
                 className={`px-7 py-[10px] rounded font-display font-semibold text-[0.88rem] transition-colors ${canImport ? 'bg-violet-500/15 border border-violet-500/50 text-[#b87aff] cursor-pointer' : 'bg-white/4 border border-[#3e325e] text-[#3e325e] cursor-not-allowed'} ${saving ? 'opacity-60' : ''}`}
               >
-                {saving ? 'Importing…' : `Import ${parsed.cards.length} cards + ${parsed.milestones.length} milestones`}
+                {saving ? 'Importing…' : `Import ${parsed.cards.length} cards + ${parsed.milestones.length} milestones${parsed.cardEffects.length > 0 ? ` + ${parsed.cardEffects.length} card effects` : ''}`}
               </button>
             </div>
           </div>

@@ -3,7 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getCorps } from '../types/database'
 import { useQueryClient } from '@tanstack/react-query'
 import { SkeletonHeader, SkeletonTable } from '../components/ui/PageSkeleton'
-import { useGame, useGameByNumber, deleteGame, useGameCards, useGameMilestones, useGameAwards, useCardReference, useCardStats } from '../lib/hooks'
+import { useGame, useGameByNumber, deleteGame, useGameCards, useGameMilestones, useGameAwards, useCardReference, useCardStats, useGameCardEffectEvents } from '../lib/hooks'
+import { RESOURCE_ADD_GROUP_TAG, RESOURCE_REMOVE_MC_VALUE } from '../lib/queries'
+import { evaluateCardEffects } from '../lib/cardEffectRules'
 import { useAuth } from '../context/useAuth'
 import { EXPANSION_ICONS, TYPE_COLORS } from '../lib/expansions'
 import Tag from '../components/ui/Tag'
@@ -38,6 +40,7 @@ export default function GameDetail() {
   const { data: gameAwards = [] } = useGameAwards(dbId ?? '')
   const { data: cardRef = [] } = useCardReference()
   const { data: globalCardStats = [] } = useCardStats()
+  const { data: gameCardEffectEvents = [] } = useGameCardEffectEvents(dbId ?? '')
   const { user } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -81,6 +84,18 @@ export default function GameDetail() {
   const gameNum = game?.game_number ?? null
   const cardRefMap = Object.fromEntries(cardRef.map(c => [c.card_name.toLowerCase(), c]))
   const statsMap = Object.fromEntries(globalCardStats.map(s => [s.card_name.toLowerCase(), s]))
+  const allCardEffects = evaluateCardEffects(gameCards, cardRefMap)
+
+  const EVENT_LABELS: Record<string, string> = {
+    draw: 'cards drawn',
+    mc_gain: 'MC gained',
+    production_raise: 'production raises',
+    floater_added: 'floaters added',
+    bought: 'cards bought',
+    discarded: 'cards discarded',
+    oxygen_raise: 'oxygen level raises',
+    venus_raise: 'Venus scale raises',
+  }
 
   const GEN_COLORS = ['#707070', '#3bbfbf', '#b87aff', '#c9a030', '#e05535', '#4a9e6b', '#9b50f0', '#2e8b8b']
   const genColor = (gen: number) => GEN_COLORS[(gen - 1) % GEN_COLORS.length]
@@ -623,6 +638,99 @@ export default function GameDetail() {
                           onSort={handleCardSort}
                           className="rounded-none border-0"
                         />
+                        {(() => {
+                          const bucket1 = allCardEffects.filter(e => e.playerName === player)
+                          const bucket2 = gameCardEffectEvents.filter(e => e.player_name === player)
+                          const addedEvents = bucket2.filter(e => e.event_type === 'resource_added')
+                          const removedEvents = bucket2.filter(e => e.event_type === 'resource_removed')
+                          const otherBucket2 = bucket2.filter(e => e.event_type !== 'resource_added' && e.event_type !== 'resource_removed')
+
+                          type StatRow = { card: string; summary: string; breakdown?: { label: string; amt: number }[] }
+                          const rows: StatRow[] = []
+
+                          for (const e of bucket1) rows.push({ card: e.card, summary: `${e.value} ${e.label}` })
+
+                          const bucket2Totals: Record<string, number> = {}
+                          for (const e of otherBucket2) {
+                            const key = `${e.card_name}::${e.event_type}`
+                            bucket2Totals[key] = (bucket2Totals[key] ?? 0) + e.amount
+                          }
+                          for (const [key, total] of Object.entries(bucket2Totals)) {
+                            const [card, eventType] = key.split('::')
+                            rows.push({ card, summary: `${total} ${EVENT_LABELS[eventType] ?? eventType}` })
+                          }
+
+                          // Discount cards (Carbon Nanosystems' graphene→MC) get one combined
+                          // stat: total gained, total spent, and the MC-equivalent saved.
+                          const discountCards = new Set(Object.keys(RESOURCE_REMOVE_MC_VALUE))
+                          for (const card of discountCards) {
+                            const gained = addedEvents.filter(e => e.card_name === card).reduce((s, e) => s + e.amount, 0)
+                            const used = removedEvents.filter(e => e.card_name === card).reduce((s, e) => s + e.amount, 0)
+                            if (gained === 0 && used === 0) continue
+                            const mcPer = RESOURCE_REMOVE_MC_VALUE[card]
+                            rows.push({ card, summary: `${gained} gained, ${used} used, ${used * mcPer} MC saved` })
+                          }
+
+                          // Only cards that actually convert this resource into VP (e.g. Venusian
+                          // Animals) get a VP stat — cards like Red Spot Observatory accumulate
+                          // floaters purely to enable an action, with no VP tied to the count, and
+                          // discount cards are already covered above. VP is always floored — there
+                          // is no such thing as half a VP.
+                          const vpByCard: Record<string, typeof addedEvents> = {}
+                          for (const e of addedEvents) {
+                            if (discountCards.has(e.card_name)) continue
+                            if (cardRefMap[e.card_name.toLowerCase()]?.resource_vp_type == null) continue
+                            ;(vpByCard[e.card_name] ??= []).push(e)
+                          }
+                          for (const [card, events] of Object.entries(vpByCard)) {
+                            const total = events.reduce((s, e) => s + e.amount, 0)
+                            const vpPer = cardRefMap[card.toLowerCase()]?.resource_vp_per ?? 1
+                            const vp = Math.floor(total / vpPer)
+                            const groupTag = RESOURCE_ADD_GROUP_TAG[card]
+                            const breakdownMap: Record<string, number> = {}
+                            for (const e of events) {
+                              const sourceTags = e.source_card ? parseTags(cardRefMap[e.source_card.toLowerCase()]?.tags ?? null) : []
+                              const groupLabel = groupTag && e.source_card && sourceTags.includes(groupTag)
+                                ? `${groupTag.toLowerCase()} tags`
+                                : (e.source_card ?? 'unknown source')
+                              breakdownMap[groupLabel] = (breakdownMap[groupLabel] ?? 0) + e.amount
+                            }
+                            const breakdown = Object.entries(breakdownMap)
+                              .sort((a, b) => b[1] - a[1])
+                              .map(([label, amt]) => ({ label, amt }))
+                            rows.push({ card, summary: `${vp} VP total`, breakdown: breakdown.length > 1 ? breakdown : undefined })
+                          }
+
+                          rows.sort((a, b) => a.card.localeCompare(b.card))
+
+                          return rows.length > 0 && (
+                            <div className="flex flex-col gap-2 px-3.5 py-2.5 border-t border-border">
+                              {rows.map((r, i) => (
+                                <div key={i} className="flex flex-col gap-0.5">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <Link
+                                      to={`/cards/${encodeURIComponent(r.card)}`}
+                                      className="font-body text-[0.72rem] font-semibold text-foreground no-underline hover:text-mars-400 transition-colors"
+                                    >
+                                      {r.card}
+                                    </Link>
+                                    <span className="text-[var(--text-5)]">·</span>
+                                    <span className="font-mono text-[0.7rem] text-score-400">{r.summary}</span>
+                                  </div>
+                                  {r.breakdown && (
+                                    <ul className="m-0 pl-4 list-disc">
+                                      {r.breakdown.map((b, j) => (
+                                        <li key={j} className="font-body text-[0.66rem] text-[var(--text-4)]">
+                                          {b.amt} from {b.label}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )
+                        })()}
                       </div>
                     )}
                   </div>

@@ -3,7 +3,7 @@ import PageHeader from '../components/ui/PageHeader'
 import { SkeletonHeader, SkeletonStatGrid, SkeletonTable } from '../components/ui/PageSkeleton'
 import StatCard from '../components/ui/StatCard'
 import CardFrame from '../components/ui/CardFrame'
-import { useCardStats, useCardReference, useCorpStats, useCEOStats, useGames, useCardPlays } from '../lib/hooks'
+import { useCardStats, useCardReference, useCorpStats, useCEOStats, useGames, useCardPlays, useCardEffectStatsGlobal, useCardEffectEventStats, useCardResourceStats, useCardResourceRemovalStats } from '../lib/hooks'
 import PositionBadge from '../components/ui/PositionBadge'
 import SectionHeading from '../components/ui/SectionHeading'
 import DataTable from '../components/ui/DataTable'
@@ -30,6 +30,10 @@ export default function CardDetail() {
   const { data: ceoData,   isLoading: ceoLoading   } = useCEOStats()
   const { data: games,     isLoading: gamesLoading } = useGames()
   const { data: cardPlays, isLoading: playsLoading } = useCardPlays(cardName)
+  const { data: effectStatsGlobal = [] } = useCardEffectStatsGlobal()
+  const { data: effectEventStats = [] } = useCardEffectEventStats()
+  const { data: resourceStats = [] } = useCardResourceStats()
+  const { data: resourceRemovalStats = [] } = useCardResourceRemovalStats()
 
   const ref = (refData ?? []).find(c => c.card_name === cardName)
     ?? (refData ?? []).find(c => normalizeForLookup(c.card_name) === normalizeForLookup(cardName))
@@ -324,6 +328,56 @@ export default function CardDetail() {
               )}
               <StatCard label="Avg player score" value={Math.round(cardStat.avg_player_score)} valueSuffix="VP" accent="score" badge />
             </div>
+
+            {(() => {
+              const EVENT_STAT_LABELS: Record<string, string> = {
+                draw: 'Cards drawn',
+                mc_gain: 'MC gained',
+                production_raise: 'Production raises',
+                floater_added: 'Floaters added',
+                bought: 'Cards bought',
+                discarded: 'Cards discarded',
+                oxygen_raise: 'Oxygen level raises',
+                venus_raise: 'Venus scale raises',
+              }
+              const bucket1 = effectStatsGlobal.filter(s => s.card === cardName)
+              const bucket2 = effectEventStats.filter(s => s.card_name === cardName && s.event_type !== 'resource_added' && s.event_type !== 'resource_removed')
+              const resourceStat = resourceStats.find(s => s.card_name === cardName)
+              const removalStat = resourceRemovalStats.find(s => s.card_name === cardName)
+              if (bucket1.length === 0 && bucket2.length === 0 && !resourceStat && !removalStat) return null
+              return (
+                <div className="card-detail-grid grid grid-cols-2 gap-4 mb-8">
+                  {resourceStat && (
+                    <StatCard
+                      label="Avg VP from resources"
+                      value={Math.round(resourceStat.avgVp * 10) / 10}
+                      sub={`best: ${resourceStat.maxVp} VP (${resourceStat.maxResourceTotal} ${resourceStat.resource_type ?? 'resources'}), ${resourceStat.gamesTriggered} games`}
+                      accent="score"
+                    />
+                  )}
+                  {removalStat && (
+                    <StatCard
+                      label="Avg MC saved"
+                      value={Math.round(removalStat.avgMcSaved * 10) / 10}
+                      sub={`avg ${Math.round(removalStat.avgGained * 10) / 10} gained, best: ${removalStat.maxMcSaved} MC, ${removalStat.gamesTriggered} games`}
+                      accent="score"
+                    />
+                  )}
+                  {bucket1.map(s => (
+                    <StatCard key={s.label} label={s.label} value={Math.round(s.avgPerGame * 10) / 10} sub={`best: ${s.maxInGame}, ${s.gamesTriggered} games`} accent="score" />
+                  ))}
+                  {bucket2.map(s => (
+                    <StatCard
+                      key={`${s.card_name}-${s.event_type}`}
+                      label={`Avg ${(EVENT_STAT_LABELS[s.event_type] ?? s.event_type).toLowerCase()}`}
+                      value={Math.round(s.avgPerGame * 10) / 10}
+                      sub={`best: ${s.maxInGame}, ${s.gamesPlayed} games`}
+                      accent="score"
+                    />
+                  ))}
+                </div>
+              )
+            })()}
 
             {historyRows.length > 0 && (
               <>
