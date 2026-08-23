@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
+import terraformingMarsLogo from '../../assets/terraforming-mars-logo.png'
 
 interface SidebarProps {
   open: boolean
@@ -72,13 +73,11 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         <button className="sidebar-close-btn" onClick={onClose} aria-label="Close menu">
           ✕
         </button>
-        <div className="font-display text-[0.65rem] tracking-[0.2em] text-[var(--text-4)] uppercase mb-1.5">
-          Mission log
-        </div>
-        <div className="font-display font-bold text-mars-500 uppercase leading-[1.1]">
-          <div className="text-[1.25rem]">Terraforming</div>
-          <div className="text-[2.3rem] leading-[0.95]">Mars</div>
-        </div>
+        <img
+          src={terraformingMarsLogo}
+          alt="Terraforming Mars"
+          className="mx-auto w-full max-w-[170px] h-auto"
+        />
         <div className="font-mono text-[0.6rem] text-[var(--text-4)] mt-2 tracking-[0.05em]">
           STATISTICS v1.0
         </div>
