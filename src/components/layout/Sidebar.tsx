@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import terraformingMarsLogo from '../../assets/terraforming-mars-logo.png'
+import scoringStatisticsLogo from '../../assets/scoring-statistics-logo.png'
 
 interface SidebarProps {
   open: boolean
@@ -28,7 +29,6 @@ const NAV_ITEMS = [
   { to: '/cards',        label: 'Cards'             },
   { to: '/ceos',         label: 'CEOs'              },
   { to: '/ma',           label: 'Milestones/Awards' },
-  { to: '/tournaments',  label: 'Tournaments'       },
   { to: '/setup',        label: 'Setup'             },
   { to: '/under-development', label: 'Under Development' },
   { to: '/scoresheet',   label: 'Score Sheet'       },
@@ -78,9 +78,11 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           alt="Terraforming Mars"
           className="mx-auto w-full max-w-[170px] h-auto"
         />
-        <div className="font-mono text-[0.6rem] text-[var(--text-4)] mt-2 tracking-[0.05em]">
-          STATISTICS v1.0
-        </div>
+        <img
+          src={scoringStatisticsLogo}
+          alt="Scoring Statistics"
+          className="mx-auto w-full max-w-[130px] h-auto mt-2"
+        />
       </div>
 
       {/* Navigation */}
