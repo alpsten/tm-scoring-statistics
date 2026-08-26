@@ -54,6 +54,15 @@ export default function Layout() {
           </p>
         </footer>
       </main>
+
+      <a
+        href="https://github.com/alpsten"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-4 right-4 z-50 font-mono text-[0.75rem] text-[var(--text-4)] hover:text-foreground transition-colors no-underline"
+      >
+        /alpsten
+      </a>
     </div>
   )
 }

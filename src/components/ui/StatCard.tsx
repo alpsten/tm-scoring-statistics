@@ -33,7 +33,7 @@ export default function StatCard({ label, value, sub, accent = 'neutral', valueS
   const badgeClass = BADGE_CLASSES[accent]
 
   return (
-    <Card className="panel-hover flex flex-row items-center justify-between gap-3 px-5 py-3.5">
+    <Card className="flex flex-row items-center justify-between gap-3 px-5 py-3.5">
       <CardContent className="p-0 flex flex-row items-center justify-between gap-3 w-full">
         <span className="font-body text-[0.72rem] font-medium text-[var(--text-4)] tracking-[0.06em] uppercase whitespace-nowrap">
           {label}

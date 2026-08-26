@@ -22,7 +22,7 @@ export default function Home() {
         />
         <Link
           to="/overview"
-          className="inline-block mt-9 font-display font-bold uppercase tracking-[0.08em] text-[0.9rem] text-[#1a0a00] bg-mars-500 hover:bg-mars-400 transition-colors rounded px-7 py-3 no-underline"
+          className="inline-block mt-9 font-display font-bold uppercase tracking-[0.08em] text-[1.1rem] text-[#1a0a00] bg-mars-500 hover:bg-mars-400 transition-colors rounded px-10 py-4 no-underline"
         >
           Welcome
         </Link>

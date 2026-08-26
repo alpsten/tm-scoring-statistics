@@ -333,16 +333,16 @@ export default function Dashboard() {
       {/* Quick links */}
       <div className="quick-links-grid grid grid-cols-3 gap-4">
         {[
-          { to: '/corporations', label: 'Corporation stats', sub: `${(corpStats ?? []).length} corporations played` },
-          { to: '/cards',        label: 'Card analysis',     sub: 'Performance by card' },
-          { to: '/players',      label: 'Player profiles',   sub: `${playerStats?.length ?? 0} players tracked` },
+          { to: '/corporations', label: 'Corporation Stats', sub: `${(corpStats ?? []).length} corporations played` },
+          { to: '/cards',        label: 'Card Analysis',     sub: 'Performance by card' },
+          { to: '/players',      label: 'Player Profiles',   sub: `${playerStats?.length ?? 0} players tracked` },
         ].map(({ to, label, sub }) => (
           <Link
             key={to}
             to={to}
             className="panel-hover block py-5 px-[22px] bg-card border border-border rounded-[6px] no-underline"
           >
-            <div className="font-display font-semibold text-[0.9rem] text-foreground mb-1.5">{label} →</div>
+            <div className="font-display font-semibold text-[0.9rem] text-foreground mb-1.5">{label}</div>
             <div className="font-body text-[0.78rem] text-[var(--text-4)]">{sub}</div>
           </Link>
         ))}
