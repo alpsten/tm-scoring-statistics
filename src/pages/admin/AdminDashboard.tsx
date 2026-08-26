@@ -35,14 +35,6 @@ const CARDS = [
     title: 'Card reference',
     desc: 'Manage the card database — tags, types, expansions',
   },
-  {
-    to: '/admin/tournaments',
-    icon: '⚔',
-    iconColor: 'text-score-400',
-    borderClass: 'border-score-400/20 hover:border-score-400/40',
-    title: 'Tournaments',
-    desc: 'Create tournaments, generate pairings, link games to rounds',
-  },
 ]
 
 export default function AdminDashboard() {
