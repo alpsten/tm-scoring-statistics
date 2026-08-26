@@ -18,7 +18,7 @@ export default function Home() {
         <img
           src={scoringStatisticsLogo}
           alt="Scoring Statistics"
-          className="mx-auto w-full max-w-[480px] sm:max-w-[810px] h-auto mt-2"
+          className="mx-auto w-full max-w-[640px] sm:max-w-[1080px] h-auto mt-2"
         />
         <Link
           to="/overview"
