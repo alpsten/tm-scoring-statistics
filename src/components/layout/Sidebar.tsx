@@ -81,7 +81,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         <img
           src={scoringStatisticsLogo}
           alt="Scoring Statistics"
-          className="mx-auto w-full max-w-[130px] h-auto mt-2"
+          className="mx-auto w-full max-w-[170px] h-auto mt-2"
         />
       </div>
 
