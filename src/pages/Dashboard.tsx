@@ -312,10 +312,20 @@ export default function Dashboard() {
                     </td>
                     <td className="py-3 px-4">
                       {winner && (
-                        <Link to={`/players/${encodeURIComponent(winner.player_name)}`} className="no-underline">
-                          <div className="font-body text-[0.83rem] text-foreground font-medium">{winner.player_name}</div>
-                          <div className="font-body text-[0.7rem] text-[var(--text-4)] mt-[2px]">{winner.corporation}</div>
-                        </Link>
+                        <>
+                          <Link
+                            to={`/players/${encodeURIComponent(winner.player_name)}`}
+                            className="block font-body text-[0.83rem] text-foreground font-medium no-underline hover:text-mars-400 transition-colors"
+                          >
+                            {winner.player_name}
+                          </Link>
+                          <Link
+                            to={`/cards/${encodeURIComponent(winner.corporation)}`}
+                            className="block font-body text-[0.7rem] text-[var(--text-4)] mt-[2px] no-underline hover:text-mars-400 transition-colors"
+                          >
+                            {winner.corporation}
+                          </Link>
+                        </>
                       )}
                     </td>
                     <td className="py-3 px-4 font-mono text-[0.9rem] font-bold text-score-400">
