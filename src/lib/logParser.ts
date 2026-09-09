@@ -14,6 +14,7 @@ export const CARD_NAME_CORRECTIONS: Record<string, string> = {
   'Anti-desertification Techniques ': 'Anti-Desertification Techniques',
   'COÂ² Reducers': 'CO2 Reducers',
   'CO² Reducers': 'CO2 Reducers',
+  'Titan Floating Launch-pad': 'Titan Floating Launch-Pad',
 }
 
 // Cards whose action-use events we extract into ParsedLog.cardEffects.
@@ -22,7 +23,7 @@ export const CARD_NAME_CORRECTIONS: Record<string, string> = {
 // a real log on first occurrence.
 const TRACKED_ACTION_CARDS = new Set([
   'AI Central', 'Martian Zoo', "Inventors' Guild", 'Hi-Tech Lab', 'Local Shading', 'Cloud Tourism',
-  'Red Spot Observatory', 'Regolith Eaters', 'Rotator Impacts', 'Weather Balloons',
+  'Red Spot Observatory', 'Regolith Eaters', 'Rotator Impacts', 'Weather Balloons', 'Floating Refinery',
 ])
 
 // Cards whose action removes N of their own resource(s) as a one-shot global-parameter
@@ -49,7 +50,7 @@ const GENERIC_RESOURCE_EXCLUDED_TARGETS = new Set(['Cloud Tourism'])
 // Weather Balloons' dynamic mc_gain) — excluded from the generic resource-removed scan
 // below to avoid double-counting or misreading them as a fixed per-resource MC value.
 const GENERIC_RESOURCE_REMOVED_EXCLUDED_TARGETS = new Set([
-  'Local Shading', 'Regolith Eaters', 'Rotator Impacts', 'Weather Balloons',
+  'Local Shading', 'Regolith Eaters', 'Rotator Impacts', 'Weather Balloons', 'Floating Refinery',
 ])
 
 // Cards whose resource-added trigger isn't "the player played/used a card" at all (so the
@@ -82,7 +83,18 @@ const CP1252_HIGH_CHARS: Record<string, number> = {
 // Note: the previous decodeURIComponent(escape(s)) approach silently failed (and returned
 // the ENTIRE string unfixed) whenever € appeared, since escape() can't represent U+201A —
 // one of the three characters € mojibakes into — breaking every "M€" match downstream.
-function fixEncoding(s: string): string {
+// Fixed per LINE, not per document: a byte like 0x96 ('–') is ambiguous — it's either a
+// mojibake'd CP1252 special char or a character that was already correctly-decoded Unicode
+// to begin with (e.g. a genuine en dash in an admin-added "GameID – N" header line). Running
+// the whole ~40KB log through one fatal decode meant a single such line — one that doesn't
+// even need fixing — threw and silently discarded the € fix for every OTHER line in the
+// entire game (undercounting every M€-gain stat for that game). Isolating the decode to one
+// line at a time means only that one ambiguous line is left unfixed, not the whole document.
+function fixEncoding(raw: string): string {
+  return raw.split('\n').map(fixLineEncoding).join('\n')
+}
+
+function fixLineEncoding(s: string): string {
   try {
     const bytes = Uint8Array.from(Array.from(s, ch => CP1252_HIGH_CHARS[ch] ?? ch.charCodeAt(0)))
     return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
@@ -115,7 +127,8 @@ export interface ParsedAward {
 
 export type ParsedCardEffectEventType =
   | 'draw' | 'mc_gain' | 'production_raise' | 'floater_added' | 'bought' | 'discarded'
-  | 'resource_added' | 'resource_removed' | 'oxygen_raise' | 'venus_raise'
+  | 'resource_added' | 'resource_removed' | 'oxygen_raise' | 'venus_raise' | 'floater_traded'
+  | 'titanium_gain' | 'heat_gain' | 'plant_gain'
 
 export interface ParsedCardEffectEvent {
   player_name: string
@@ -220,6 +233,7 @@ export function parseGameLog(raw: string): ParsedLog {
       const card = actionMatch[2].trim()
       const next1 = lines[i + 1] ?? ''
       const next2 = lines[i + 2] ?? ''
+      const next3 = lines[i + 3] ?? ''
       const esc = escapeRegExp(player)
 
       // Draw/MC-gain lines may be immediately after the action, or one line later if an
@@ -231,6 +245,12 @@ export function parseGameLog(raw: string): ParsedLog {
       const mcMatch = next1.match(mcRe) ?? next2.match(mcRe)
       const removedFromOwnCard = new RegExp(`^${esc} removed \\d+ resource\\(s\\) from ${esc}'s ${escapeRegExp(card)}$`).test(next1)
       const boughtMatch = next1.match(new RegExp(`^${esc} bought (\\d+) card\\(s\\)$`))
+      // Floating Refinery removes floaters from ANY card the player owns (not necessarily
+      // Floating Refinery itself), so this checks for "removed N resource(s) from {player}'s
+      // {any card}" rather than requiring the target to match the acting card's own name.
+      const removedFromAnyCard = new RegExp(`^${esc} removed \\d+ resource\\(s\\) from ${esc}'s .+$`).test(next1)
+      const titaniumRe = new RegExp(`^${esc} gained (\\d+) titanium$`)
+      const titaniumMatch = next2.match(titaniumRe) ?? next3.match(titaniumRe)
 
       let event: Omit<ParsedCardEffectEvent, 'event_order'> | null = null
       if ((card === 'Hi-Tech Lab' || card === 'AI Central' || card === 'Red Spot Observatory') && drawMatch) {
@@ -243,10 +263,116 @@ export function parseGameLog(raw: string): ParsedLog {
         event = { player_name: player, card_name: card, event_type: 'floater_added', amount: 1, generation: currentGeneration }
       } else if (card === "Inventors' Guild" && boughtMatch) {
         event = { player_name: player, card_name: card, event_type: boughtMatch[1] === '0' ? 'discarded' : 'bought', amount: 1, generation: currentGeneration }
+      } else if (card === 'Floating Refinery' && removedFromAnyCard) {
+        // Two separate gains from one action use, so pushed directly instead of via
+        // the single-event `event` variable above.
+        if (mcMatch) {
+          result.cardEffects.push({ player_name: player, card_name: card, event_type: 'mc_gain', amount: Number(mcMatch[1]), generation: currentGeneration, event_order: result.cardEffects.length + 1 })
+        }
+        if (titaniumMatch) {
+          result.cardEffects.push({ player_name: player, card_name: card, event_type: 'titanium_gain', amount: Number(titaniumMatch[1]), generation: currentGeneration, event_order: result.cardEffects.length + 1 })
+        }
       }
       if (event) {
         result.cardEffects.push({ ...event, event_order: result.cardEffects.length + 1 })
       }
+      continue
+    }
+
+    // Trade: "[Player] spent N [resource] to trade with [Colony]" — not wrapped in a
+    // "used {card} action" line (trading isn't a card action), so it needs its own match.
+    // Two independent card effects key off this same line:
+    //  - Venus Trade Hub grants a flat 3 M€ on any trade the player makes; matched by the
+    //    literal "gained 3 M€" text (not a captured amount) so a colony's own MC-based trade
+    //    income (e.g. Luna's, which scales with its colony track and could only coincidentally
+    //    ever equal 3) doesn't get misattributed to the card.
+    //  - Titan Floating Launch-Pad's action lets you pay for a trade with 1 floater from the
+    //    card instead of the normal cost — identified by the spent resource being "floater"
+    //    (no other trade payment is ever a floater). Tracked as a plain count, not an MC
+    //    value, since the cost it substitutes for varies by colony/discounts.
+    // Both gated on the player having already played the respective card earlier in the game.
+    const tradeMatch = line.match(/^(.+) spent (\d+) (\S+) to trade with .+$/)
+    if (tradeMatch) {
+      const player = tradeMatch[1].trim()
+      const spentAmount = Number(tradeMatch[2])
+      const spentResource = tradeMatch[3]
+
+      if (result.cards.some(c => c.player_name === player && c.card_name === 'Venus Trade Hub')) {
+        const esc = escapeRegExp(player)
+        const gainedThreeRe = new RegExp(`^${esc} gained 3 M€$`)
+        const found = [lines[i + 1], lines[i + 2], lines[i + 3]].some(l => l && gainedThreeRe.test(l))
+        if (found) {
+          result.cardEffects.push({
+            player_name: player,
+            card_name: 'Venus Trade Hub',
+            event_type: 'mc_gain',
+            amount: 3,
+            generation: currentGeneration,
+            event_order: result.cardEffects.length + 1,
+          })
+        }
+      }
+
+      if (spentResource === 'floater' && result.cards.some(c => c.player_name === player && c.card_name === 'Titan Floating Launch-Pad')) {
+        result.cardEffects.push({
+          player_name: player,
+          card_name: 'Titan Floating Launch-Pad',
+          event_type: 'floater_traded',
+          amount: spentAmount,
+          generation: currentGeneration,
+          event_order: result.cardEffects.length + 1,
+        })
+      }
+      continue
+    }
+
+    // "[Player] gained N M€ because of Optimal Aerobraking" / "... N heat because of
+    // Optimal Aerobraking" — a passive effect triggered by playing ANY card (not a card
+    // action), so there's no "used {card} action" line to anchor a lookahead from. Unlike
+    // Venus Trade Hub's trade bonus, the log tags both gains with the card's name directly,
+    // so matching the line itself is unambiguous — no play-order gating needed.
+    const aerobrakingMcMatch = line.match(/^(.+) gained (\d+) M€ because of Optimal Aerobraking$/)
+    if (aerobrakingMcMatch) {
+      result.cardEffects.push({
+        player_name: aerobrakingMcMatch[1].trim(),
+        card_name: 'Optimal Aerobraking',
+        event_type: 'mc_gain',
+        amount: Number(aerobrakingMcMatch[2]),
+        generation: currentGeneration,
+        event_order: result.cardEffects.length + 1,
+      })
+      continue
+    }
+    const aerobrakingHeatMatch = line.match(/^(.+) gained (\d+) heat because of Optimal Aerobraking$/)
+    if (aerobrakingHeatMatch) {
+      result.cardEffects.push({
+        player_name: aerobrakingHeatMatch[1].trim(),
+        card_name: 'Optimal Aerobraking',
+        event_type: 'heat_gain',
+        amount: Number(aerobrakingHeatMatch[2]),
+        generation: currentGeneration,
+        event_order: result.cardEffects.length + 1,
+      })
+      continue
+    }
+
+    // "[Player] gained N plant(s) because of Viral Enhancers" — same shape as Optimal
+    // Aerobraking: a passive effect (triggers on playing any Animal/Plant/Microbe tag,
+    // including itself) that the app already evaluates and tags with the card's name
+    // directly, so no cross-referencing of card tags is needed here — just capture the
+    // number. A card that also collects its own resource on tag-play (e.g. Decomposers'
+    // "added N microbe(s) to Decomposers") logs that as a completely separate line, already
+    // covered by the generic resource-added match below — no overlap with this one.
+    const viralEnhancersMatch = line.match(/^(.+) gained (\d+) plants? because of Viral Enhancers$/)
+    if (viralEnhancersMatch) {
+      result.cardEffects.push({
+        player_name: viralEnhancersMatch[1].trim(),
+        card_name: 'Viral Enhancers',
+        event_type: 'plant_gain',
+        amount: Number(viralEnhancersMatch[2]),
+        generation: currentGeneration,
+        event_order: result.cardEffects.length + 1,
+      })
       continue
     }
 
@@ -281,7 +407,10 @@ export function parseGameLog(raw: string): ParsedLog {
           card_name: targetCard,
           event_type: 'resource_added',
           amount: Number(addedMatch[2]),
-          resource_type: addedMatch[3].trim(),
+          // Lowercased: the app's log text isn't consistent about case for this word
+          // (e.g. "microbe" in most games, "Microbe" in others) — normalized here so
+          // display text doesn't vary game-to-game for what's the same resource type.
+          resource_type: addedMatch[3].trim().toLowerCase(),
           source_card: sourceCard,
           generation: currentGeneration,
           event_order: result.cardEffects.length + 1,

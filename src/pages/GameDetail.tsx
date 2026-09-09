@@ -96,6 +96,10 @@ export default function GameDetail() {
     discarded: 'cards discarded',
     oxygen_raise: 'oxygen level raises',
     venus_raise: 'Venus scale raises',
+    floater_traded: 'trades paid with a floater',
+    titanium_gain: 'titanium gained',
+    heat_gain: 'heat gained',
+    plant_gain: 'plants gained',
   }
 
   const GEN_COLORS = ['#707070', '#3bbfbf', '#b87aff', '#c9a030', '#e05535', '#4a9e6b', '#9b50f0', '#2e8b8b']
@@ -769,17 +773,17 @@ export default function GameDetail() {
 
       {/* Raw game log */}
       {game.raw_log && (
-        <div className="mt-8">
+        <div className="mt-8 bg-card border border-border rounded-[6px] overflow-hidden">
           <button
             type="button"
             onClick={() => setLogExpanded(v => !v)}
-            className="w-full flex justify-between items-center bg-transparent border-none p-0 cursor-pointer text-left"
+            className="w-full flex justify-between items-center px-3.5 py-2.5 bg-transparent border-none cursor-pointer text-left"
           >
-            <SectionHeading>Game log</SectionHeading>
-            <span className={cn('font-mono text-[0.6rem] text-[var(--text-4)] transition-transform duration-150 mb-3', logExpanded && 'rotate-180')}>▼</span>
+            <SectionHeading style={{ marginBottom: 0 }}>Game log</SectionHeading>
+            <span className={cn('font-mono text-[0.6rem] text-[var(--text-4)] transition-transform duration-150', logExpanded && 'rotate-180')}>▼</span>
           </button>
           {logExpanded && (
-            <pre className="bg-card border border-border rounded px-4 py-3 font-mono text-[0.72rem] text-[var(--text-3)] leading-[1.6] whitespace-pre-wrap max-h-[480px] overflow-y-auto">
+            <pre className="border-t border-border px-4 py-3 font-mono text-[0.72rem] text-[var(--text-3)] leading-[1.6] whitespace-pre-wrap max-h-[480px] overflow-y-auto">
               {game.raw_log}
             </pre>
           )}
