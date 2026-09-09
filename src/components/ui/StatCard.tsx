@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -5,7 +6,7 @@ import { cn } from '@/lib/utils'
 interface StatCardProps {
   label: string
   value: string | number
-  sub?: string
+  sub?: ReactNode
   accent?: 'mars' | 'atmo' | 'score' | 'neutral' | 'win'
   valueSuffix?: string
   suffixColor?: string

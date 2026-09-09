@@ -255,7 +255,7 @@ export async function fetchCardEffectStatsGlobal(): Promise<CardEffectAggregateS
   const cardRefMap = Object.fromEntries(cardRef.map(c => [c.card_name.toLowerCase(), c]))
   const byGame: Record<string, typeof allCards> = {}
   for (const c of allCards) (byGame[c.game_id] ??= []).push(c)
-  const perGame = Object.values(byGame).map(cards => evaluateCardEffects(cards, cardRefMap))
+  const perGame = Object.entries(byGame).map(([gameId, cards]) => ({ gameId, stats: evaluateCardEffects(cards, cardRefMap) }))
   return aggregateCardEffects(perGame)
 }
 
@@ -266,6 +266,8 @@ export interface CardEffectEventStat {
   totalAmount: number
   avgPerGame: number
   maxInGame: number
+  maxGameId: string | null
+  maxPlayerName: string | null
 }
 
 export interface GameCardEffectEvent {
@@ -312,6 +314,8 @@ export interface CardResourceRemovalStat {
   maxResourceTotal: number
   avgMcSaved: number
   maxMcSaved: number
+  maxGameId: string | null
+  maxPlayerName: string | null
 }
 
 // Only cards with an explicit MC-per-resource rate (RESOURCE_REMOVE_MC_VALUE) get an
@@ -341,25 +345,27 @@ export async function fetchCardResourceRemovalStats(): Promise<CardResourceRemov
     addedByPlayInGame[key] = (addedByPlayInGame[key] ?? 0) + row.amount
   }
 
-  const byCard: Record<string, { totals: number[]; gained: number[] }> = {}
+  const byCard: Record<string, { totals: { total: number; gameId: string; playerName: string }[]; gained: number[] }> = {}
   for (const [key, total] of Object.entries(removedByPlayInGame)) {
-    const card_name = key.split('::')[0]
+    const [card_name, gameId, playerName] = key.split('::')
     const entry = (byCard[card_name] ??= { totals: [], gained: [] })
-    entry.totals.push(total)
+    entry.totals.push({ total, gameId, playerName })
     entry.gained.push(addedByPlayInGame[key] ?? 0)
   }
 
   return Object.entries(byCard).map(([card_name, { totals, gained }]) => {
     const mcPer = RESOURCE_REMOVE_MC_VALUE[card_name]
-    const mcValues = totals.map(t => t * mcPer)
+    const best = totals.reduce((best, v) => (v.total > best.total ? v : best))
     return {
       card_name,
       gamesTriggered: totals.length,
       avgGained: gained.reduce((s, v) => s + v, 0) / gained.length,
-      avgResourceTotal: totals.reduce((s, v) => s + v, 0) / totals.length,
-      maxResourceTotal: Math.max(...totals),
-      avgMcSaved: mcValues.reduce((s, v) => s + v, 0) / mcValues.length,
-      maxMcSaved: Math.max(...mcValues),
+      avgResourceTotal: totals.reduce((s, v) => s + v.total, 0) / totals.length,
+      maxResourceTotal: best.total,
+      avgMcSaved: totals.reduce((s, v) => s + v.total * mcPer, 0) / totals.length,
+      maxMcSaved: best.total * mcPer,
+      maxGameId: best.gameId,
+      maxPlayerName: best.playerName,
     }
   })
 }
@@ -372,6 +378,8 @@ export interface CardResourceStat {
   maxResourceTotal: number
   avgVp: number
   maxVp: number
+  maxGameId: string | null
+  maxPlayerName: string | null
 }
 
 export async function fetchCardResourceStats(): Promise<CardResourceStat[]> {
@@ -393,11 +401,11 @@ export async function fetchCardResourceStats(): Promise<CardResourceStat[]> {
     entry.total += row.amount
   }
 
-  const byCard: Record<string, { totals: number[]; resource_type: string | null }> = {}
+  const byCard: Record<string, { totals: { total: number; gameId: string; playerName: string }[]; resource_type: string | null }> = {}
   for (const [key, { total, resource_type }] of Object.entries(byPlayInGame)) {
-    const card_name = key.split('::')[0]
+    const [card_name, gameId, playerName] = key.split('::')
     const entry = (byCard[card_name] ??= { totals: [], resource_type })
-    entry.totals.push(total)
+    entry.totals.push({ total, gameId, playerName })
   }
 
   return Object.entries(byCard)
@@ -407,15 +415,17 @@ export async function fetchCardResourceStats(): Promise<CardResourceStat[]> {
     .map(([card_name, { totals, resource_type }]) => {
       const vpPer = cardRefMap[card_name.toLowerCase()]?.resource_vp_per ?? 1
       // VP is always floored — there's no such thing as half a VP.
-      const vps = totals.map(t => Math.floor(t / vpPer))
+      const best = totals.reduce((best, v) => (v.total > best.total ? v : best))
       return {
         card_name,
         resource_type,
         gamesTriggered: totals.length,
-        avgResourceTotal: totals.reduce((s, v) => s + v, 0) / totals.length,
-        maxResourceTotal: Math.max(...totals),
-        avgVp: vps.reduce((s, v) => s + v, 0) / vps.length,
-        maxVp: Math.max(...vps),
+        avgResourceTotal: totals.reduce((s, v) => s + v.total, 0) / totals.length,
+        maxResourceTotal: best.total,
+        avgVp: totals.reduce((s, v) => s + Math.floor(v.total / vpPer), 0) / totals.length,
+        maxVp: Math.floor(best.total / vpPer),
+        maxGameId: best.gameId,
+        maxPlayerName: best.playerName,
       }
     })
 }
@@ -423,25 +433,33 @@ export async function fetchCardResourceStats(): Promise<CardResourceStat[]> {
 export async function fetchCardEffectEventStats(): Promise<CardEffectEventStat[]> {
   const { data, error } = await supabase
     .from('card_effect_events')
-    .select('game_id, card_name, event_type, amount')
+    .select('game_id, player_name, card_name, event_type, amount')
     .limit(10000)
   if (error) throw error
 
-  const byCardType: Record<string, { perGame: Record<string, number> }> = {}
+  const byCardType: Record<string, { perGame: Record<string, number>; perPlayerGame: Record<string, number> }> = {}
   for (const row of data) {
     const key = `${row.card_name}::${row.event_type}`
-    byCardType[key] ??= { perGame: {} }
+    byCardType[key] ??= { perGame: {}, perPlayerGame: {} }
     byCardType[key].perGame[row.game_id] = (byCardType[key].perGame[row.game_id] ?? 0) + row.amount
+    const playerGameKey = `${row.game_id}::${row.player_name}`
+    byCardType[key].perPlayerGame[playerGameKey] = (byCardType[key].perPlayerGame[playerGameKey] ?? 0) + row.amount
   }
-  return Object.entries(byCardType).map(([key, { perGame }]) => {
+  return Object.entries(byCardType).map(([key, { perGame, perPlayerGame }]) => {
     const [card_name, event_type] = key.split('::')
     const totals = Object.values(perGame)
+    // "Best" is a single player's total within one game, not a game-wide total
+    // combining multiple players (relevant for shared-action cards).
+    const [bestKey, maxInGame] = Object.entries(perPlayerGame).reduce((best, e) => (e[1] > best[1] ? e : best))
+    const [maxGameId, maxPlayerName] = bestKey.split('::')
     return {
       card_name, event_type,
       gamesPlayed: totals.length,
       totalAmount: totals.reduce((s, v) => s + v, 0),
       avgPerGame: totals.reduce((s, v) => s + v, 0) / totals.length,
-      maxInGame: Math.max(...totals),
+      maxInGame,
+      maxGameId,
+      maxPlayerName,
     }
   })
 }

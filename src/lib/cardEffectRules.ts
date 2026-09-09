@@ -20,6 +20,7 @@ export const CARD_EFFECT_RULES: CardEffectRule[] = [
   { kind: 'flat_discount_own_subsequent', card: 'Sky Docks', amountPerPlay: 1, label: 'MC saved' },
   { kind: 'flat_discount_own_subsequent', card: 'Earth Catapult', amountPerPlay: 2, label: 'MC saved' },
   { kind: 'tag_discount_own_subsequent', card: 'Space Station', tag: 'Space', amountPerPlay: 2, label: 'MC saved' },
+  { kind: 'tag_discount_own_subsequent', card: 'Venus Waystation', tag: 'Venus', amountPerPlay: 2, label: 'MC saved' },
   { kind: 'tag_discount_own_subsequent', card: 'Earth Office', tag: 'Earth', amountPerPlay: 3, label: 'MC saved' },
   { kind: 'tag_discount_own_subsequent', card: 'Solar Logistics', tag: 'Earth', amountPerPlay: 2, label: 'MC saved' },
   { kind: 'tag_type_count_any_player_subsequent', card: 'Solar Logistics', tag: 'Space', cardType: 'Event', label: 'Cards drawn (any player)' },
@@ -88,23 +89,34 @@ export interface CardEffectAggregateStat {
   totalValue: number
   avgPerGame: number
   maxInGame: number
+  maxGameId: string | null
+  maxPlayerName: string | null
 }
 
-export function aggregateCardEffects(perGameStats: CardEffectStat[][]): CardEffectAggregateStat[] {
-  const byCard: Record<string, { label: string; perGame: number[] }> = {}
-  for (const gameStats of perGameStats) {
-    const totalsThisGame: Record<string, number> = {}
-    for (const s of gameStats) {
-      totalsThisGame[s.card] = (totalsThisGame[s.card] ?? 0) + s.value
+export function aggregateCardEffects(perGameStats: { gameId: string; stats: CardEffectStat[] }[]): CardEffectAggregateStat[] {
+  const byCard: Record<string, { label: string; perGame: { total: number; gameId: string; playerName: string }[] }> = {}
+  for (const { gameId, stats } of perGameStats) {
+    // A card can only be played by one player per game, so the last playerName
+    // seen for a card within this game is its sole owner here.
+    const totalsThisGame: Record<string, { total: number; playerName: string }> = {}
+    for (const s of stats) {
+      const entry = (totalsThisGame[s.card] ??= { total: 0, playerName: s.playerName })
+      entry.total += s.value
+      entry.playerName = s.playerName
       byCard[s.card] ??= { label: s.label, perGame: [] }
     }
-    for (const [card, total] of Object.entries(totalsThisGame)) byCard[card].perGame.push(total)
+    for (const [card, { total, playerName }] of Object.entries(totalsThisGame)) byCard[card].perGame.push({ total, gameId, playerName })
   }
-  return Object.entries(byCard).map(([card, { label, perGame }]) => ({
-    card, label,
-    gamesTriggered: perGame.length,
-    totalValue: perGame.reduce((s, v) => s + v, 0),
-    avgPerGame: perGame.reduce((s, v) => s + v, 0) / perGame.length,
-    maxInGame: Math.max(...perGame),
-  }))
+  return Object.entries(byCard).map(([card, { label, perGame }]) => {
+    const best = perGame.reduce((best, v) => (v.total > best.total ? v : best))
+    return {
+      card, label,
+      gamesTriggered: perGame.length,
+      totalValue: perGame.reduce((s, v) => s + v.total, 0),
+      avgPerGame: perGame.reduce((s, v) => s + v.total, 0) / perGame.length,
+      maxInGame: best.total,
+      maxGameId: best.gameId,
+      maxPlayerName: best.playerName,
+    }
+  })
 }

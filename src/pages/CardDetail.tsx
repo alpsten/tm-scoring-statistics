@@ -1,3 +1,5 @@
+import { Fragment } from 'react'
+import type { ReactNode } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
 import { SkeletonHeader, SkeletonStatGrid, SkeletonTable } from '../components/ui/PageSkeleton'
@@ -16,6 +18,15 @@ function normalizeForLookup(s: string) { return s.toLowerCase().replace(/\s+/g, 
 const VARIANT_STYLE: Record<string, { bg: string; color: string; border: string }> = {
   ares:  { bg: 'rgba(210,80,50,0.12)',  color: '#d05032', border: 'rgba(210,80,50,0.35)'  },
   promo: { bg: 'rgba(91,141,217,0.12)', color: '#5b8dd9', border: 'rgba(91,141,217,0.35)' },
+}
+
+// Cards whose MC gain always comes paired with a fixed-ratio second resource from the
+// same trigger (Floating Refinery: 2 M€ + 1 Titanium per use; Optimal Aerobraking: 3 M€ +
+// 3 heat per card played) — the two stats can never point at different games, so they're
+// shown as one combined "Avg"/"Best" pair instead of two separately-computed ones.
+const PAIRED_MC_STAT: Record<string, { eventType: string; unit: string }> = {
+  'Floating Refinery': { eventType: 'titanium_gain', unit: 'Ti' },
+  'Optimal Aerobraking': { eventType: 'heat_gain', unit: 'Heat' },
 }
 
 export default function CardDetail() {
@@ -83,6 +94,26 @@ export default function CardDetail() {
     : []
 
   const timesPlayed = isCorporation ? (corpStat?.games_played ?? 0) : isCEO ? (ceoStat?.times_played ?? 0) : (cardStat?.times_played ?? 0)
+
+  const gameById = Object.fromEntries((games ?? []).map(g => [g.id, g]))
+  // Sub-line for a "Best" StatCard: who achieved it, linked to their player page,
+  // and the game it happened in, linked to that game. Null when either can't be
+  // resolved (e.g. no games yet) — the StatCard just omits the sub-line then.
+  function bestStatSub(maxGameId: string | null | undefined, maxPlayerName: string | null | undefined): ReactNode {
+    const game = maxGameId ? gameById[maxGameId] : null
+    if (!game || !maxPlayerName) return null
+    return (
+      <>
+        <Link to={`/players/${encodeURIComponent(maxPlayerName)}`} className="text-violet-400 no-underline hover:text-violet-300">
+          {maxPlayerName}
+        </Link>
+        {' · '}
+        <Link to={`/games/${game.game_number}`} className="text-[var(--text-4)] no-underline hover:text-foreground transition-colors">
+          {new Date(game.date).toLocaleDateString('sv-SE')}
+        </Link>
+      </>
+    )
+  }
 
   type HistoryRow = { id: string; game_number: number | null; date: string; map_name: string | null; player_name: string; position: number; total_vp: number }
   type CEOHistoryRow = HistoryRow & { corporation: string }
@@ -261,7 +292,6 @@ export default function CardDetail() {
 
       {/* Project card stats */}
       {!isCorporation && !isCEO && cardStat && (() => {
-        const gameMap = Object.fromEntries((games ?? []).map(g => [g.id, g]))
         const playsMap: Record<string, Record<string, number | null>> = {}
         for (const p of cardPlays ?? []) {
           if (!playsMap[p.game_id]) playsMap[p.game_id] = {}
@@ -270,7 +300,7 @@ export default function CardDetail() {
         type CardHistoryRow = { id: string; game_number: number | null; date: string; map_name: string | null; player_name: string; position: number; total_vp: number; vp_from_card: number | null }
         const historyRows: CardHistoryRow[] = []
         for (const [game_id, players] of Object.entries(playsMap)) {
-          const game = gameMap[game_id]
+          const game = gameById[game_id]
           if (!game) continue
           for (const [player_name, vp_from_card] of Object.entries(players)) {
             const result = game.player_results.find(r => r.player_name === player_name)
@@ -339,6 +369,10 @@ export default function CardDetail() {
                 discarded: 'Cards discarded',
                 oxygen_raise: 'Oxygen level raises',
                 venus_raise: 'Venus scale raises',
+                floater_traded: 'Trades paid with a floater',
+                titanium_gain: 'Titanium gained',
+                heat_gain: 'Heat gained',
+                plant_gain: 'Plants gained',
               }
               const bucket1 = effectStatsGlobal.filter(s => s.card === cardName)
               const bucket2 = effectEventStats.filter(s => s.card_name === cardName && s.event_type !== 'resource_added' && s.event_type !== 'resource_removed')
@@ -348,33 +382,89 @@ export default function CardDetail() {
               return (
                 <div className="card-detail-grid grid grid-cols-2 gap-4 mb-8">
                   {resourceStat && (
-                    <StatCard
-                      label="Avg VP from resources"
-                      value={Math.round(resourceStat.avgVp * 10) / 10}
-                      sub={`best: ${resourceStat.maxVp} VP (${resourceStat.maxResourceTotal} ${resourceStat.resource_type ?? 'resources'}), ${resourceStat.gamesTriggered} games`}
-                      accent="score"
-                    />
+                    <>
+                      <StatCard
+                        label="Avg VP from resources"
+                        value={Math.round(resourceStat.avgVp * 10) / 10}
+                        sub={`${resourceStat.gamesTriggered} games`}
+                        accent="score"
+                      />
+                      <StatCard
+                        label="Best VP from resources"
+                        value={resourceStat.maxVp}
+                        valueSuffix="VP"
+                        sub={<>{bestStatSub(resourceStat.maxGameId, resourceStat.maxPlayerName)} ({resourceStat.maxResourceTotal} {resourceStat.resource_type ?? 'resources'})</>}
+                        accent="score"
+                        badge
+                      />
+                    </>
                   )}
                   {removalStat && (
-                    <StatCard
-                      label="Avg MC saved"
-                      value={Math.round(removalStat.avgMcSaved * 10) / 10}
-                      sub={`avg ${Math.round(removalStat.avgGained * 10) / 10} gained, best: ${removalStat.maxMcSaved} MC, ${removalStat.gamesTriggered} games`}
-                      accent="score"
-                    />
+                    <>
+                      <StatCard
+                        label="Avg MC saved"
+                        value={Math.round(removalStat.avgMcSaved * 10) / 10}
+                        sub={`avg ${Math.round(removalStat.avgGained * 10) / 10} gained, ${removalStat.gamesTriggered} games`}
+                        accent="score"
+                      />
+                      <StatCard
+                        label="Best MC saved"
+                        value={removalStat.maxMcSaved}
+                        valueSuffix="MC"
+                        sub={bestStatSub(removalStat.maxGameId, removalStat.maxPlayerName)}
+                        accent="score"
+                        badge
+                      />
+                    </>
                   )}
                   {bucket1.map(s => (
-                    <StatCard key={s.label} label={s.label} value={Math.round(s.avgPerGame * 10) / 10} sub={`best: ${s.maxInGame}, ${s.gamesTriggered} games`} accent="score" />
+                    <Fragment key={s.label}>
+                      <StatCard label={s.label} value={Math.round(s.avgPerGame * 10) / 10} sub={`${s.gamesTriggered} games`} accent="score" />
+                      <StatCard label={`Best ${s.label.toLowerCase()}`} value={s.maxInGame} sub={bestStatSub(s.maxGameId, s.maxPlayerName)} accent="score" badge />
+                    </Fragment>
                   ))}
-                  {bucket2.map(s => (
-                    <StatCard
-                      key={`${s.card_name}-${s.event_type}`}
-                      label={`Avg ${(EVENT_STAT_LABELS[s.event_type] ?? s.event_type).toLowerCase()}`}
-                      value={Math.round(s.avgPerGame * 10) / 10}
-                      sub={`best: ${s.maxInGame}, ${s.gamesPlayed} games`}
-                      accent="score"
-                    />
-                  ))}
+                  {PAIRED_MC_STAT[cardName] ? (() => {
+                    const { eventType, unit } = PAIRED_MC_STAT[cardName]
+                    const mc = bucket2.find(s => s.event_type === 'mc_gain')
+                    const secondary = bucket2.find(s => s.event_type === eventType)
+                    if (!mc || !secondary) return null
+                    return (
+                      <>
+                        <StatCard
+                          label={`Avg MC + ${unit} gained`}
+                          value={`${Math.round(mc.avgPerGame * 10) / 10} MC / ${Math.round(secondary.avgPerGame * 10) / 10} ${unit}`}
+                          sub={`${mc.gamesPlayed} games`}
+                          accent="score"
+                        />
+                        <StatCard
+                          label={`Best MC + ${unit} gained`}
+                          value={`${mc.maxInGame} MC / ${secondary.maxInGame} ${unit}`}
+                          sub={bestStatSub(mc.maxGameId, mc.maxPlayerName)}
+                          accent="score"
+                          badge
+                        />
+                      </>
+                    )
+                  })() : bucket2.map(s => {
+                    const label = (EVENT_STAT_LABELS[s.event_type] ?? s.event_type).toLowerCase()
+                    return (
+                      <Fragment key={`${s.card_name}-${s.event_type}`}>
+                        <StatCard
+                          label={`Avg ${label}`}
+                          value={Math.round(s.avgPerGame * 10) / 10}
+                          sub={`${s.gamesPlayed} games`}
+                          accent="score"
+                        />
+                        <StatCard
+                          label={`Best ${label}`}
+                          value={s.maxInGame}
+                          sub={bestStatSub(s.maxGameId, s.maxPlayerName)}
+                          accent="score"
+                          badge
+                        />
+                      </Fragment>
+                    )
+                  })}
                 </div>
               )
             })()}
