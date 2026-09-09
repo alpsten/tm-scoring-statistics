@@ -38,7 +38,7 @@ export default function Layout() {
         </>
       )}
 
-      <main className="flex-1">
+      <main className="flex-1 min-w-0">
         <Outlet />
 
         <footer className={`border-t border-border px-9 py-5 ${isHome ? 'text-center' : ''}`}>

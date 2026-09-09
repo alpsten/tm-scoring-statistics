@@ -603,7 +603,7 @@ export default function PlayerDetail() {
             ), true),
           ]
           return (
-            <div className="grid grid-cols-2">
+            <div className="player-stat-split grid grid-cols-2">
               <div className="border-r border-border">{left}</div>
               <div>{right}</div>
             </div>
@@ -616,7 +616,7 @@ export default function PlayerDetail() {
         <div className="font-display font-semibold text-[0.72rem] tracking-[0.1em] uppercase text-[var(--text-4)] mb-3">
           Highest In a Single Game
         </div>
-        <div className="grid gap-2" style={{ gridTemplateColumns: '1fr 1fr 1fr', gridTemplateRows: 'repeat(3, auto)', gridAutoFlow: 'column' }}>
+        <div className="player-records-grid grid gap-2" style={{ gridTemplateColumns: '1fr 1fr 1fr', gridTemplateRows: 'repeat(3, auto)', gridAutoFlow: 'column' }}>
           {([
             { label: 'Highest Score',       record: bestScore,    color: '#e8c84a', bg: 'rgba(232,200,74,0.28)',  border: 'rgba(232,200,74,0.60)',  fmt: (v: number) => `${v} VP`  },
             { label: 'Biggest Win',         record: biggestWin,   color: '#e8c84a', bg: 'rgba(232,200,74,0.28)',  border: 'rgba(232,200,74,0.60)',  fmt: (v: number) => `+${v} VP` },

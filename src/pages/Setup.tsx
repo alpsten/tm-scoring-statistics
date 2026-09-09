@@ -41,7 +41,7 @@ export default function Setup() {
     <div className="page-enter py-8 px-9">
       <PageHeader title="Setup" subtitle="Maps, expansions, and colonies" />
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="setup-grid grid grid-cols-3 gap-6">
 
         {/* Maps */}
         <div>

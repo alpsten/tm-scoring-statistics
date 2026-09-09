@@ -87,7 +87,7 @@ export default function Corporations() {
             </Button>
           </div>
 
-          <div className="grid gap-3 mb-5" style={{ gridTemplateColumns: `repeat(${selectedCorps.length}, 1fr)` }}>
+          <div className="corp-compare-grid grid gap-3 mb-5" style={{ gridTemplateColumns: `repeat(${selectedCorps.length}, 1fr)` }}>
             {selectedCorps.map((c, i) => (
               <div
                 key={c.corporation}

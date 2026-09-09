@@ -19,7 +19,7 @@ export default function Dashboard() {
       <div className="page-enter py-8 px-9">
         <SkeletonHeader />
         <SkeletonStatGrid count={4} />
-        <div className="grid grid-cols-2 gap-6 mt-6">
+        <div className="dashboard-loading-grid grid grid-cols-2 gap-6 mt-6">
           <SkeletonTable rows={5} cols={3} />
           <SkeletonTable rows={5} cols={3} />
         </div>

@@ -314,12 +314,31 @@ body {
 
   /* Responsive grids */
   .stat-grid,
-  .records-grid {
+  .records-grid,
+  .card-detail-grid,
+  .dashboard-loading-grid,
+  .setup-grid,
+  .player-stat-split {
     grid-template-columns: 1fr !important;
   }
   .quick-links-grid,
   .admin-links-grid {
     grid-template-columns: 1fr !important;
+  }
+
+  /* Player "highest in a single game" records: fixed 3-col/auto-flow-column layout doesn't fit, collapse to 1 col */
+  .player-records-grid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: none !important;
+    grid-auto-flow: row !important;
+  }
+
+  /* Corporation comparison: keep columns side-by-side and scroll horizontally instead of squeezing */
+  .corp-compare-grid {
+    grid-auto-flow: column !important;
+    grid-auto-columns: minmax(150px, 1fr) !important;
+    grid-template-columns: none !important;
+    overflow-x: auto !important;
   }
 }
 
