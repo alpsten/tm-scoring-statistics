@@ -1,15 +1,7 @@
-import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Code2, LogIn, LogOut, ShieldCheck } from 'lucide-react'
+import { LogIn, LogOut, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../../context/useAuth'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import terraformingMarsLogo from '../../assets/terraforming-mars-logo.png'
 import scoringStatisticsLogo from '../../assets/scoring-statistics-logo.png'
@@ -39,21 +31,6 @@ const NAV_PILL = '/tm-scoring-statistics/misc/standard-project-blank.png'
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
-  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>(
-    () => (localStorage.getItem('viewportMode') as 'desktop' | 'mobile') ?? 'desktop'
-  )
-  const [showMobileDisclaimer, setShowMobileDisclaimer] = useState(false)
-
-  useEffect(() => {
-    const meta = document.querySelector('meta[name="viewport"]')
-    if (meta) {
-      meta.setAttribute(
-        'content',
-        viewMode === 'desktop' ? 'width=1280' : 'width=device-width, initial-scale=1.0'
-      )
-    }
-    localStorage.setItem('viewportMode', viewMode)
-  }, [viewMode])
 
   async function handleSignOut() {
     await signOut()
@@ -108,52 +85,8 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         ))}
       </nav>
 
-      {/* View mode toggle */}
-      <div className="px-5 py-3 border-t border-b border-border">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="font-mono text-[0.55rem] tracking-[0.12em] text-[var(--text-4)] uppercase">
-            View
-          </span>
-          <div className="flex gap-1">
-            {(['desktop', 'mobile'] as const).map(mode => (
-              <button
-                key={mode}
-                onClick={() => {
-                  if (mode === 'mobile') setShowMobileDisclaimer(true)
-                  else setViewMode(mode)
-                }}
-                className={cn(
-                  'px-2 py-0.5 font-mono text-[0.55rem] tracking-[0.08em] uppercase cursor-pointer rounded-[3px] border transition-colors',
-                  viewMode === mode
-                    ? 'border-[#5b8dd9] bg-[rgba(91,141,217,0.15)] text-[#5b8dd9]'
-                    : 'border-border text-[var(--text-4)] bg-transparent hover:text-muted-foreground'
-                )}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
-        </div>
-        {viewMode === 'mobile' && (
-          <p className="font-body text-[0.62rem] text-score-400 italic leading-[1.4]">
-            Mobile view is still in development — some layouts may appear unexpected.
-          </p>
-        )}
-        <div className="border-t border-border mt-2.5 pt-2.5">
-          <a
-            href="https://github.com/alpsten/tm-scoring-statistics"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 py-1 px-2 bg-win-500/10 border border-win-500/35 rounded-[3px] text-win-500 font-mono text-[0.6rem] font-semibold tracking-[0.08em] uppercase no-underline hover:bg-win-500/20 transition-colors"
-          >
-            <Code2 className="size-3" />
-            Source Code
-          </a>
-        </div>
-      </div>
-
       {/* Admin / auth section */}
-      <div className="px-5 py-[14px]">
+      <div className="mt-auto px-5 py-[14px] border-t border-border">
         {user ? (
           <div className="flex flex-col gap-2">
             <NavLink
@@ -191,37 +124,6 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </NavLink>
         )}
       </div>
-
-      {/* Mobile disclaimer dialog */}
-      <Dialog open={showMobileDisclaimer} onOpenChange={setShowMobileDisclaimer}>
-        <DialogContent className="max-w-[320px]">
-          <DialogHeader>
-            <DialogTitle className="font-display text-score-400 tracking-[0.06em] uppercase text-[0.9rem]">
-              ⚠ Mobile View
-            </DialogTitle>
-          </DialogHeader>
-          <p className="font-body text-[0.82rem] text-muted-foreground leading-relaxed">
-            Mobile view is currently under development. Some layouts and elements may not appear as
-            expected.
-          </p>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowMobileDisclaimer(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-score-400 border-score-400/40 bg-score-400/10 hover:bg-score-400/20"
-              onClick={() => {
-                setViewMode('mobile')
-                setShowMobileDisclaimer(false)
-              }}
-            >
-              Continue anyway
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </aside>
   )
 }
