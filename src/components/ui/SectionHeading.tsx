@@ -8,12 +8,13 @@ interface SectionHeadingProps {
   banner?: boolean
   effect?: boolean
   style?: React.CSSProperties
+  className?: string
 }
 
-export default function SectionHeading({ children, banner, effect, style }: SectionHeadingProps) {
+export default function SectionHeading({ children, banner, effect, style, className }: SectionHeadingProps) {
   if (banner) {
     return (
-      <h2 className="section-heading-banner" style={{
+      <h2 className={className ? `section-heading-banner ${className}` : 'section-heading-banner'} style={{
         display: 'inline-flex',
         alignItems: 'center',
         height: '115px',
@@ -40,7 +41,7 @@ export default function SectionHeading({ children, banner, effect, style }: Sect
 
   if (effect) {
     return (
-      <h2 className="section-heading-effect" style={{
+      <h2 className={className ? `section-heading-effect ${className}` : 'section-heading-effect'} style={{
         display: 'inline-flex',
         alignItems: 'center',
         height: '161px',
