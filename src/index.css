@@ -284,23 +284,13 @@ body {
     padding: 62px 16px 28px !important;
   }
 
-  /* Tables: enable horizontal scroll */
+  /* Tables: enable horizontal scroll instead of squeezing columns unreadably thin */
   div:has(> table) {
     overflow-x: auto !important;
   }
-
-  /* Section heading banners: shrink, center, and unify on mobile */
-  .section-heading-banner {
-    display: flex !important;
-    width: fit-content !important;
-    height: 78px !important;
-    font-size: 0.88rem !important;
-    padding: 0 24px 4px !important;
-    letter-spacing: 0.07em !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    margin-top: -20px !important;
-    margin-bottom: -52px !important;
+  table {
+    width: max-content !important;
+    min-width: 100%;
   }
 
   .section-heading-effect {
@@ -312,14 +302,47 @@ body {
     margin-bottom: -30px !important;
   }
 
+  /* Games filter titles: keep the same size/placement as desktop instead of shrinking */
+  .section-heading-effect.filter-section-heading {
+    height: 161px !important;
+    font-size: 0.85rem !important;
+    padding: 0 25px 9px !important;
+    letter-spacing: 0.08em !important;
+    margin-top: -40px !important;
+    margin-bottom: -65px !important;
+  }
+
+  /* Games filter: Map-Selection and Expansion-Selection stack instead of sitting side by side */
+  .map-expansion-row {
+    flex-direction: column !important;
+  }
+  /* The extra margin below is only needed to line up the two "Unofficial" labels when the columns sit side by side */
+  .map-expansion-align-spacer {
+    margin-bottom: 0 !important;
+  }
+
   /* Responsive grids */
-  .stat-grid,
-  .records-grid,
   .card-detail-grid,
   .dashboard-loading-grid,
   .setup-grid,
   .player-stat-split {
     grid-template-columns: 1fr !important;
+  }
+  /* General Stats: keep 2x2 rather than a tall single column; stack label above
+     value in each card since there isn't enough width for them side by side */
+  .stat-grid {
+    gap: 8px !important;
+  }
+  /* Records & highlights: keep 2 columns (2x3) rather than a tall single column */
+  .records-grid {
+    gap: 8px !important;
+  }
+  .stat-grid [data-slot="card"],
+  .stat-grid [data-slot="card-content"] {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 4px !important;
   }
   .quick-links-grid,
   .admin-links-grid {

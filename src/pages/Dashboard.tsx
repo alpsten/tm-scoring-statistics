@@ -123,7 +123,7 @@ export default function Dashboard() {
           </RecordCard>
 
           {/* Best win rate */}
-          <RecordCard label={<>Best Player Win Rate <span className="text-[var(--text-4)]">(min 3 games)</span></>}>
+          <RecordCard label="Best Player Win Rate">
             {bestWinRate ? (
               <>
                 <span className="font-mono font-bold text-[0.9rem] text-win-500 leading-none">
@@ -144,15 +144,18 @@ export default function Dashboard() {
           </RecordCard>
 
           {/* Top corporation by avg score */}
-          <RecordCard label="Top Corporation by Average Score">
+          <RecordCard label="Top Corp. by Average Score">
             {topCorp ? (
               <>
                 <span className="font-mono font-bold text-[0.9rem] text-score-400 leading-none">
-                  {Math.round(topCorp.avg_score)}<span className="font-body font-bold ml-1">VP</span>
+                  {Math.round(topCorp.avg_score)}
+                  <span className="font-body text-[0.9rem] font-bold ml-1">VP</span>
+                  <span className="font-body text-[0.78rem] font-normal text-[var(--text-4)] ml-1.5">
+                    with <Link to={`/corporations/${encodeURIComponent(topCorp.corporation)}`} className="text-violet-400 no-underline hover:text-violet-300">{topCorp.corporation}</Link>
+                  </span>
                 </span>
                 <MetaRow>
-                  <Link to={`/corporations/${encodeURIComponent(topCorp.corporation)}`} className="text-violet-400 no-underline hover:text-violet-300">{topCorp.corporation}</Link>
-                  <Dot /><span>{topCorp.games_played} games</span><Dot />
+                  <span>{topCorp.games_played} games</span><Dot />
                   <span>
                     <span className={cn(topCorp.win_rate < 40 ? 'text-mars-500' : topCorp.win_rate < 60 ? 'text-score-400' : 'text-win-500')}>
                       {Math.round(topCorp.win_rate)}%
@@ -165,7 +168,7 @@ export default function Dashboard() {
           </RecordCard>
 
           {/* Best corporation by win rate */}
-          <RecordCard label={<>Best Corporation by Win Rate <span className="text-[var(--text-4)]">(min 3 games)</span></>}>
+          <RecordCard label="Best Corp. by Win Rate">
             {bestCorpWinRate.length > 0 ? (
               <>
                 <span className="font-mono font-bold text-[0.9rem] text-win-500 leading-none">
@@ -185,7 +188,7 @@ export default function Dashboard() {
           </RecordCard>
 
           {/* Highest card VP */}
-          <RecordCard label="Highest Card VP in a single game">
+          <RecordCard label="Highest Card VP in a game">
             {highCardVpResult && highCardVpGame ? (
               <>
                 <span className="font-mono font-bold text-[0.9rem] text-score-400 leading-none">
@@ -193,8 +196,6 @@ export default function Dashboard() {
                 </span>
                 <MetaRow>
                   <Link to={`/players/${encodeURIComponent(highCardVpResult.player_name)}`} className="text-violet-400 no-underline hover:text-violet-300">{highCardVpResult.player_name}</Link>
-                  <Dot />
-                  <Link to={`/corporations/${encodeURIComponent(highCardVpResult.corporation)}`} className="text-violet-400 no-underline hover:text-violet-300">{highCardVpResult.corporation}</Link>
                   <Dot />
                   <Link to={`/games/${highCardVpGame.game_number}`} className="text-[var(--text-4)] no-underline">{new Date(highCardVpGame.date).toLocaleDateString('sv-SE')}</Link>
                 </MetaRow>
@@ -222,9 +223,9 @@ export default function Dashboard() {
 
       {/* Player leaderboard */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="relative">
           <SectionHeading banner>Player leaderboard</SectionHeading>
-          <Link to="/players" className="font-body text-[0.78rem] text-violet-500 no-underline hover:text-violet-400">
+          <Link to="/players" className="absolute top-2 right-0 font-body text-[0.78rem] text-violet-500 no-underline hover:text-violet-400">
             Full stats →
           </Link>
         </div>
@@ -268,9 +269,9 @@ export default function Dashboard() {
 
       {/* Recent games */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="relative">
           <SectionHeading banner>Recent games</SectionHeading>
-          <Link to="/games" className="font-body text-[0.78rem] text-violet-500 no-underline hover:text-violet-400">
+          <Link to="/games" className="absolute top-2 right-0 font-body text-[0.78rem] text-violet-500 no-underline hover:text-violet-400">
             View all →
           </Link>
         </div>
