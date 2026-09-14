@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getCorps } from '../types/database'
 import PageHeader from '../components/ui/PageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import { SkeletonHeader, SkeletonTable } from '../components/ui/PageSkeleton'
 import { useGames, usePlayerProfiles } from '../lib/hooks'
-import { EXPANSION_ICONS, ALL_MAPS, ALL_EXPANSIONS } from '../lib/expansions'
+import { EXPANSION_ICONS, ALL_MAPS, ALL_EXPANSIONS, UNOFFICIAL_EXPANSIONS, UNOFFICIAL_MAPS } from '../lib/expansions'
 import SectionHeading from '../components/ui/SectionHeading'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -18,6 +18,25 @@ export default function Games() {
   const [search, setSearch]                     = useState('')
   const [mapFilters, setMapFilters]             = useState<string[]>([])
   const [expansionFilters, setExpansionFilters] = useState<string[]>([])
+  const [unofficialSpacer, setUnofficialSpacer] = useState(0)
+  const mapBeforeUnofficialRef = useRef<HTMLDivElement>(null)
+  const expBeforeUnofficialRef = useRef<HTMLDivElement>(null)
+
+  // Map-Selection has an extra "Nova" row that Expansion-Selection doesn't, and each
+  // column's pill rows wrap independently as the page narrows — so the height difference
+  // above the two "Unofficial" labels isn't a fixed number. Measure it live and keep both
+  // labels lined up at any width, instead of a hardcoded spacer that drifts out of sync.
+  useEffect(() => {
+    const mapEl = mapBeforeUnofficialRef.current
+    const expEl = expBeforeUnofficialRef.current
+    if (!mapEl || !expEl) return
+    const recalc = () => setUnofficialSpacer(Math.max(0, mapEl.offsetHeight - expEl.offsetHeight))
+    recalc()
+    const observer = new ResizeObserver(recalc)
+    observer.observe(mapEl)
+    observer.observe(expEl)
+    return () => observer.disconnect()
+  }, [isLoading])
 
   if (isLoading) return (
     <div className="page-enter py-8 px-9">
@@ -44,11 +63,60 @@ export default function Games() {
 
   const hasFilters = !!search || mapFilters.length > 0 || expansionFilters.length > 0
 
+  // Fan-made expansions/maps get their own row, below the official ones
+  const officialExpansions = ALL_EXPANSIONS.filter(e => !UNOFFICIAL_EXPANSIONS.has(e))
+  const fanExpansions      = ALL_EXPANSIONS.filter(e => UNOFFICIAL_EXPANSIONS.has(e))
+  const officialMaps      = ALL_MAPS.filter(m => !UNOFFICIAL_MAPS.has(m) && !m.endsWith('Nova'))
+  const officialMapsNova  = ALL_MAPS.filter(m => !UNOFFICIAL_MAPS.has(m) && m.endsWith('Nova'))
+  const fanMapsSecondRow = new Set(['Vastitas Borealis', 'Hollandia'])
+  const fanMaps          = ALL_MAPS.filter(m => UNOFFICIAL_MAPS.has(m) && !fanMapsSecondRow.has(m))
+  const fanMapsVastitas   = ALL_MAPS.filter(m => UNOFFICIAL_MAPS.has(m) && fanMapsSecondRow.has(m))
+
   function toggleMap(map: string) {
     setMapFilters(prev => prev.includes(map) ? prev.filter(m => m !== map) : [...prev, map])
   }
   function toggleExpansion(exp: string) {
     setExpansionFilters(prev => prev.includes(exp) ? prev.filter(e => e !== exp) : [...prev, exp])
+  }
+
+  function renderMapButton(map: string) {
+    const active = mapFilters.includes(map)
+    return (
+      <button
+        key={map}
+        onClick={() => toggleMap(map)}
+        className={cn(
+          'px-3 py-1 rounded border cursor-pointer transition-all font-display font-semibold text-[0.75rem]',
+          active
+            ? 'bg-[rgba(91,141,217,0.15)] border-[#5b8dd9] text-[#5b8dd9]'
+            : 'bg-card border-border text-[var(--text-4)] hover:text-muted-foreground'
+        )}
+      >
+        {active ? '✓ ' : ''}{map}
+      </button>
+    )
+  }
+
+  function renderExpansionButton(exp: string) {
+    const active = expansionFilters.includes(exp)
+    return (
+      <button
+        key={exp}
+        onClick={() => toggleExpansion(exp)}
+        title={exp}
+        className={cn(
+          'py-1 px-1.5 rounded border cursor-pointer transition-all flex items-center justify-center',
+          active
+            ? 'bg-[rgba(91,141,217,0.12)] border-[#5b8dd9] opacity-100'
+            : 'bg-card border-border opacity-70 hover:opacity-100'
+        )}
+      >
+        {EXPANSION_ICONS[exp]
+          ? <img src={EXPANSION_ICONS[exp]} alt={exp} className="w-5 h-5 object-contain" />
+          : <span className={cn('font-body text-[0.75rem] px-1', active ? 'text-[#5b8dd9]' : 'text-[var(--text-4)]')}>{exp}</span>
+        }
+      </button>
+    )
   }
 
   return (
@@ -81,55 +149,31 @@ export default function Games() {
           )}
         </div>
 
-        {/* Map pills */}
-        <div className="flex flex-col gap-1.5">
-          <SectionHeading effect style={{ marginTop: '-40px', marginBottom: '-65px' }}>Map-Selection</SectionHeading>
-          <div className="flex gap-1.5 flex-wrap pl-0.5 relative z-10">
-            {ALL_MAPS.map(map => {
-              const active = mapFilters.includes(map)
-              return (
-                <button
-                  key={map}
-                  onClick={() => toggleMap(map)}
-                  className={cn(
-                    'px-3 py-1 rounded border cursor-pointer transition-all font-display font-semibold text-[0.75rem]',
-                    active
-                      ? 'bg-[rgba(91,141,217,0.15)] border-[#5b8dd9] text-[#5b8dd9]'
-                      : 'bg-card border-border text-[var(--text-4)] hover:text-muted-foreground'
-                  )}
-                >
-                  {active ? '✓ ' : ''}{map}
-                </button>
-              )
-            })}
+        {/* Map + Expansion pills: side by side on desktop, stacked on mobile */}
+        <div className="map-expansion-row flex gap-6">
+          {/* Map pills */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            <SectionHeading effect className="filter-section-heading" style={{ marginTop: '-40px', marginBottom: '-65px' }}>Map-Selection</SectionHeading>
+            <div className="flex flex-col gap-1.5 pl-0.5 relative z-10">
+              <div ref={mapBeforeUnofficialRef} className="flex flex-col gap-1.5">
+                <div className="flex gap-1.5 flex-wrap">{officialMaps.map(renderMapButton)}</div>
+                <div className="flex gap-1.5 flex-wrap">{officialMapsNova.map(renderMapButton)}</div>
+              </div>
+              <span className="font-body text-[1.0rem] font-medium tracking-[0.08em] uppercase text-[var(--text-4)] py-1.5">Unofficial</span>
+              <div className="flex gap-1.5 flex-wrap">{fanMaps.map(renderMapButton)}</div>
+              <div className="flex gap-1.5 flex-wrap">{fanMapsVastitas.map(renderMapButton)}</div>
+            </div>
           </div>
-        </div>
 
-        {/* Expansion pills */}
-        <div className="flex flex-col gap-1.5">
-          <SectionHeading effect style={{ marginTop: '-40px', marginBottom: '-65px' }}>Expansion-Selection</SectionHeading>
-          <div className="flex gap-1.5 flex-wrap pl-0.5 relative z-10">
-            {ALL_EXPANSIONS.map(exp => {
-              const active = expansionFilters.includes(exp)
-              return (
-                <button
-                  key={exp}
-                  onClick={() => toggleExpansion(exp)}
-                  title={exp}
-                  className={cn(
-                    'py-1 px-1.5 rounded border cursor-pointer transition-all flex items-center justify-center',
-                    active
-                      ? 'bg-[rgba(91,141,217,0.12)] border-[#5b8dd9] opacity-100'
-                      : 'bg-card border-border opacity-70 hover:opacity-100'
-                  )}
-                >
-                  {EXPANSION_ICONS[exp]
-                    ? <img src={EXPANSION_ICONS[exp]} alt={exp} className="w-5 h-5 object-contain" />
-                    : <span className={cn('font-body text-[0.75rem] px-1', active ? 'text-[#5b8dd9]' : 'text-[var(--text-4)]')}>{exp}</span>
-                  }
-                </button>
-              )
-            })}
+          {/* Expansion pills */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            <SectionHeading effect className="filter-section-heading" style={{ marginTop: '-40px', marginBottom: '-65px' }}>Expansion-Selection</SectionHeading>
+            <div className="flex flex-col gap-1.5 pl-0.5 relative z-10">
+              {/* marginBottom is live-measured to match Map-Selection's extra Nova row, so both "Unofficial" labels line up at any width */}
+              <div ref={expBeforeUnofficialRef} style={{ marginBottom: unofficialSpacer }} className="flex gap-1.5 flex-wrap map-expansion-align-spacer">{officialExpansions.map(renderExpansionButton)}</div>
+              <span className="font-body text-[1.0rem] font-medium tracking-[0.08em] uppercase text-[var(--text-4)] py-1.5">Unofficial</span>
+              <div className="flex gap-1.5 flex-wrap">{fanExpansions.map(renderExpansionButton)}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -141,6 +185,7 @@ export default function Games() {
           {filtered.map(game => {
             const sorted  = [...game.player_results].sort((a, b) => a.position - b.position)
             const gameNum = game.game_number
+            const hasCeo  = game.expansions.includes('CEO')
 
             return (
               <Link
@@ -159,11 +204,22 @@ export default function Games() {
                 </div>
 
                 {/* Info row: date · players · generations · format */}
-                <div className="font-body text-[0.75rem] text-[var(--text-4)] mb-1.5">
-                  {new Date(game.date).toLocaleDateString('sv-SE')}
-                  {' · '}{game.player_count} players
-                  {game.generations ? ` · ${game.generations} generations` : ''}
-                  {game.format ? ` · ${game.format}` : ''}
+                <div className="flex items-center gap-2.5 flex-wrap font-body text-[0.9rem] text-[var(--text-4)] mb-2.5">
+                  <span>{new Date(game.date).toLocaleDateString('sv-SE')}</span>
+                  <span>·</span>
+                  <span>{game.player_count} players</span>
+                  {game.generations != null && (
+                    <>
+                      <span>·</span>
+                      <span>{game.generations} generations</span>
+                    </>
+                  )}
+                  {game.format && (
+                    <>
+                      <span>·</span>
+                      <span>{game.format}</span>
+                    </>
+                  )}
                 </div>
 
                 {/* Expansion icons */}
@@ -187,6 +243,9 @@ export default function Games() {
                       <tr className="border-b border-border">
                         <th className="px-3 py-2 text-left font-body text-[0.68rem] font-semibold tracking-[0.08em] uppercase text-[var(--text-4)]">Player</th>
                         <th className="px-3 py-2 text-left font-body text-[0.68rem] font-semibold tracking-[0.08em] uppercase text-[var(--text-4)]">Corporation</th>
+                        {hasCeo && (
+                          <th className="px-3 py-2 text-left font-body text-[0.68rem] font-semibold tracking-[0.08em] uppercase text-[#d07832]">CEO</th>
+                        )}
                         {['TR', 'Milestones', 'Awards', 'Greeneries', 'Cities', 'Cards'].map(h => (
                           <th key={h} className="px-3 py-2 text-center font-body text-[0.68rem] font-semibold tracking-[0.08em] uppercase text-[var(--text-4)]">{h}</th>
                         ))}
@@ -208,11 +267,6 @@ export default function Games() {
                                 <span className={cn('font-body text-[0.85rem]', result.position === 1 ? 'font-semibold text-foreground' : 'font-normal text-secondary-foreground')}>
                                   {result.player_name}
                                 </span>
-                                {result.ceo && (
-                                  <span className="ml-1.5 font-mono text-[0.62rem] text-[#d07832] bg-[rgba(210,120,50,0.1)] border border-[rgba(210,120,50,0.3)] rounded px-1.5 py-[1px]">
-                                    {result.ceo}
-                                  </span>
-                                )}
                                 {result.key_notes && (
                                   <div className="font-body text-[0.7rem] text-[var(--text-4)] italic">{result.key_notes}</div>
                                 )}
@@ -225,6 +279,9 @@ export default function Games() {
                               <span className="ml-1.5 font-mono text-[0.6rem] text-score-400 bg-score-400/10 border border-score-400/30 rounded px-[5px] py-[1px]">Merger</span>
                             )}
                           </td>
+                          {hasCeo && (
+                            <td className="px-3 py-2.5 font-body text-[0.8rem] text-[#d07832]">{result.ceo ?? '—'}</td>
+                          )}
                           {[result.tr, result.milestone_vp, result.award_vp, result.greenery_vp, result.city_vp, result.card_vp].map((val, vi) => (
                             <td key={vi} className="px-3 py-2.5 text-center font-mono text-[0.82rem] text-secondary-foreground">{val ?? '—'}</td>
                           ))}

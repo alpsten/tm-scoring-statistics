@@ -1,6 +1,7 @@
 export const ALL_MAPS = [
   'Tharsis', 'Hellas', 'Elysium', 'Arabia Terra',
   'Amazonis Planitia', 'Terra Cimmeria', 'Vastitas Borealis', 'Utopia Planitia',
+  'Vastitas Borealis Nova', 'Hollandia', 'Terra Cimmeria Nova',
 ]
 
 // Expansions shown on the Games filter and selectable when recording a game
@@ -17,6 +18,9 @@ export const CARD_EXPANSIONS = [
 
 // Fan expansions excluded when the Official-Cards toggle is active
 export const UNOFFICIAL_EXPANSIONS = new Set(['Ares', 'CEO', 'The Moon', 'Pathfinders'])
+
+// Fan-made maps, shown on their own row below the official maps in the Games filter
+export const UNOFFICIAL_MAPS = new Set(['Arabia Terra', 'Amazonis Planitia', 'Hollandia', 'Vastitas Borealis', 'Terra Cimmeria'])
 
 // Maps legacy or variant expansion names from old DB records to canonical form
 export function normalizeExpansion(name: string): string {

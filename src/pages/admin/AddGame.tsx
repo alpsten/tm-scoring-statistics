@@ -7,7 +7,7 @@ import { z } from 'zod'
 import PageHeader from '../../components/ui/PageHeader'
 import { supabase } from '../../lib/supabase'
 import { usePlayerStats, useCardReference, useGame, useGameMilestones, useGameAwards } from '../../lib/hooks'
-import { EXPANSION_ICONS, ALL_EXPANSIONS } from '../../lib/expansions'
+import { EXPANSION_ICONS, ALL_EXPANSIONS, ALL_MAPS } from '../../lib/expansions'
 
 // ─── Shared class constants ────────────────────────────────────────────────────
 
@@ -112,11 +112,7 @@ type GameFormValues = z.infer<typeof gameSchema>
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MAPS = [
-  'Tharsis', 'Hellas', 'Elysium', 'Arabia Terra',
-  'Amazonis Planitia', 'Terra Cimmeria', 'Vastitas Borealis', 'Utopia Planitia',
-  'Vastitas Borealis Nova', 'Hollandia',
-]
+const MAPS = ALL_MAPS
 const EXPANSIONS = ALL_EXPANSIONS
 const COLONY_TILES = [
   'Callisto', 'Ceres', 'Enceladus', 'Europa', 'Ganymede',
