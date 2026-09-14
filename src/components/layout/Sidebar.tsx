@@ -3,6 +3,7 @@ import { LogIn, LogOut, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../../context/useAuth'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useDevicePreviewMode } from '@/lib/useDevicePreviewMode'
 import terraformingMarsLogo from '../../assets/terraforming-mars-logo.png'
 import scoringStatisticsLogo from '../../assets/scoring-statistics-logo.png'
 
@@ -31,6 +32,7 @@ const NAV_PILL = '/tm-scoring-statistics/misc/standard-project-blank.png'
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const { mode, toggle } = useDevicePreviewMode()
 
   async function handleSignOut() {
     await signOut()
@@ -84,6 +86,31 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </NavLink>
         ))}
       </nav>
+
+      {/* Device preview toggle */}
+      <div className="px-5 py-3 border-t border-border">
+        <div className="flex items-center justify-between">
+          <span className="font-mono text-[0.55rem] tracking-[0.12em] text-[var(--text-4)] uppercase">
+            View
+          </span>
+          <div className="flex gap-1">
+            {(['desktop', 'mobile'] as const).map(m => (
+              <button
+                key={m}
+                onClick={() => toggle(m)}
+                className={cn(
+                  'px-2 py-0.5 font-mono text-[0.55rem] tracking-[0.08em] uppercase cursor-pointer rounded-[3px] border transition-colors',
+                  mode === m
+                    ? 'border-[#5b8dd9] bg-[rgba(91,141,217,0.15)] text-[#5b8dd9]'
+                    : 'border-border text-[var(--text-4)] bg-transparent hover:text-muted-foreground'
+                )}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Admin / auth section */}
       <div className="mt-auto px-5 py-[14px] border-t border-border">
