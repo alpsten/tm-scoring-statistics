@@ -128,6 +128,15 @@ html, body, #root {
   padding: 0;
 }
 
+/* Anchor the hex background to the full page and keep its negative z-index behind the
+   content within this stacking context. Short pages still fill the screen. */
+#root {
+  position: relative;
+  height: auto;
+  min-height: 100%;
+  isolation: isolate;
+}
+
 html {
   background-color: var(--bg-body);
 }
