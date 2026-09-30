@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts'
 import PageHeader from '../components/ui/PageHeader'
 import { SkeletonHeader, SkeletonTable } from '../components/ui/PageSkeleton'
 import { useCorpStats, useMergerStats } from '../lib/hooks'
@@ -12,7 +12,11 @@ import { cn } from '@/lib/utils'
 type SortKey = keyof Pick<CorporationStats, 'corporation' | 'games_played' | 'wins' | 'win_rate' | 'avg_score' | 'best_score'>
 
 const CORP_COLORS = ['#9b50f0', '#e05535', '#2e8b8b', '#d4a820', '#4a9e6b', '#b87aff']
-const PIE_COLORS = ['#9b50f0','#e05535','#2e8b8b','#c9a030','#4a9e6b','#b87aff','#3bbfbf','#5b8dd9','#d4a820','#aaaaaa','#888888']
+// Single-series bar color for the play-count ranking below — one nominal series (corporation
+// play counts), so one hue does the job; "Other" is an aggregate bucket, not a real corporation,
+// so it gets its own neutral gray rather than sharing the accent.
+const PLAY_COUNT_COLOR = '#9b50f0'
+const OTHER_COLOR = '#8a8682'
 
 const numTdClass = 'px-[18px] py-[13px] text-center font-mono text-[0.85rem] text-secondary-foreground'
 
@@ -134,68 +138,51 @@ export default function Corporations() {
         </div>
       )}
 
-      {/* Play count pie chart */}
+      {/* Play count ranking */}
       {allCorps.length > 0 && (() => {
         const sorted = [...allCorps].sort((a, b) => b.games_played - a.games_played)
         const top = sorted.slice(0, 10)
         const rest = sorted.slice(10)
-        const pieData = [
-          ...top.map(c => ({ name: c.corporation, value: c.games_played })),
-          ...(rest.length > 0 ? [{ name: 'Other', value: rest.reduce((s, c) => s + c.games_played, 0) }] : []),
+        // "Other" is a rolled-up bucket, not a real corporation — pinned last regardless of its
+        // total so it never gets mistaken for the most-played corp just because the long tail
+        // outweighs any single one of the top 10.
+        const barData = [
+          ...top.map(c => ({ name: c.corporation, value: c.games_played, isOther: false })),
+          ...(rest.length > 0 ? [{ name: 'Other', value: rest.reduce((s, c) => s + c.games_played, 0), isOther: true }] : []),
         ]
         return (
           <div className="bg-card border border-border rounded-[6px] px-6 py-5 mb-7">
             <div className="font-body text-[0.68rem] font-semibold tracking-[0.08em] uppercase text-[var(--text-4)] mb-4">
-              Play count distribution
+              Most played corporations
             </div>
-            <div className="corp-pie-layout">
-              <div className="corp-pie-legend">
-                {pieData.map((item, i) => (
-                  <div key={item.name} className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                    <span className="font-body text-[0.78rem] text-secondary-foreground flex-1">{item.name}</span>
-                    <span className="font-mono text-[0.72rem] text-[var(--text-4)]">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="corp-pie-container">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius="80%"
-                      paddingAngle={1}
-                      label={({ cx, cy, midAngle, outerRadius, percent }: { cx?: number; cy?: number; midAngle?: number; outerRadius?: number; percent?: number }) => {
-                        if ((percent ?? 0) <= 0.04) return null
-                        const RADIAN = Math.PI / 180
-                        const r = (outerRadius ?? 0) * 0.75
-                        const x = (cx ?? 0) + r * Math.cos(-(midAngle ?? 0) * RADIAN)
-                        const y = (cy ?? 0) + r * Math.sin(-(midAngle ?? 0) * RADIAN)
-                        return (
-                          <text x={x} y={y} textAnchor="middle" dominantBaseline="central"
-                            style={{ fontSize: '9px', fontFamily: 'Space Mono, monospace', fill: 'rgba(255,255,255,0.8)', fontWeight: 700 }}>
-                            {`${Math.round((percent ?? 0) * 100)}%`}
-                          </text>
-                        )
-                      }}
-                      labelLine={false}
-                    >
-                      {pieData.map((_, i) => (
-                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{ background: 'var(--bg-input)', border: '1px solid var(--bd-secondary)', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-1)' }}
-                      formatter={(value, name) => [`${value} games`, name]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+            <ResponsiveContainer width="100%" height={barData.length * 34 + 20}>
+              <BarChart data={barData} layout="vertical" barSize={18} margin={{ top: 0, right: 34, bottom: 0, left: 0 }}>
+                <XAxis type="number" hide />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={150}
+                  tick={{ fontFamily: 'var(--font-body)', fontSize: 12, fill: 'var(--text-3)' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{ background: 'var(--bg-input)', border: '1px solid var(--bd-secondary)', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-1)' }}
+                  cursor={{ fill: 'rgba(155,80,240,0.05)' }}
+                  formatter={(value, _name, item) => [`${value} games`, item.payload.isOther ? 'Other corporations' : item.payload.name]}
+                />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                  {barData.map((d, i) => (
+                    <Cell key={i} fill={d.isOther ? OTHER_COLOR : PLAY_COUNT_COLOR} />
+                  ))}
+                  <LabelList
+                    dataKey="value"
+                    position="right"
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fill: 'var(--text-4)' }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         )
       })()}
