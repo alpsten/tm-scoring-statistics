@@ -180,7 +180,7 @@ export default function GameDetail() {
         return (
           <span className="inline-flex gap-[3px] flex-wrap justify-center">
             {exps.map(exp => EXPANSION_ICONS[exp]
-              ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} className="w-4 h-4 object-contain" />
+              ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} loading="lazy" decoding="async" className="w-4 h-4 object-contain" />
               : <span key={exp} className="font-mono text-[0.55rem] text-[var(--text-4)]">{exp.slice(0, 3).toUpperCase()}</span>
             )}
           </span>
@@ -328,7 +328,7 @@ export default function GameDetail() {
           {game.expansions.length > 0 ? (
             <div className="flex gap-1.5 flex-wrap mt-2 items-center">
               {game.expansions.map(exp => EXPANSION_ICONS[exp] ? (
-                <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} className="w-6 h-6 object-contain" />
+                <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} loading="lazy" decoding="async" className="w-6 h-6 object-contain" />
               ) : (
                 <span key={exp} className="font-body text-[0.7rem] px-2 py-[2px] rounded-[3px] bg-[rgba(46,139,139,0.1)] text-[#3bbfbf] border border-[rgba(46,139,139,0.25)]">
                   {exp}
