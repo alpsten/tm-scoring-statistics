@@ -1,7 +1,7 @@
 import React from 'react'
 
-const AWARD_BANNER  = '/tm-scoring-statistics/misc/award-banner.png'
-const EFFECT_BANNER = '/tm-scoring-statistics/misc/effect-banner.png'
+const AWARD_BANNER  = '/tm-scoring-statistics/misc/award-banner.webp'
+const EFFECT_BANNER = '/tm-scoring-statistics/misc/effect-banner.webp'
 
 interface SectionHeadingProps {
   children: React.ReactNode

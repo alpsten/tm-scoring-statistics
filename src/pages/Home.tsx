@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
-import terraformingMarsLogo from '../assets/terraforming-mars-logo.png'
-import scoringStatisticsLogo from '../assets/scoring-statistics-logo.png'
+import terraformingMarsLogo from '../assets/terraforming-mars-logo.webp'
+import scoringStatisticsLogo from '../assets/scoring-statistics-logo.webp'
 
 // The landing page — kept deliberately sparse.
 export default function Home() {
@@ -13,11 +13,13 @@ export default function Home() {
         <img
           src={terraformingMarsLogo}
           alt="Terraforming Mars"
+          decoding="async"
           className="mx-auto w-full max-w-[640px] sm:max-w-[1080px] h-auto"
         />
         <img
           src={scoringStatisticsLogo}
           alt="Scoring Statistics"
+          decoding="async"
           className="mx-auto w-full max-w-[640px] sm:max-w-[1080px] h-auto mt-2"
         />
         <Link

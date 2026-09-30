@@ -64,6 +64,8 @@ function ResourceIconRow({ resources, size = 18 }: { resources: string | null; s
             src={`/tm-scoring-statistics/resources/${item.name}.png`}
             alt={item.name}
             title={item.name}
+            loading="lazy"
+            decoding="async"
             style={{ width: size, height: size, objectFit: 'contain', display: 'block' }}
           />
         </div>
@@ -219,7 +221,7 @@ function applyBlueCardLayoutRules(layout: ImageCardLayout, card: CardReference, 
 
 const GREEN_CARD_FRAME: ImageCardFrame = {
   name: 'Green Card Frame',
-  template: '/tm-scoring-statistics/cards/automated-green-card.png',
+  template: '/tm-scoring-statistics/cards/automated-green-card.webp',
   cardWidth: 240,
   cardHeight: 336,
   baseLayout: {
@@ -245,7 +247,7 @@ const GREEN_CARD_FRAME: ImageCardFrame = {
 //   Bottom border      : y=306–336
 const BLUE_CARD_FRAME: ImageCardFrame = {
   name: 'Blue Card Frame',
-  template: '/tm-scoring-statistics/cards/active-blue-card.png',
+  template: '/tm-scoring-statistics/cards/active-blue-card.webp',
   cardWidth: 240,
   cardHeight: 336,
   baseLayout: {
@@ -307,7 +309,7 @@ function applyEventCardLayoutRules(layout: ImageCardLayout, card: CardReference,
 
 const EVENT_CARD_FRAME: ImageCardFrame = {
   name: 'Event Card Frame',
-  template: '/tm-scoring-statistics/cards/event-red-card.png',
+  template: '/tm-scoring-statistics/cards/event-red-card.webp',
   cardWidth: 240,
   cardHeight: 336,
   baseLayout: {
@@ -332,7 +334,7 @@ const EVENT_CARD_FRAME: ImageCardFrame = {
 //   Silver text panel  : y=183–305  ← card text lives here
 const CEO_CARD_FRAME: ImageCardFrame = {
   name: 'CEO Card Frame',
-  template: '/tm-scoring-statistics/cards/ceo-orange-card.png',
+  template: '/tm-scoring-statistics/cards/ceo-orange-card.webp',
   cardWidth: 240,
   cardHeight: 336,
   baseLayout: {
@@ -370,7 +372,7 @@ function applyCorporationLayoutRules(layout: ImageCardLayout, card: CardReferenc
 
 const CORPORATION_CARD_FRAME: ImageCardFrame = {
   name: 'Corporation Card Frame',
-  template: '/tm-scoring-statistics/cards/corporation-yellow-card.png',
+  template: '/tm-scoring-statistics/cards/corporation-yellow-card.webp',
   cardWidth: 336,
   cardHeight: 240,
   baseLayout: {
@@ -402,7 +404,7 @@ function applyPreludeLayoutRules(layout: ImageCardLayout, card: CardReference, t
 
 const PRELUDE_CARD_FRAME: ImageCardFrame = {
   name: 'Prelude Card Frame',
-  template: '/tm-scoring-statistics/cards/prelude-pink-card.png',
+  template: '/tm-scoring-statistics/cards/prelude-pink-card.webp',
   cardWidth: 336,
   cardHeight: 240,
   baseLayout: {
@@ -465,6 +467,8 @@ function CardTagIcon({ name, size }: { name: string; size: number }) {
         src={icon}
         alt={name}
         title={name}
+        loading="lazy"
+        decoding="async"
         style={{ width: size, height: size, objectFit: 'contain', display: 'block' }}
       />
     )
@@ -526,7 +530,7 @@ function ImageCard({ card }: { card: CardReference }) {
   const layout = getImageCardLayout(card, tags.length)
   const tagSize = frame.getTagSize(tags.length)
   const vpImg = card.base_vp != null && card.base_vp >= 1 && card.base_vp <= 2
-    ? `/tm-scoring-statistics/cards/VP${card.base_vp}.png`
+    ? `/tm-scoring-statistics/cards/VP${card.base_vp}.webp`
     : null
   const sections = getCardTextSections(card)
   const effectSection = sections.find(s => s.label === 'Effect')
@@ -546,7 +550,7 @@ function ImageCard({ card }: { card: CardReference }) {
       boxShadow: '0 8px 36px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.2)',
     }}>
       {/* Template image */}
-      <img src={template} alt="" aria-hidden style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }} />
+      <img src={template} alt="" aria-hidden decoding="async" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }} />
 
       {/* MC cost — yellow badge, top-left */}
       {card.mc_cost != null && (
@@ -678,7 +682,7 @@ function ImageCard({ card }: { card: CardReference }) {
       {/* CEO expansion icon — bottom-left of the CEO card frame */}
       {card.card_type === 'CEO' && EXPANSION_ICONS['CEO'] && (
         <div style={{ position: 'absolute', top: 25, left: 24}}>
-          <img src={EXPANSION_ICONS['CEO']} alt="CEO" title="CEO" style={{ width: 20, height: 20, objectFit: 'contain', opacity: 0.9 }} />
+          <img src={EXPANSION_ICONS['CEO']} alt="CEO" title="CEO" loading="lazy" decoding="async" style={{ width: 20, height: 20, objectFit: 'contain', opacity: 0.9 }} />
         </div>
       )}
 
@@ -692,7 +696,7 @@ function ImageCard({ card }: { card: CardReference }) {
           height: layout.vp.size,
         }}>
           {vpImg ? (
-            <img src={vpImg} alt={`${card.base_vp} VP`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            <img src={vpImg} alt={`${card.base_vp} VP`} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           ) : (
             <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'radial-gradient(circle at 40% 35%, #e8b840, #b8860b)', border: '1px solid #c9a030', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '1.35rem', color: '#1a1428' }}>
               {card.base_vp}

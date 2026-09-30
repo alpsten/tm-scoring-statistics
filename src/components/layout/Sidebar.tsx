@@ -4,8 +4,8 @@ import { useAuth } from '../../context/useAuth'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useDevicePreviewMode } from '@/lib/useDevicePreviewMode'
-import terraformingMarsLogo from '../../assets/terraforming-mars-logo.png'
-import scoringStatisticsLogo from '../../assets/scoring-statistics-logo.png'
+import terraformingMarsLogo from '../../assets/terraforming-mars-logo.webp'
+import scoringStatisticsLogo from '../../assets/scoring-statistics-logo.webp'
 
 interface SidebarProps {
   open: boolean
@@ -55,11 +55,13 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         <img
           src={terraformingMarsLogo}
           alt="Terraforming Mars"
+          decoding="async"
           className="mx-auto w-full max-w-[170px] h-auto"
         />
         <img
           src={scoringStatisticsLogo}
           alt="Scoring Statistics"
+          decoding="async"
           className="mx-auto w-full max-w-[170px] h-auto mt-2"
         />
       </div>
@@ -79,7 +81,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               )
             }
           >
-            <img src={NAV_PILL} alt="" aria-hidden className="w-full h-9 object-fill block" />
+            <img src={NAV_PILL} alt="" aria-hidden decoding="async" className="w-full h-9 object-fill block" />
             <span className="absolute inset-0 flex items-center justify-center font-display font-bold text-[0.78rem] tracking-[0.06em] uppercase text-[#1a0a00]">
               {label}
             </span>
