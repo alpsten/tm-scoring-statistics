@@ -96,7 +96,7 @@ export default function Setup() {
                       <td className="py-2.5 px-3.5 font-body text-[0.83rem] text-foreground">
                         <span className="inline-flex items-center gap-2">
                           {EXPANSION_ICONS[exp] && (
-                            <img src={EXPANSION_ICONS[exp]} alt={exp} className="w-4 h-4 object-contain" />
+                            <img src={EXPANSION_ICONS[exp]} alt={exp} loading="lazy" decoding="async" className="w-4 h-4 object-contain" />
                           )}
                           {exp}
                         </span>

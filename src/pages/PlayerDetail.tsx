@@ -372,7 +372,7 @@ export default function PlayerDetail() {
         return (
           <span className="inline-flex gap-[3px] flex-wrap justify-center">
             {exps.map(exp => EXPANSION_ICONS[exp]
-              ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} className="w-4 h-4 object-contain" />
+              ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} loading="lazy" decoding="async" className="w-4 h-4 object-contain" />
               : <span key={exp} className="font-mono text-[0.55rem] text-[var(--text-4)]">{exp.slice(0, 3).toUpperCase()}</span>
             )}
           </span>

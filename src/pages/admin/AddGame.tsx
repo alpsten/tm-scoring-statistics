@@ -722,7 +722,7 @@ export default function AddGame() {
                     className="flex items-center gap-[5px] px-[10px] py-1 rounded-[12px] cursor-pointer transition-all font-body text-[0.78rem]"
                     style={{ background: on ? 'rgba(155,80,240,0.12)' : 'transparent', border: `1px solid ${on ? '#9b50f0' : '#3e325e'}`, color: on ? '#b87aff' : '#625c7c' }}
                   >
-                    {icon && <img src={icon} alt={e} className="w-[14px] h-[14px] object-contain" style={{ opacity: on ? 1 : 0.5 }} />}
+                    {icon && <img src={icon} alt={e} loading="lazy" decoding="async" className="w-[14px] h-[14px] object-contain" style={{ opacity: on ? 1 : 0.5 }} />}
                     {on ? '✓ ' : ''}{e}
                   </button>
                 )

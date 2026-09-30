@@ -56,6 +56,8 @@ function ExpansionGroup({ title, expansions, selected, toggle }: {
               <img
                 src={EXPANSION_ICONS[exp]}
                 alt={exp}
+                loading="lazy"
+                decoding="async"
                 className={cn('w-[22px] h-[22px] object-contain transition-opacity', active ? 'opacity-100' : 'opacity-40')}
               />
             </button>

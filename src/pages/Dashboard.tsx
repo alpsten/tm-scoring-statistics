@@ -304,7 +304,7 @@ export default function Dashboard() {
                       ) : (
                         <div className="flex gap-1 flex-wrap items-center">
                           {game.expansions.map(exp => EXPANSION_ICONS[exp] ? (
-                            <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} className="w-5 h-5 object-contain" />
+                            <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} loading="lazy" decoding="async" className="w-5 h-5 object-contain" />
                           ) : (
                             <span key={exp} className="font-body text-[0.72rem] text-[var(--text-4)]">{exp}</span>
                           ))}

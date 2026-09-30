@@ -225,7 +225,7 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
                   className={`w-[31px] h-[31px] p-1 border rounded-[6px] cursor-pointer transition-all inline-flex items-center justify-center relative ${active ? 'bg-[rgba(46,139,139,0.12)] border-[#2e8b8b] opacity-100' : 'bg-transparent border-[#3e325e] opacity-45'}`}
                 >
                   {EXPANSION_ICONS[e]
-                    ? <img src={EXPANSION_ICONS[e]} alt={e} className="w-[21px] h-[21px] object-contain block" />
+                    ? <img src={EXPANSION_ICONS[e]} alt={e} loading="lazy" decoding="async" className="w-[21px] h-[21px] object-contain block" />
                     : <span className={`font-body text-[0.65rem] leading-none ${active ? 'text-[#3bbfbf]' : 'text-[#625c7c]'}`}>{e.slice(0, 2).toUpperCase()}</span>
                   }
                   {active && <span className="absolute right-[3px] bottom-[3px] w-1.5 h-1.5 rounded-full bg-[#3bbfbf] shadow-[0_0_0_1px_#171228]" />}
@@ -340,7 +340,7 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
                 style={{ background: count > 0 ? colors.bg : 'transparent', border: `1px solid ${count > 0 ? colors.color : '#3e325e'}`, opacity: count > 0 ? 1 : 0.45 }}
               >
                 {TAG_ICONS[tag]
-                  ? <img src={TAG_ICONS[tag]} alt={tag} className="w-[21px] h-[21px] object-contain block" />
+                  ? <img src={TAG_ICONS[tag]} alt={tag} loading="lazy" decoding="async" className="w-[21px] h-[21px] object-contain block" />
                   : <span className="font-body text-[0.65rem] leading-none" style={{ color: count > 0 ? colors.color : '#625c7c' }}>{tag.slice(0, 2).toUpperCase()}</span>
                 }
                 {count === 1 && <span className="absolute right-[3px] bottom-[3px] w-1.5 h-1.5 rounded-full bg-[#3bbfbf] shadow-[0_0_0_1px_#171228]" />}
@@ -355,7 +355,7 @@ function EditRow({ values, onChange, saving, error, onSave, onCancel, isNew }: {
             className="w-[31px] h-[31px] p-1 rounded-[6px] cursor-pointer transition-all inline-flex items-center justify-center"
             style={{ background: values.noTagExplicit ? 'rgba(100,100,100,0.12)' : 'transparent', border: `1px solid ${values.noTagExplicit ? '#8e87a8' : '#3e325e'}`, opacity: values.noTagExplicit ? 1 : 0.45 }}
           >
-            <img src={NO_TAG_ICON} alt="No tag" className="w-[21px] h-[21px] object-contain block" />
+            <img src={NO_TAG_ICON} alt="No tag" loading="lazy" decoding="async" className="w-[21px] h-[21px] object-contain block" />
           </button>
         </div>
       </div>
@@ -744,7 +744,7 @@ export default function CardReferenceAdmin() {
                   style={{ background: active ? colors.bg : 'transparent', border: `1px solid ${active ? colors.color : '#3e325e'}`, opacity: active ? 1 : 0.45 }}
                 >
                   {icon
-                    ? <img src={icon} alt={tag} className="w-5 h-5 object-contain block" />
+                    ? <img src={icon} alt={tag} loading="lazy" decoding="async" className="w-5 h-5 object-contain block" />
                     : <span className="font-body text-[0.75rem] px-[7px]" style={{ color: active ? colors.color : '#625c7c' }}>{tag}</span>
                   }
                 </button>
@@ -756,7 +756,7 @@ export default function CardReferenceAdmin() {
               className="p-1 rounded-[6px] cursor-pointer transition-all inline-flex items-center justify-center"
               style={{ background: tagFilters.includes(NO_TAG) ? 'rgba(100,100,100,0.12)' : 'transparent', border: `1px solid ${tagFilters.includes(NO_TAG) ? '#8e87a8' : '#3e325e'}`, opacity: tagFilters.includes(NO_TAG) ? 1 : 0.45 }}
             >
-              <img src={NO_TAG_ICON} alt="No tag" className="w-5 h-5 object-contain block" />
+              <img src={NO_TAG_ICON} alt="No tag" loading="lazy" decoding="async" className="w-5 h-5 object-contain block" />
             </button>
           </div>
         )}
@@ -776,7 +776,7 @@ export default function CardReferenceAdmin() {
                   className={`w-[31px] h-[31px] p-1 border rounded-[6px] cursor-pointer transition-all inline-flex items-center justify-center box-border ${active ? 'bg-[rgba(46,139,139,0.12)] border-[#2e8b8b] opacity-100' : 'bg-transparent border-[#3e325e] opacity-45'}`}
                 >
                   {icon
-                    ? <img src={icon} alt={exp} className="w-5 h-5 object-contain block" />
+                    ? <img src={icon} alt={exp} loading="lazy" decoding="async" className="w-5 h-5 object-contain block" />
                     : <span className={`font-body text-[0.75rem] px-[7px] ${active ? 'text-[#3bbfbf]' : 'text-[#625c7c]'}`}>{exp}</span>
                   }
                 </button>
@@ -852,7 +852,7 @@ export default function CardReferenceAdmin() {
                       <div className="flex gap-1 flex-wrap">
                         {card.expansions.length > 0
                           ? card.expansions.map(exp => EXPANSION_ICONS[exp]
-                              ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} className="w-[18px] h-[18px] object-contain" />
+                              ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} loading="lazy" decoding="async" className="w-[18px] h-[18px] object-contain" />
                               : <span key={exp} className="font-body text-[0.75rem] text-[#8e87a8]">{exp}</span>
                             )
                           : <span className="text-[#504270]">—</span>

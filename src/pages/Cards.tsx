@@ -340,7 +340,7 @@ export default function Cards() {
                   {Object.entries(expansionTagBreakdown).sort((a, b) => b[1] - a[1]).map(([tag, count]) => (
                     <span key={tag} title={tag} className="flex items-center gap-1 px-1.5 py-[3px] rounded-[3px] bg-secondary border border-border whitespace-nowrap">
                       {TAG_ICONS[tag]
-                        ? <img src={TAG_ICONS[tag]} alt={tag} className="w-3.5 h-3.5 object-contain" />
+                        ? <img src={TAG_ICONS[tag]} alt={tag} loading="lazy" decoding="async" className="w-3.5 h-3.5 object-contain" />
                         : <span className="font-body text-[0.65rem] text-[var(--text-3)]">{tag.slice(0, 3)}</span>
                       }
                       <span className="font-mono font-bold text-[0.72rem] text-secondary-foreground">{count}</span>
@@ -507,7 +507,7 @@ export default function Cards() {
                       <div className="flex gap-1 flex-wrap justify-center">
                         {(card.expansions ?? []).map(exp => (
                           EXPANSION_ICONS[exp]
-                            ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} className="w-[18px] h-[18px] object-contain opacity-85" />
+                            ? <img key={exp} src={EXPANSION_ICONS[exp]} alt={exp} title={exp} loading="lazy" decoding="async" className="w-[18px] h-[18px] object-contain opacity-85" />
                             : <span key={exp} className="font-mono text-[0.6rem] text-[var(--text-4)]">{exp}</span>
                         ))}
                       </div>
@@ -538,7 +538,7 @@ export default function Cards() {
                           <span className="inline-flex items-center gap-1 px-2 py-[3px] rounded-[5px] bg-[rgba(91,141,217,0.1)] border border-[rgba(91,141,217,0.3)] font-mono text-[0.72rem] font-bold text-[#5b8dd9]">
                             1/{card.resource_vp_per}
                             {card.resource_vp_type && (PLACEMENT_ICONS[card.resource_vp_type]
-                              ? <img src={PLACEMENT_ICONS[card.resource_vp_type]} alt={card.resource_vp_type} title={card.resource_vp_type} className="w-3.5 h-3.5 object-contain" />
+                              ? <img src={PLACEMENT_ICONS[card.resource_vp_type]} alt={card.resource_vp_type} title={card.resource_vp_type} loading="lazy" decoding="async" className="w-3.5 h-3.5 object-contain" />
                               : <span className="text-[0.65rem] text-[rgba(91,141,217,0.7)]">{card.resource_vp_type}</span>
                             )}
                           </span>
@@ -546,7 +546,7 @@ export default function Cards() {
                           <span className="inline-flex items-center gap-1 px-2 py-[3px] rounded-[5px] bg-[rgba(201,160,48,0.1)] border border-[rgba(201,160,48,0.3)] font-mono text-[0.72rem] font-bold text-score-400">
                             1/{card.resource_vp_per}
                             {card.resource_vp_type && (RESOURCE_ICONS[card.resource_vp_type]
-                              ? <img src={RESOURCE_ICONS[card.resource_vp_type]} alt={card.resource_vp_type} title={card.resource_vp_type} className="w-3.5 h-3.5 object-contain" />
+                              ? <img src={RESOURCE_ICONS[card.resource_vp_type]} alt={card.resource_vp_type} title={card.resource_vp_type} loading="lazy" decoding="async" className="w-3.5 h-3.5 object-contain" />
                               : <span className="text-[0.65rem] text-[rgba(201,160,48,0.7)]">{card.resource_vp_type}</span>
                             )}
                           </span>

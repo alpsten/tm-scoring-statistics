@@ -112,7 +112,7 @@ export default function Games() {
         )}
       >
         {EXPANSION_ICONS[exp]
-          ? <img src={EXPANSION_ICONS[exp]} alt={exp} className="w-5 h-5 object-contain" />
+          ? <img src={EXPANSION_ICONS[exp]} alt={exp} loading="lazy" decoding="async" className="w-5 h-5 object-contain" />
           : <span className={cn('font-body text-[0.75rem] px-1', active ? 'text-[#5b8dd9]' : 'text-[var(--text-4)]')}>{exp}</span>
         }
       </button>
@@ -228,7 +228,7 @@ export default function Games() {
                     {game.expansions.map(exp => {
                       const icon = EXPANSION_ICONS[exp]
                       return icon ? (
-                        <img key={exp} src={icon} alt={exp} title={exp} className="w-5 h-5 object-contain" />
+                        <img key={exp} src={icon} alt={exp} title={exp} loading="lazy" decoding="async" className="w-5 h-5 object-contain" />
                       ) : (
                         <span key={exp} className="font-body text-[0.65rem] px-1.5 py-[1px] rounded-[3px] bg-atmo-500/8 text-atmo-500 border border-atmo-500/20">{exp}</span>
                       )

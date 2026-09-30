@@ -34,6 +34,8 @@ export default function Tag({ name }: TagProps) {
         src={icon}
         alt={name}
         title={name}
+        loading="lazy"
+        decoding="async"
         className="w-[18px] h-[18px] object-contain inline-block align-middle"
       />
     )

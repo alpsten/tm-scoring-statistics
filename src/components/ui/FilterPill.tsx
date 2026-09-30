@@ -24,7 +24,7 @@ export default function FilterPill({ label, tooltip, icon, active, color = '#888
       }}
     >
       {icon ? (
-        <img src={icon} alt={tooltip ?? label ?? ''} className={cn('w-5 h-5 object-contain block transition-opacity', active ? 'opacity-100' : 'opacity-50')} />
+        <img src={icon} alt={tooltip ?? label ?? ''} loading="lazy" decoding="async" className={cn('w-5 h-5 object-contain block transition-opacity', active ? 'opacity-100' : 'opacity-50')} />
       ) : (
         <span
           className="font-mono text-[0.65rem] font-normal tracking-[0] select-none leading-none whitespace-nowrap"
