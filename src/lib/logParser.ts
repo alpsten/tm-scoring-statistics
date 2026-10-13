@@ -15,6 +15,27 @@ export const CARD_NAME_CORRECTIONS: Record<string, string> = {
   'COÂ² Reducers': 'CO2 Reducers',
   'CO² Reducers': 'CO2 Reducers',
   'Titan Floating Launch-pad': 'Titan Floating Launch-Pad',
+  // The TM app's log keeps small connector words ("to", "of", "the", "for", "from") lowercase,
+  // but card_reference title-cases every word — these are all the same mismatch pattern.
+  'ArchaeBacteria': 'Archaebacteria',
+  'AstroDrill': 'Astrodrill',
+  'Cheung Shing MARS': 'Cheung Shing Mars',
+  'Comet for Venus': 'Comet For Venus',
+  'CrediCor': 'Credicor',
+  'Expedition to the Surface - Venus': 'Expedition To The Surface - Venus',
+  'Hermetic Order of Mars': 'Hermetic Order Of Mars',
+  'Hydrogen to Venus': 'Hydrogen To Venus',
+  'Museum of Early Colonisation': 'Museum Of Early Colonisation',
+  'Nitrogen from Titan': 'Nitrogen From Titan',
+  'Prefabrication of Human Habitats': 'Prefabrication Of Human Habitats',
+  'Pride of the Earth Arkship': 'Pride Of The Earth Arkship',
+  'Return to Abandoned Technology': 'Return To Abandoned Technology',
+  'Shipment to Earth': 'Shipment To Earth',
+  'Spin-off Department': 'Spin-Off Department',
+  'St. Joseph of Cupertino Mission': 'St. Joseph Of Cupertino Mission',
+  'Sub-zero Salt Fish': 'Sub-Zero Salt Fish',
+  'Titan Air-scrapping': 'Titan Air-Scrapping',
+  'Water to Venus': 'Water To Venus',
 }
 
 // Cards whose action-use events we extract into ParsedLog.cardEffects.
